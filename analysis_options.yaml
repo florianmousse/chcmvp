@@ -1,0 +1,9 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # Combinaison freezed + json_serializable : json_serializable place ses
+    # annotations sur le constructeur généré, ce que l'analyseur signale par
+    # défaut comme "mal placé" alors que c'est le fonctionnement normal de
+    # freezed. Recommandé par la doc officielle de freezed.
+    invalid_annotation_target: ignore

@@ -1,0 +1,103 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Miscellaneous
+# ═══════════════════════════════════════════════════════════════════════════
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# ═══════════════════════════════════════════════════════════════════════════
+# IDE
+# ═══════════════════════════════════════════════════════════════════════════
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Flutter / Dart / Pub
+# ═══════════════════════════════════════════════════════════════════════════
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Android
+# ═══════════════════════════════════════════════════════════════════════════
+/android/app/debug
+/android/app/profile
+/android/app/release
+/android/.gradle/
+/android/captures/
+/android/gradlew
+/android/gradlew.bat
+local.properties
+.cxx/
+
+# Signing — NEVER commit keystores or signing config
+key.properties
+**/*.keystore
+**/*.jks
+
+# ═══════════════════════════════════════════════════════════════════════════
+# iOS
+# ═══════════════════════════════════════════════════════════════════════════
+/ios/Pods/
+/ios/.symlinks/
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Flutter.podspec
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Secrets & credentials — CRITICAL, never push these
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Firebase Admin SDK service account keys
+*-firebase-adminsdk-*.json
+*-service-account*.json
+
+# Environment files (contain SMTP passwords, paths to keys, etc.)
+.env
+**/.env
+
+# SSH keys and certificates
+*.pem
+*.key
+!package-lock.json
+
+# Local deployment notes with real IPs / passwords
+*.local.md
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Server (Node.js / TypeScript backend)
+# ═══════════════════════════════════════════════════════════════════════════
+node_modules/
+server/node_modules/
+server/dist/
+server/.env
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Flutter metadata (auto-generated, not needed in VCS)
+# ═══════════════════════════════════════════════════════════════════════════
+.metadata
+.flutter-plugins

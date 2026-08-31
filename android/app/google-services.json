@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "64422446249",
+    "project_id": "chc-mvp",
+    "storage_bucket": "chc-mvp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:64422446249:android:f5623f8d1d5604041795b8",
+        "android_client_info": {
+          "package_name": "fr.florianmousse.chcmvp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "64422446249-hme7ptt6h5e0ogj02p0964fd5eul2s0m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fr.florianmousse.chcmvp",
+            "certificate_hash": "1c9e92dd8d4c39c00e1e407f406e9d40bf078f70"
+          }
+        },
+        {
+          "client_id": "64422446249-q2dmcs7hhn7ifb1n6g1ct9lob3ualc98.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCv98WdKPkwkA5lKJYf-oKvueZcvA5RM6s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "64422446249-q2dmcs7hhn7ifb1n6g1ct9lob3ualc98.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "64422446249-bvetsijii6e070fp3bf1e8sae6i1n2fs.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "fr.florianmousse.chcmvp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

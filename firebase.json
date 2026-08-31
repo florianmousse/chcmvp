@@ -1,0 +1,16 @@
+{
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "chc-mvp",
+          "configurations": {
+            "android": "1:64422446249:android:f5623f8d1d5604041795b8",
+            "ios": "1:64422446249:ios:b66e0b30392507f31795b8",
+            "web": "1:64422446249:web:1d86f46b48c6dc6a1795b8"
+          }
+        }
+      }
+    }
+  }
+}

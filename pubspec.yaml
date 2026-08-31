@@ -1,0 +1,74 @@
+name: chc_mvp
+description: Application de vote des meilleurs joueurs pour club de hockey sur gazon.
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Firebase
+  firebase_core: ^3.1.0
+  firebase_auth: ^5.1.0
+  cloud_firestore: ^5.0.1
+  firebase_messaging: ^15.0.1
+  firebase_storage: ^12.1.0
+
+  # Modèles immuables
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+
+  # UI / UX
+  google_fonts: ^6.2.1
+  google_sign_in: ^7.0.0
+  cached_network_image: ^3.3.1
+  flutter_svg: ^2.0.10
+  shimmer: ^3.0.0
+  image_picker: ^1.1.2
+  flutter_local_notifications: ^17.2.2
+
+  # Utilitaires
+  intl: ^0.19.0
+  share_plus: ^9.0.0
+  go_router: ^14.1.4
+  http: ^1.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.9
+  riverpod_generator: ^2.4.0
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/logo/logo.png
+    - assets/team_logos/
+
+# Génère l'icône de l'app pour Android et iOS à partir d'une seule image
+# source. Remplace assets/icon/icon.png par ton logo (1024x1024 recommandé,
+# fond plein — pas de transparence pour l'icône principale) puis lance :
+#   dart run flutter_launcher_icons
+#   flutter clean
+#   flutter run
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 21
+  # Sans ça, Android génère seulement l'ancienne icône carrée "à plat" au
+  # lieu d'une vraie icône adaptative — d'où l'effet carré, en retrait, qui
+  # ne remplit pas l'espace comme les autres icônes du launcher.
+  adaptive_icon_background: "#081725"
+  adaptive_icon_foreground: "assets/icon/icon.png"
