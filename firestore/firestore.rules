@@ -1,0 +1,95 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isActiveMember() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ---------- users ----------
+    match /users/{userId} {
+      allow read: if isActiveMember();
+      allow create: if isAdmin();
+      // Un membre peut modifier son propre profil (nom, photo...) mais jamais son rôle ou isActive.
+      allow update: if isAdmin() ||
+        (isSignedIn() && request.auth.uid == userId &&
+         request.resource.data.role == resource.data.role &&
+         request.resource.data.isActive == resource.data.isActive);
+      allow delete: if isAdmin();
+    }
+
+    // ---------- settings (barème, durée de vote, délai de rappel...) ----------
+    match /settings/{doc} {
+      allow read: if isActiveMember();
+      allow write: if isAdmin();
+    }
+
+    // ---------- teams ----------
+    match /teams/{teamId} {
+      allow read: if isActiveMember();
+      allow write: if isAdmin();
+    }
+
+    // ---------- seasons ----------
+    match /seasons/{seasonId} {
+      allow read: if isActiveMember();
+      allow write: if isAdmin();
+    }
+
+    // ---------- matches ----------
+    match /matches/{matchId} {
+      allow read: if isActiveMember();
+      allow create, update, delete: if isAdmin();
+
+      // ---------- votes (sous-collection) ----------
+      // Un vote ne peut être créé que par son auteur, une seule fois, et uniquement
+      // pendant que le vote est ouvert. Personne ne peut lire les votes individuels
+      // des autres : seule une Cloud Function (Admin SDK, hors règles) agrège les résultats.
+      match /votes/{voterUid} {
+        allow read: if isSignedIn() && request.auth.uid == voterUid;
+        allow create: if isActiveMember() &&
+          request.auth.uid == voterUid &&
+          get(/databases/$(database)/documents/matches/$(matchId)).data.status == 'voting_open' &&
+          request.resource.data.firstPlaceUid != request.resource.data.secondPlaceUid &&
+          request.resource.data.firstPlaceUid != request.resource.data.thirdPlaceUid &&
+          request.resource.data.secondPlaceUid != request.resource.data.thirdPlaceUid;
+        allow update, delete: if false; // un vote est définitif
+      }
+
+      // Résultats agrégés : lecture publique aux membres, écriture réservée au backend (Admin SDK).
+      match /results/{doc} {
+        allow read: if isActiveMember();
+        allow write: if false; // uniquement via Cloud Function avec les privilèges admin
+      }
+    }
+
+    // ---------- rankings_cache ----------
+    match /rankings_cache/{scope} {
+      allow read: if isActiveMember();
+      allow write: if false; // recalculé par Cloud Function
+    }
+
+    // ---------- player_stats (all-time, alimenté par computeMatchResults) ----------
+    match /player_stats/{uid} {
+      allow read: if isActiveMember();
+      allow write: if false;
+
+      match /history/{matchId} {
+        allow read: if isActiveMember();
+        allow write: if false;
+      }
+    }
+  }
+}

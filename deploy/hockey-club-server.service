@@ -1,0 +1,15 @@
+[Unit]
+Description=Serveur backend club hockey (notifications, vote, membres)
+After=network.target
+
+[Service]
+Type=simple
+User=hockey
+WorkingDirectory=/opt/hockey-club-server
+EnvironmentFile=/opt/hockey-club-server/.env
+ExecStart=/usr/bin/node /opt/hockey-club-server/dist/index.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
