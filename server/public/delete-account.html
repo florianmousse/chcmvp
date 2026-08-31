@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suppression de compte — CHC MVP</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      background: #f5f5f7;
+      padding: 20px;
+    }
+    .container {
+      max-width: 680px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    h1 {
+      font-size: 1.6em;
+      margin-bottom: 8px;
+      color: #0d1b2a;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 32px;
+      font-size: 0.95em;
+    }
+    h2 {
+      font-size: 1.15em;
+      margin-top: 28px;
+      margin-bottom: 12px;
+      color: #0d1b2a;
+    }
+    p, li {
+      color: #333;
+      margin-bottom: 8px;
+    }
+    ul {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+    .step {
+      background: #f0f4ff;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .step-number {
+      display: inline-block;
+      background: #1565c0;
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 28px;
+      font-weight: bold;
+      font-size: 0.85em;
+      margin-right: 8px;
+    }
+    .step-title {
+      font-weight: 600;
+      color: #0d1b2a;
+    }
+    .step p {
+      margin-top: 8px;
+      margin-left: 36px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 0.92em;
+    }
+    th {
+      background: #f5f5f7;
+      font-weight: 600;
+      color: #0d1b2a;
+    }
+    .deleted { color: #c62828; }
+    .anonymized { color: #e65100; }
+    .contact-box {
+      background: #e8f5e9;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 24px;
+    }
+    .contact-box a {
+      color: #1565c0;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .contact-box a:hover {
+      text-decoration: underline;
+    }
+    .footer {
+      text-align: center;
+      color: #999;
+      font-size: 0.82em;
+      margin-top: 32px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🗑️ Suppression de compte</h1>
+    <p class="subtitle">Application <strong>CHC MVP</strong> — développée par Florian Moussé</p>
+
+    <h2>Comment supprimer votre compte ?</h2>
+    <p>Vous pouvez demander la suppression de votre compte et des données associées de deux manières :</p>
+
+    <div class="step">
+      <span class="step-number">1</span>
+      <span class="step-title">Depuis l'application</span>
+      <p>
+        Ouvrez l'application → onglet <strong>Profil</strong> →
+        <strong>Supprimer mon compte</strong>. La suppression est immédiate.
+      </p>
+    </div>
+
+    <div class="step">
+      <span class="step-number">2</span>
+      <span class="step-title">Par e-mail</span>
+      <p>
+        Envoyez un e-mail à l'adresse ci-dessous en précisant le nom et l'adresse
+        e-mail associés à votre compte. Votre demande sera traitée sous
+        <strong>7 jours ouvrés</strong>.
+      </p>
+    </div>
+
+    <h2>Quelles données sont supprimées ?</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Type de données</th>
+          <th>Traitement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Compte Firebase (e-mail, mot de passe)</td>
+          <td class="deleted">✗ Supprimé définitivement</td>
+        </tr>
+        <tr>
+          <td>Profil (nom, prénom, numéro de maillot, photo)</td>
+          <td class="deleted">✗ Supprimé définitivement</td>
+        </tr>
+        <tr>
+          <td>Tokens de notifications push</td>
+          <td class="deleted">✗ Supprimés définitivement</td>
+        </tr>
+        <tr>
+          <td>Votes individuels émis</td>
+          <td class="anonymized">↻ Anonymisés (l'identifiant du votant est effacé, les totaux agrégés sont conservés pour l'intégrité du classement)</td>
+        </tr>
+        <tr>
+          <td>Résultats de matchs et classement</td>
+          <td class="anonymized">↻ Les points et statistiques agrégées restent dans le classement historique, mais ne sont plus rattachés à un profil identifiable</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      <strong>Délai de conservation :</strong> les données personnelles identifiables
+      sont supprimées immédiatement lors du traitement de la demande. Les données
+      agrégées et anonymisées (classements historiques) sont conservées sans limite
+      de durée car elles ne permettent plus d'identifier un individu.
+    </p>
+
+    <div class="contact-box">
+      <h2>📧 Contact</h2>
+      <p>
+        Pour toute demande de suppression par e-mail ou toute question relative à
+        vos données personnelles :
+      </p>
+      <p><a href="mailto:florian2.mousse@gmail.com">florian2.mousse@gmail.com</a></p>
+      <p style="margin-top: 8px; font-size: 0.9em; color: #555;">
+        Développeur : Florian Moussé · Application : CHC MVP
+      </p>
+    </div>
+
+    <p class="footer">
+      Dernière mise à jour : août 2026
+    </p>
+  </div>
+</body>
+</html>
