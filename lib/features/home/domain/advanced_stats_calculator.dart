@@ -109,8 +109,7 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
     final first5 = history.take(5).toList();
     final rest = history.skip(5).toList();
 
-    final avgFirst5 =
-        first5.map((h) => h.points).reduce((a, b) => a + b) / 5.0;
+    final avgFirst5 = first5.map((h) => h.points).reduce((a, b) => a + b) / 5.0;
     final avgRest =
         rest.map((h) => h.points).reduce((a, b) => a + b) / rest.length;
 
@@ -165,85 +164,122 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
   required String Function(String uid) nameOf,
   required DateTime now,
 }) {
-  final facts = <({String emoji, String title, String body})>[];
-
-  // Fait 1 : joueur avec beaucoup de matchs votés mais jamais 1er
-  for (final e in allStats.entries) {
-    if (e.value.votesReceived >= 5 && e.value.firstCount == 0) {
-      facts.add((
-        emoji: '🧙‍♂️',
-        title: 'Le saviez-vous ?',
-        body:
-            '${nameOf(e.key)} a reçu des votes lors de ${e.value.votesReceived} matchs cette saison, mais n\'a jamais terminé 1er.',
-      ));
-    }
-  }
-
-  // Fait 2 : deux joueurs séparés de 3 points ou moins
-  for (var i = 0; i < ranking.length - 1; i++) {
-    final diff = ranking[i].points - ranking[i + 1].points;
-    if (diff > 0 && diff <= 3) {
-      facts.add((
-        emoji: '⚡',
-        title: 'Course serrée !',
-        body:
-            '${nameOf(ranking[i].uid)} et ${nameOf(ranking[i + 1].uid)} ne sont séparés que de $diff point${diff > 1 ? 's' : ''} !',
-      ));
-    }
-  }
-
-  // Fait 3 : joueur avec le plus de 3èmes places
-  final maxThird = allStats.entries
-      .where((e) => e.value.thirdCount >= 3)
-      .toList()
-    ..sort((a, b) => b.value.thirdCount.compareTo(a.value.thirdCount));
-  if (maxThird.isNotEmpty) {
-    final e = maxThird.first;
-    facts.add((
-      emoji: '🥉',
-      title: 'Le fidèle du podium',
-      body:
-          '${nameOf(e.key)} a terminé 3e pas moins de ${e.value.thirdCount} fois cette saison !',
-    ));
-  }
-
-  // Fait 4 : joueur avec le meilleur ratio points/match (min 3 matchs)
-  final byAvg = allStats.entries
-      .where((e) => e.value.matchesPlayed >= 3)
-      .toList()
-    ..sort(
-      (a, b) => b.value.averagePointsPerMatch.compareTo(
-        a.value.averagePointsPerMatch,
-      ),
-    );
-  if (byAvg.isNotEmpty) {
-    final e = byAvg.first;
-    facts.add((
-      emoji: '📈',
-      title: 'Le plus régulier',
-      body:
-          '${nameOf(e.key)} affiche une moyenne de ${e.value.averagePointsPerMatch.toStringAsFixed(1)} pts/match sur ${e.value.matchesPlayed} matchs.',
-    ));
-  }
-
-  // Fait 5 : joueur qui a fait un sans-faute top 3 sur ses 3 derniers matchs
-  for (final e in allHistories.entries) {
-    if (e.value.length >= 3) {
-      final last3 = e.value.reversed.take(3).toList();
-      if (last3.every((h) => h.rank != null && h.rank! <= 3)) {
-        facts.add((
-          emoji: '🎯',
-          title: 'Sans faute !',
-          body:
-              '${nameOf(e.key)} est sur le podium à chacun de ses 3 derniers matchs !',
-        ));
-      }
-    }
-  }
-
-  if (facts.isEmpty) return null;
   final weekNumber = _isoWeekNumber(now);
-  return facts[weekNumber % facts.length];
+
+  // 5 catégories fixes — on en choisit une par numéro de semaine.
+  // Même si les données évoluent en cours de semaine, la catégorie
+  // sélectionnée ne change pas jusqu'au lundi suivant.
+  final category = weekNumber % 5;
+
+  switch (category) {
+    // Catégorie 0 : joueur avec beaucoup de votes mais jamais 1er
+    case 0:
+      for (final e in allStats.entries) {
+        if (e.value.votesReceived >= 5 && e.value.firstCount == 0) {
+          return (
+            emoji: '🧙‍♂️',
+            title: 'Le saviez-vous ?',
+            body:
+                '${nameOf(e.key)} a reçu des votes lors de ${e.value.votesReceived} matchs cette saison, mais n\'a jamais terminé 1er.',
+          );
+        }
+      }
+      return (
+        emoji: '🤷‍♂️',
+        title: 'Pas de stat insolite cette semaine',
+        body:
+            'Aucun joueur n\'a reçu beaucoup de votes sans jamais finir 1er cette saison.',
+      );
+
+    // Catégorie 1 : deux joueurs séparés de 3 points ou moins
+    case 1:
+      for (var i = 0; i < ranking.length - 1; i++) {
+        final diff = ranking[i].points - ranking[i + 1].points;
+        if (diff > 0 && diff <= 3) {
+          return (
+            emoji: '⚡',
+            title: 'Course serrée !',
+            body:
+                '${nameOf(ranking[i].uid)} et ${nameOf(ranking[i + 1].uid)} ne sont séparés que de $diff point${diff > 1 ? 's' : ''} !',
+          );
+        }
+      }
+      return (
+        emoji: '😴',
+        title: 'Pas de stat insolite cette semaine',
+        body:
+            'Aucun duo de joueurs n\'est séparé de 3 points ou moins au classement cette saison.',
+      );
+
+    // Catégorie 2 : joueur avec le plus de 3èmes places
+    case 2:
+      final maxThird =
+          allStats.entries.where((e) => e.value.thirdCount >= 3).toList()
+            ..sort((a, b) => b.value.thirdCount.compareTo(a.value.thirdCount));
+      if (maxThird.isNotEmpty) {
+        final e = maxThird.first;
+        return (
+          emoji: '🥉',
+          title: 'Le fidèle du podium',
+          body:
+              '${nameOf(e.key)} a terminé 3e pas moins de ${e.value.thirdCount} fois cette saison !',
+        );
+      }
+      return (
+        emoji: '😴',
+        title: 'Pas de stat insolite cette semaine',
+        body: 'Aucun joueur n\'a terminé 3e au moins 3 fois cette saison.',
+      );
+
+    // Catégorie 3 : meilleur ratio points/match
+    case 3:
+      final byAvg =
+          allStats.entries.where((e) => e.value.matchesPlayed >= 3).toList()
+            ..sort(
+              (a, b) => b.value.averagePointsPerMatch.compareTo(
+                a.value.averagePointsPerMatch,
+              ),
+            );
+      if (byAvg.isNotEmpty) {
+        final e = byAvg.first;
+        return (
+          emoji: '📈',
+          title: 'Le plus régulier',
+          body:
+              '${nameOf(e.key)} affiche une moyenne de ${e.value.averagePointsPerMatch.toStringAsFixed(1)} pts/match sur ${e.value.matchesPlayed} matchs.',
+        );
+      }
+      return (
+        emoji: '😴',
+        title: 'Pas de stat insolite cette semaine',
+        body:
+            'Aucun joueur n\'a joué au moins 3 matchs cette saison pour calculer un ratio points/match.',
+      );
+
+    // Catégorie 4 : sans-faute top 3 sur les 3 derniers matchs
+    case 4:
+      for (final e in allHistories.entries) {
+        if (e.value.length >= 3) {
+          final last3 = e.value.reversed.take(3).toList();
+          if (last3.every((h) => h.rank != null && h.rank! <= 3)) {
+            return (
+              emoji: '🎯',
+              title: 'Sans faute !',
+              body:
+                  '${nameOf(e.key)} est sur le podium à chacun de ses 3 derniers matchs !',
+            );
+          }
+        }
+      }
+      return (
+        emoji: '😴',
+        title: 'Pas de stat insolite cette semaine',
+        body:
+            'Aucun joueur n\'a terminé dans le top 3 lors de ses 3 derniers matchs.',
+      );
+  }
+
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -253,8 +289,9 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
 /// Taux de vote moyen sur tous les matchs clôturés, en pourcentage.
 double averageVoteRate(List<({int totalVotes, int presentCount})> matches) {
   if (matches.isEmpty) return 0;
-  final rates =
-      matches.map((m) => m.presentCount > 0 ? m.totalVotes / m.presentCount * 100 : 0.0);
+  final rates = matches.map(
+    (m) => m.presentCount > 0 ? m.totalVotes / m.presentCount * 100 : 0.0,
+  );
   return rates.reduce((a, b) => a + b) / matches.length;
 }
 
@@ -273,9 +310,6 @@ int _isoWeekNumber(DateTime date) {
 double standardDeviation(List<int> values) {
   if (values.length < 2) return double.infinity;
   final mean = values.reduce((a, b) => a + b) / values.length;
-  final sumSqDiff = values.fold<double>(
-    0,
-    (sum, v) => sum + pow(v - mean, 2),
-  );
+  final sumSqDiff = values.fold<double>(0, (sum, v) => sum + pow(v - mean, 2));
   return sqrt(sumSqDiff / values.length);
 }

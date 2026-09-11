@@ -11,11 +11,45 @@ import 'package:intl/intl.dart';
 
 /// Vue membre (lecture + vote) — distincte de MatchesAdminScreen qui gère la
 /// création/édition et n'a pas vocation à être utilisée pour voter.
-class MatchesScreen extends ConsumerWidget {
+class MatchesScreen extends ConsumerStatefulWidget {
   const MatchesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MatchesScreen> createState() => _MatchesScreenState();
+}
+
+class _MatchesScreenState extends ConsumerState<MatchesScreen> {
+  MatchStatus? _filter; // null = tous
+
+  List<MatchModel> _sortAndFilter(List<MatchModel> matches) {
+    var list = List<MatchModel>.from(matches);
+
+    // Filtre par statut si actif
+    if (_filter != null) {
+      list = list.where((m) => m.status == _filter).toList();
+    }
+
+    // Tri : votes ouverts → à venir → terminés, puis par date
+    list.sort((a, b) {
+      const statusOrder = {
+        MatchStatus.votingOpen: 0,
+        MatchStatus.upcoming: 1,
+        MatchStatus.votingClosed: 2,
+      };
+      final cmp =
+          (statusOrder[a.status] ?? 9).compareTo(statusOrder[b.status] ?? 9);
+      if (cmp != 0) return cmp;
+      if (a.status == MatchStatus.votingClosed) {
+        return b.date.compareTo(a.date);
+      }
+      return a.date.compareTo(b.date);
+    });
+
+    return list;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final matchesAsync = ref.watch(matchesListProvider(null));
 
     return Scaffold(
@@ -25,16 +59,103 @@ class MatchesScreen extends ConsumerWidget {
           if (matches.isEmpty) {
             return const Center(child: Text('Aucun match pour le moment.'));
           }
-          return ListView.separated(
-            padding: const EdgeInsets.all(12),
-            itemCount: matches.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, i) => _MatchCard(match: matches[i]),
+
+          final sorted = _sortAndFilter(matches);
+
+          return Column(
+            children: [
+              // ── Barre de filtres ──
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    _FilterChipBtn(
+                      label: 'Tous',
+                      icon: Icons.list,
+                      selected: _filter == null,
+                      onTap: () => setState(() => _filter = null),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChipBtn(
+                      label: 'Vote ouvert',
+                      icon: Icons.how_to_vote_outlined,
+                      selected: _filter == MatchStatus.votingOpen,
+                      onTap: () => setState(() => _filter =
+                          _filter == MatchStatus.votingOpen
+                              ? null
+                              : MatchStatus.votingOpen),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChipBtn(
+                      label: 'À venir',
+                      icon: Icons.schedule_outlined,
+                      selected: _filter == MatchStatus.upcoming,
+                      onTap: () => setState(() => _filter =
+                          _filter == MatchStatus.upcoming
+                              ? null
+                              : MatchStatus.upcoming),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChipBtn(
+                      label: 'Terminé',
+                      icon: Icons.check_circle_outline,
+                      selected: _filter == MatchStatus.votingClosed,
+                      onTap: () => setState(() => _filter =
+                          _filter == MatchStatus.votingClosed
+                              ? null
+                              : MatchStatus.votingClosed),
+                    ),
+                  ],
+                ),
+              ),
+              // ── Liste des matchs ──
+              Expanded(
+                child: sorted.isEmpty
+                    ? const Center(
+                        child: Text('Aucun match avec ce filtre.'))
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                        itemCount: sorted.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 8),
+                        itemBuilder: (context, i) =>
+                            _MatchCard(match: sorted[i]),
+                      ),
+              ),
+            ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Erreur : $e')),
       ),
+    );
+  }
+}
+
+class _FilterChipBtn extends StatelessWidget {
+  const _FilterChipBtn({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilterChip(
+      label: Text(label),
+      avatar: Icon(icon, size: 16),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      showCheckmark: false,
+      visualDensity: VisualDensity.compact,
     );
   }
 }

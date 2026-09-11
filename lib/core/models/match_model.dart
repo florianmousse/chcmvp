@@ -52,5 +52,5 @@ class MatchModel with _$MatchModel {
 
   const MatchModel._();
 
-  String get label => '${isHome ? "Dom." : "Ext."} vs $opponent';
+  String get label => 'CHC vs $opponent';
 }
