@@ -127,6 +127,15 @@ Le `.gitignore` est configuré pour exclure tous ces fichiers.
 
 ---
 
+## Pages légales (hébergées sur le VPS)
+
+- 🔒 **Politique de confidentialité** : `https://<VOTRE_DOMAINE>/privacy.html`
+- 🗑️ **Suppression de compte** : `https://<VOTRE_DOMAINE>/delete-account.html`
+
+Ces pages sont servies par Express depuis `server/public/` et sont requises par le Google Play Store.
+
+---
+
 ## Licence
 
 Projet privé — usage réservé au club.
