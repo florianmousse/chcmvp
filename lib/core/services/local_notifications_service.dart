@@ -15,7 +15,7 @@ class LocalNotificationsService {
   );
 
   Future<void> init({void Function(String? payload)? onTap}) async {
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidInit = AndroidInitializationSettings('ic_stat_chc');
     const iosInit = DarwinInitializationSettings();
     await _plugin.initialize(
       const InitializationSettings(android: androidInit, iOS: iosInit),
@@ -47,6 +47,7 @@ class LocalNotificationsService {
           _channel.id,
           _channel.name,
           channelDescription: _channel.description,
+          icon: 'ic_stat_chc',
           importance: Importance.high,
           priority: Priority.high,
         ),

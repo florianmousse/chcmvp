@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/config/club_config.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
@@ -137,15 +137,28 @@ class _SwipableSection extends StatefulWidget {
 }
 
 class _SwipableSectionState extends State<_SwipableSection> {
-  late final PageController _pageController;
+  late PageController _pageController;
+  late int _lastPageCount;
 
   @override
   void initState() {
     super.initState();
-
+    _lastPageCount = widget.pages.length;
     _pageController = PageController(
-      viewportFraction: widget.pages.length > 1 ? 0.88 : 1.0,
+      viewportFraction: _lastPageCount > 1 ? 0.88 : 1.0,
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant _SwipableSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.pages.length != _lastPageCount) {
+      _lastPageCount = widget.pages.length;
+      _pageController.dispose();
+      _pageController = PageController(
+        viewportFraction: _lastPageCount > 1 ? 0.88 : 1.0,
+      );
+    }
   }
 
   @override
@@ -208,9 +221,13 @@ class _ActionCardsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pages = <Widget>[];
 
-    // Votes ouverts en premier (action urgente)
+    // Votes ouverts — on n'ajoute que ceux pour lesquels le joueur
+    // n'a PAS encore voté (sinon on a un bloc vide dans le PageView).
     for (final match in votingOpen) {
-      pages.add(_VoteCallToAction(match: match));
+      final hasVoted = ref.watch(hasVotedProvider(match.id)).value ?? true;
+      if (!hasVoted) {
+        pages.add(_VoteCallToAction(match: match));
+      }
     }
 
     // Prochain match
@@ -537,11 +554,6 @@ class _VoteCallToAction extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasVotedAsync = ref.watch(hasVotedProvider(match.id));
-    final hasVoted = hasVotedAsync.value ?? true;
-
-    if (hasVoted) return const SizedBox.shrink();
-
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 

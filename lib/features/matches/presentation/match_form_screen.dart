@@ -19,9 +19,9 @@ class MatchFormScreen extends ConsumerStatefulWidget {
 class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final _opponent = TextEditingController(text: widget.existing?.opponent);
-  late DateTime _date = widget.existing?.date ?? DateTime.now();
+  late DateTime _date = widget.existing?.date ?? _nextSunday();
   late TimeOfDay _time =
-      _parseTime(widget.existing?.time) ?? const TimeOfDay(hour: 15, minute: 0);
+      _parseTime(widget.existing?.time) ?? const TimeOfDay(hour: 9, minute: 0);
   String? _selectedTeam;
   late bool _isHome = widget.existing?.isHome ?? true;
   late bool _allowSelfVote = widget.existing?.allowSelfVote ?? false;
@@ -200,6 +200,12 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
 
   String? _required(String? value) =>
       (value == null || value.trim().isEmpty) ? 'Champ requis' : null;
+
+  static DateTime _nextSunday() {
+    final now = DateTime.now();
+    final daysUntilSunday = (DateTime.sunday - now.weekday) % 7;
+    return now.add(Duration(days: daysUntilSunday == 0 ? 7 : daysUntilSunday));
+  }
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
