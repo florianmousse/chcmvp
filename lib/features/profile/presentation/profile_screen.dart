@@ -97,8 +97,8 @@ class ProfileScreen extends ConsumerWidget {
               if (kIsWeb) ...[
                 const SizedBox(height: 24),
                 const Text(
-                  'Sur le web, consulte les votes et résultats dans l'application. '
-                  'Les notifications push et les widgets d'écran d'accueil restent disponibles dans l'application mobile.',
+                  "Sur le web, consulte les votes et résultats dans l'application. "
+                  "Les notifications push et les widgets d'écran d'accueil restent disponibles dans l'application mobile.",
                 ),
                 const SizedBox(height: 12),
                 const LegalLinks(),

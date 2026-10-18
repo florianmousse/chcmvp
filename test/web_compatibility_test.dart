@@ -72,7 +72,7 @@ void main() {
 
   for (final reject in [false, true]) {
     test(
-      'Un vote ${reject ? 'refusé est propagé à l’écran' : 'accepté se termine sans erreur'}',
+      'Un vote ${reject ? "refusé est propagé à l'écran" : 'accepté se termine sans erreur'}',
       () async {
         final container = ProviderContainer(
           overrides: [

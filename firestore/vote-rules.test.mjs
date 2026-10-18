@@ -33,7 +33,7 @@ before(async () => {
   for (const uid of ['voter','a','b','c','absent']) await seed(`users/${uid}`, { isActive:true, role:'member' });
   await seed('users/inactive', { isActive:false, role:'member' });
 });
-test('Vote valide, double vote et lecture du bulletin d’un autre membre', async () => {
+test("Vote valide, double vote et lecture du bulletin d'un autre membre", async () => {
   await seed('matches/valid', match);
   const accepted = await vote('valid');
   assert.equal(accepted.status, 200, await accepted.text());

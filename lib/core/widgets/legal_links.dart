@@ -16,7 +16,7 @@ class LegalLinks extends StatelessWidget {
           'Mentions légales': '/mentions-legales.html',
           'Confidentialité': '/confidentialite.html',
           'Cookies': '/cookies.html',
-          'Conditions d'utilisation': '/conditions-utilisation.html',
+          "Conditions d'utilisation": '/conditions-utilisation.html',
           'Mes données': '/supprimer-compte.html',
         }.entries)
           TextButton(
@@ -28,7 +28,7 @@ class LegalLinks extends StatelessWidget {
               if (!opened && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Impossible d'ouvrir cette page.'),
+                    content: Text("Impossible d'ouvrir cette page."),
                   ),
                 );
               }

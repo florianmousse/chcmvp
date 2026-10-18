@@ -16,7 +16,7 @@ _flutter.loader.load({
       document.getElementById('loading')?.remove();
     } catch (error) {
       clearTimeout(bootTimeout);
-      document.getElementById('loading-status').textContent = 'Impossible de démarrer l’application. Recharge la page ou essaie un navigateur récent.';
+      document.getElementById('loading-status').textContent = "Impossible de démarrer l'application. Recharge la page ou essaie un navigateur récent.";
       console.error('Démarrage CHC MVP impossible', error);
     }
   }
