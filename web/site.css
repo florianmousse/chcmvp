@@ -1,0 +1,26 @@
+:root { color-scheme: light dark; --bg:#f3f5fc; --card:#fff; --ink:#192031; --muted:#505d74; --blue:#3261ff; --line:#dce2f1; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.7 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+a { color:var(--blue); text-underline-offset:4px; overflow-wrap:anywhere; }
+a:focus-visible { outline:3px solid #ffb717; outline-offset:4px; border-radius:4px; }
+header,main,footer { width:min(100% - 40px,800px); margin-inline:auto; }
+header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding-block:28px; }
+.brand { display:flex; align-items:center; gap:12px; font-weight:800; text-decoration:none; color:var(--ink); }
+.brand img { width:48px; height:48px; object-fit:contain; }
+main.document { background:var(--card); border:1px solid var(--line); border-radius:24px; padding:clamp(20px,5vw,48px); box-shadow:0 8px 28px #001a4108; }
+h1 { font-size:clamp(1.8rem,5vw,2.6rem); line-height:1.2; letter-spacing:-.035em; margin:12px 0 20px; }
+h2 { font-size:1.15rem; margin:32px 0 8px; }
+p,li { overflow-wrap:anywhere; }
+.eyebrow { color:var(--blue); font-size:.75rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+.intro { color:var(--muted); font-size:1.08rem; }
+.notice { border-left:4px solid #ffb717; padding:12px 18px; background:var(--bg); border-radius:4px 12px 12px 4px; }
+.button { display:inline-block; background:var(--blue); color:#fff; text-decoration:none; border-radius:30px; padding:12px 22px; font-weight:600; }
+footer { padding:24px 0 36px; color:var(--muted); font-size:.83rem; }
+nav { display:flex; flex-wrap:wrap; gap:8px 18px; }
+nav a { padding-block:8px; }
+.loading { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100dvh; text-align:center; padding-block:32px; max-width:600px; }
+.loading img { object-fit:contain; }
+.loading nav { justify-content:center; margin-top:32px; font-size:.85rem; }
+.loading p { margin:4px 0 20px; color:var(--muted); }
+@media(prefers-color-scheme:dark) { :root { --bg:#10131c; --card:#1c2333; --ink:#edf1ff; --muted:#b6c1db; --blue:#9bb0ff; --line:#35415a; } .button { color:#001a41; } }
+@media(max-width:440px) { header,main,footer { width:calc(100% - 24px); } header { flex-wrap:wrap; padding-block:18px; } }

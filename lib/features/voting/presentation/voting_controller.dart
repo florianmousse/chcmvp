@@ -41,5 +41,10 @@ class VoteSubmissionController extends _$VoteSubmissionController {
         'votedAt': FieldValue.serverTimestamp(),
       });
     });
+    // AsyncValue.guard capture l'erreur : la propager aussi à l'écran pour
+    // qu'un refus réseau / Firestore ne soit jamais annoncé comme un succès.
+    if (state.hasError) {
+      Error.throwWithStackTrace(state.error!, state.stackTrace!);
+    }
   }
 }

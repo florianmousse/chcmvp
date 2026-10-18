@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chc_mvp/core/widgets/legal_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/config/club_config.dart';
 import 'package:chc_mvp/core/services/auth_service.dart';
@@ -21,6 +22,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscurePassword = true;
   bool _submittingEmail = false;
   bool _submittingGoogle = false;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,6 +164,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall,
                       ),
+                      const SizedBox(height: 16),
+                      const LegalLinks(),
                     ],
                   ),
                 ),

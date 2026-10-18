@@ -101,3 +101,6 @@ server/.env
 # ═══════════════════════════════════════════════════════════════════════════
 .metadata
 .flutter-plugins
+
+# Vercel local project identity
+.vercel/

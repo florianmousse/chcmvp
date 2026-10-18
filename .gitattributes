@@ -1,0 +1,2 @@
+# Les scripts exécutés sur Vercel (Linux) gardent leurs fins de ligne LF.
+*.sh text eol=lf

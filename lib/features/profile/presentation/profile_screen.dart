@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart' hide Badge;
+import 'package:flutter/foundation.dart';
+import 'package:chc_mvp/core/widgets/legal_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/core/utils/season.dart';
@@ -91,6 +93,16 @@ class ProfileScreen extends ConsumerWidget {
 
               // ── Thème ──
               _ThemeSelector(),
+
+              if (kIsWeb) ...[
+                const SizedBox(height: 24),
+                const Text(
+                  'Sur le web, consulte les votes et résultats dans l'application. '
+                  'Les notifications push et les widgets d'écran d'accueil restent disponibles dans l'application mobile.',
+                ),
+                const SizedBox(height: 12),
+                const LegalLinks(),
+              ],
 
               const SizedBox(height: 24),
               OutlinedButton.icon(

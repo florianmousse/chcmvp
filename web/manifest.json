@@ -1,0 +1,12 @@
+{
+  "name": "CHC MVP — Châteaubourg Hockey Club",
+  "short_name": "CHC MVP",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F3F5FC",
+  "theme_color": "#3261FF",
+  "description": "Matchs, votes MVP et classements du Châteaubourg Hockey Club.",
+  "icons": [{ "src": "logo.png", "sizes": "any", "type": "image/png", "purpose": "any" }]
+}

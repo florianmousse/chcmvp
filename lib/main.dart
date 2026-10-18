@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -26,10 +27,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('fr_FR');
-  await HomeWidgetService.initialize();
+  if (!kIsWeb) await HomeWidgetService.initialize();
   try {
     // Obligatoire depuis google_sign_in v7, avant tout signInWithGoogle().
-    await GoogleSignIn.instance.initialize();
+    if (!kIsWeb) await GoogleSignIn.instance.initialize();
   } catch (e) {
     // Ne bloque pas le démarrage de l'app si la config Google Sign-In
     // (SHA-1, google-services.json...) n'est pas encore en place — l'e-mail/
@@ -49,10 +50,10 @@ class HockeyClubApp extends ConsumerWidget {
     // provider Riverpod est paresseux et ne s'active que si quelque chose le
     // lit. Sans cette ligne, ce mécanisme n'était tout simplement jamais
     // démarré, d'où fcmTokens qui restait vide indéfiniment.
-    ref.watch(messagingSyncProvider);
+    if (!kIsWeb) ref.watch(messagingSyncProvider);
 
     // Maintient les widgets Android de l'écran d'accueil à jour.
-    ref.watch(homeWidgetSyncProvider);
+    if (!kIsWeb) ref.watch(homeWidgetSyncProvider);
 
     final themeMode = ref.watch(themeModeProvider);
 
@@ -70,6 +71,13 @@ class HockeyClubApp extends ConsumerWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
+      builder: (context, child) => Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: child!,
+        ),
+      ),
       home: const _RootRouter(),
     );
   }
@@ -102,7 +110,7 @@ class _AuthenticatedGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(currentUserProfileProvider);
     return profileAsync.when(
-      data: (profile) => profile == null
+      data: (profile) => profile == null || !profile.isActive
           ? const _UnrecognizedAccountScreen()
           : const _MainShell(),
       loading: () =>
@@ -127,7 +135,7 @@ class _UnrecognizedAccountScreen extends ConsumerWidget {
               const Icon(Icons.person_off_outlined, size: 48),
               const SizedBox(height: 16),
               const Text(
-                "Ce compte n'est associé à aucun membre du club.\nContacte un administrateur pour te faire inviter.",
+                "Ce compte n'est associé à aucun membre actif du club.\nContacte un administrateur pour vérifier ton accès.",
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -200,6 +208,41 @@ class _MainShellState extends ConsumerState<_MainShell> {
     ];
     final safeIndex = _index < screens.length ? _index : 0;
 
+    if (MediaQuery.sizeOf(context).width >= 840) {
+      return Scaffold(
+        body: SafeArea(
+          child: Row(
+            children: [
+              NavigationRail(
+                selectedIndex: safeIndex,
+                onDestinationSelected: (i) => setState(() => _index = i),
+                labelType: NavigationRailLabelType.all,
+                leading: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    'CHC MVP',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                destinations: destinations
+                    .map(
+                      (d) => NavigationRailDestination(
+                        icon: d.icon,
+                        selectedIcon: d.selectedIcon,
+                        label: Text(d.label),
+                      ),
+                    )
+                    .toList(),
+              ),
+              const VerticalDivider(width: 1),
+              Expanded(
+                child: IndexedStack(index: safeIndex, children: screens),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return Scaffold(
       body: IndexedStack(index: safeIndex, children: screens),
       bottomNavigationBar: NavigationBar(

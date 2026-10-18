@@ -20,7 +20,10 @@ service cloud.firestore {
 
     // ---------- users ----------
     match /users/{userId} {
-      allow read: if isActiveMember();
+      // Lire sa propre fiche permet aussi d'afficher proprement un compte
+      // désactivé ou sans fiche, sans ouvrir les autres données du club.
+      allow read: if isActiveMember() ||
+        (isSignedIn() && request.auth.uid == userId);
       allow create: if isAdmin();
       // Un membre peut modifier son propre profil (nom, photo...) mais jamais son rôle ou isActive.
       allow update: if isAdmin() ||
@@ -64,10 +67,27 @@ service cloud.firestore {
       // pendant que le vote est ouvert. Personne ne peut lire les votes individuels
       // des autres : seule une Cloud Function (Admin SDK, hors règles) agrège les résultats.
       match /votes/{voterUid} {
+        function validParticipation() {
+          let m = get(/databases/$(database)/documents/matches/$(matchId)).data;
+          let v = request.resource.data;
+          return m.status == 'voting_open' &&
+            request.auth.uid in m.presentPlayerIds &&
+            v.firstPlaceUid in m.presentPlayerIds &&
+            v.secondPlaceUid in m.presentPlayerIds &&
+            v.thirdPlaceUid in m.presentPlayerIds &&
+            (m.get('allowSelfVote', false) == true ||
+              !(request.auth.uid in [v.firstPlaceUid, v.secondPlaceUid, v.thirdPlaceUid])) &&
+            (m.get('votingOpensAt', null) == null || request.time >= m.votingOpensAt) &&
+            (m.get('votingClosesAt', null) == null || request.time < m.votingClosesAt);
+        }
         allow read: if isSignedIn() && request.auth.uid == voterUid;
         allow create: if isActiveMember() &&
           request.auth.uid == voterUid &&
-          get(/databases/$(database)/documents/matches/$(matchId)).data.status == 'voting_open' &&
+          request.resource.data.keys().hasAll(['voterUid', 'firstPlaceUid', 'secondPlaceUid', 'thirdPlaceUid', 'votedAt']) &&
+          request.resource.data.keys().hasOnly(['voterUid', 'firstPlaceUid', 'secondPlaceUid', 'thirdPlaceUid', 'votedAt']) &&
+          request.resource.data.voterUid == voterUid &&
+          request.resource.data.votedAt == request.time &&
+          validParticipation() &&
           request.resource.data.firstPlaceUid != request.resource.data.secondPlaceUid &&
           request.resource.data.firstPlaceUid != request.resource.data.thirdPlaceUid &&
           request.resource.data.secondPlaceUid != request.resource.data.thirdPlaceUid;

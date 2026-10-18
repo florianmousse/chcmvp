@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:chc_mvp/core/services/server_client.dart';
 
@@ -60,6 +61,9 @@ class AuthService {
   /// Google plutôt que par mot de passe (même e-mail des deux côtés).
   Future<UserCredential> signInWithGoogle() async {
     try {
+      if (kIsWeb) {
+        return await _auth.signInWithPopup(GoogleAuthProvider());
+      }
       final googleUser = await _googleSignIn.authenticate();
       final googleAuth = googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
@@ -76,6 +80,10 @@ class AuthService {
         'Connexion Google échouée : ${e.code} — ${e.description ?? "(pas de détail)"}',
       );
     } on FirebaseAuthException catch (e) {
+      if (e.code == 'popup-closed-by-user' ||
+          e.code == 'cancelled-popup-request') {
+        throw AuthFailure('cancelled');
+      }
       if (e.code == 'account-exists-with-different-credential') {
         throw AuthFailure(
           'Ce compte utilise déjà une connexion par e-mail/mot de passe. '
@@ -89,12 +97,18 @@ class AuthService {
   }
 
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
+    if (!kIsWeb) await _googleSignIn.signOut();
     await _auth.signOut();
   }
 
   String _mapError(FirebaseAuthException e) {
     switch (e.code) {
+      case 'popup-blocked':
+        return 'Autorise les fenêtres de connexion Google dans ton navigateur, ou utilise ton e-mail et ton mot de passe.';
+      case 'unauthorized-domain':
+        return 'Ce domaine doit être autorisé dans Firebase par un administrateur.';
+      case 'network-request-failed':
+        return 'Connexion impossible. Vérifie ta connexion Internet.';
       case 'user-not-found':
         return 'Aucun compte ne correspond à cet e-mail.';
       case 'wrong-password':

@@ -8,8 +8,10 @@ import { processScheduledVoting } from "./scheduledVoting";
 import { authRouter } from "./routes/auth";
 import { membersRouter } from "./routes/members";
 import { matchesRouter } from "./routes/matches";
+import { createCorsMiddleware } from "./middleware/cors";
 
 const app = express();
+app.use(createCorsMiddleware((process.env.WEB_ALLOWED_ORIGINS ?? "").split(",")));
 app.use(express.json());
 
 app.get("/health", (_req, res) =>

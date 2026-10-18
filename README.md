@@ -7,6 +7,15 @@ push — le tout sur un backend auto-hébergé (gratuit, sans carte bancaire).
 Voir **[ARCHITECTURE.md](ARCHITECTURE.md)** pour le détail de l'architecture, du modèle
 de données, du système de badges, et de la feuille de route.
 
+## Version web mobile et ordinateur
+
+La même application est disponible pour les navigateurs avec Flutter Web : design
+identique, navigation adaptée aux grands écrans, connexion Google web et pages légales
+publiques. Le frontend peut être hébergé sur Vercel, tout en conservant le backend VPS.
+
+Voir **[deploy/DEPLOY_VERCEL.md](deploy/DEPLOY_VERCEL.md)** pour le démarrage local,
+les réglages Vercel, Firebase et CORS, ainsi que les points juridiques à valider.
+
 ---
 
 ## Fonctionnalités
