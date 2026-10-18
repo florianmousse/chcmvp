@@ -3,7 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/core/utils/season.dart';
 import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
+import 'package:chc_mvp/features/badges/presentation/badges_providers.dart';
+import 'package:chc_mvp/core/theme/theme_provider.dart';
+import 'package:chc_mvp/features/home/domain/advanced_stats_calculator.dart';
 import 'package:chc_mvp/features/home/domain/badge_calculator.dart';
+import 'package:chc_mvp/features/home/domain/badge_model.dart';
 import 'package:chc_mvp/features/home/presentation/badges_section.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:chc_mvp/features/ranking/presentation/player_stats_screen.dart';
@@ -83,6 +87,11 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+              const Divider(height: 32),
+
+              // ── Thème ──
+              _ThemeSelector(),
+
               const SizedBox(height: 24),
               OutlinedButton.icon(
                 icon: const Icon(Icons.logout),
@@ -99,7 +108,8 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-/// Charge les données nécessaires au calcul des badges et les affiche.
+/// Charge les données nécessaires au calcul des badges, synchronise avec
+/// Firestore et affiche les badges avec les dates d'obtention.
 class _BadgesWrapper extends ConsumerWidget {
   const _BadgesWrapper({required this.uid});
   final String uid;
@@ -111,12 +121,14 @@ class _BadgesWrapper extends ConsumerWidget {
     final rankingAsync = ref.watch(rankingProvider('general'));
     final allHistoriesAsync = ref.watch(allPlayerHistoriesProvider);
     final matchesAsync = ref.watch(matchesListProvider(null));
+    final storedBadgesAsync = ref.watch(userBadgesProvider(uid));
 
     if (statsAsync.isLoading ||
         historyAsync.isLoading ||
         rankingAsync.isLoading ||
         allHistoriesAsync.isLoading ||
-        matchesAsync.isLoading) {
+        matchesAsync.isLoading ||
+        storedBadgesAsync.isLoading) {
       return const SizedBox.shrink();
     }
 
@@ -125,6 +137,7 @@ class _BadgesWrapper extends ConsumerWidget {
     final ranking = rankingAsync.value ?? [];
     final allHistories = allHistoriesAsync.value ?? {};
     final allMatches = matchesAsync.value ?? [];
+    final storedDates = storedBadgesAsync.value ?? {};
 
     if (stats == null) return const SizedBox.shrink();
 
@@ -142,19 +155,11 @@ class _BadgesWrapper extends ConsumerWidget {
       if (hasVotedAsync.value == true) votedCount++;
     }
 
-    // La saison est « finie » si on est en septembre (début de la saison
-    // suivante) et que les matchs affichés appartiennent à la saison
-    // précédente, OU si un admin a explicitement marqué la saison comme close.
-    // Pour l'instant, heuristique simple : la saison est finie quand la date
-    // courante est en septembre ou après, ET la date du dernier match clôturé
-    // est avant septembre de la même année (= saison précédente terminée).
     final now = DateTime.now();
     final currentSeason = seasonId(now);
     final matchSeasons = closedMatches
         .map((m) => seasonId(m.date))
         .toSet();
-    // On considère qu'une saison passée est terminée — seule la saison en
-    // cours n'est pas « finie ».
     final isSeasonFinished = matchSeasons.isNotEmpty &&
         !matchSeasons.contains(currentSeason);
 
@@ -168,8 +173,168 @@ class _BadgesWrapper extends ConsumerWidget {
       playerMatchesEligibleCount: eligible.length,
       playerVotedCount: votedCount,
       isSeasonFinished: isSeasonFinished,
+      gameStats: _lookupGameStats(ref, uid),
     );
 
-    return BadgesSection(earnedBadges: badges);
+    // Synchroniser avec Firestore (n'écrit que les nouveaux badges)
+    final computedTypes = badges.map((b) => b.type.name).toList();
+    final newTypes = computedTypes.where((t) => !storedDates.containsKey(t)).toList();
+    if (newTypes.isNotEmpty) {
+      // Déclencher la sync en post-frame pour ne pas écrire pendant le build
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final written = await ref.read(badgesRepositoryProvider).syncBadges(
+          userId: uid,
+          computedBadgeTypes: computedTypes,
+        );
+        if (written.isNotEmpty && context.mounted) {
+          _showBadgeCelebration(context, written);
+        }
+      });
+    }
+
+    return BadgesSection(
+      earnedBadges: badges,
+      earnedDates: storedDates,
+    );
+  }
+
+  /// Récupère les GameStats agrégées pour un joueur depuis le provider.
+  GameStats? _lookupGameStats(WidgetRef ref, String uid) {
+    final aggAsync = ref.watch(aggregatedPlayerStatsProvider);
+    final aggData = aggAsync.value;
+    if (aggData == null) return null;
+    final data = aggData[uid];
+    if (data == null) return null;
+    return GameStats(
+      goals: data.goals,
+      assists: data.assists,
+      greenCards: data.greenCards,
+      yellowCards: data.yellowCards,
+      redCards: data.redCards,
+      matchesPlayed: data.matchesPlayed,
+    );
+  }
+
+  void _showBadgeCelebration(BuildContext context, List<String> newBadgeTypes) {
+    final theme = Theme.of(context);
+    final badgeInfos = <Badge>[];
+    for (final typeName in newBadgeTypes) {
+      try {
+        final type = BadgeType.values.byName(typeName);
+        final badge = Badge.allDefinitions[type];
+        if (badge != null) badgeInfos.add(badge);
+      } catch (_) {}
+    }
+    if (badgeInfos.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🎉', style: TextStyle(fontSize: 48)),
+            const SizedBox(height: 8),
+            Text(
+              badgeInfos.length == 1
+                  ? 'Nouveau badge débloqué !'
+                  : '${badgeInfos.length} nouveaux badges !',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...badgeInfos.map((b) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Text(b.emoji, style: const TextStyle(fontSize: 28)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              b.label,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              b.description,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Super ! 🙌'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Sélecteur de thème (Système / Clair / Sombre) avec un SegmentedButton.
+class _ThemeSelector extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(themeModeProvider);
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.palette_outlined, color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(width: 16),
+              Text('Thème', style: theme.textTheme.bodyLarge),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<ThemeMode>(
+              segments: const [
+                ButtonSegment(
+                  value: ThemeMode.system,
+                  label: Text('Système'),
+                  icon: Icon(Icons.settings_brightness),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.light,
+                  label: Text('Clair'),
+                  icon: Icon(Icons.light_mode),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.dark,
+                  label: Text('Sombre'),
+                  icon: Icon(Icons.dark_mode),
+                ),
+              ],
+              selected: {current},
+              onSelectionChanged: (selected) {
+                ref.read(themeModeProvider.notifier).setThemeMode(selected.first);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

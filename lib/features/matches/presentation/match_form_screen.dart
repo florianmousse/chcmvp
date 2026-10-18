@@ -5,6 +5,7 @@ import 'package:chc_mvp/core/config/team_logos_catalog.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:chc_mvp/features/members/presentation/members_providers.dart';
+import 'package:chc_mvp/features/opponents/presentation/opponents_providers.dart';
 import 'package:chc_mvp/features/teams/presentation/teams_providers.dart';
 import 'package:intl/intl.dart';
 
@@ -18,11 +19,11 @@ class MatchFormScreen extends ConsumerStatefulWidget {
 
 class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final _opponent = TextEditingController(text: widget.existing?.opponent);
   late DateTime _date = widget.existing?.date ?? _nextSunday();
   late TimeOfDay _time =
       _parseTime(widget.existing?.time) ?? const TimeOfDay(hour: 9, minute: 0);
   String? _selectedTeam;
+  String? _selectedOpponentId;
   late bool _isHome = widget.existing?.isHome ?? true;
   late bool _allowSelfVote = widget.existing?.allowSelfVote ?? false;
   final Set<String> _presentPlayerIds = {};
@@ -37,6 +38,7 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
     _presentPlayerIds.addAll(widget.existing?.presentPlayerIds ?? []);
     _selectedTeam = widget.existing?.team;
     _selectedLogoAsset = widget.existing?.opponentLogoAsset;
+    _selectedOpponentId = widget.existing?.opponentId;
   }
 
   static TimeOfDay? _parseTime(String? value) {
@@ -81,20 +83,71 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
               onTap: _pickTime,
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _opponent,
-              decoration: const InputDecoration(labelText: 'Adversaire'),
-              validator: _required,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Logo de l\'adversaire (optionnel)',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            _LogoPicker(
-              selected: _selectedLogoAsset,
-              onSelected: (path) => setState(() => _selectedLogoAsset = path),
+            // ── Adversaire (dropdown depuis Firestore) ──
+            ref.watch(opponentsListProvider).when(
+              data: (opponents) {
+                // Vérifie que l'id sélectionné existe toujours
+                final validId = opponents.any((o) => o.id == _selectedOpponentId)
+                    ? _selectedOpponentId
+                    : null;
+                if (validId != _selectedOpponentId) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) setState(() => _selectedOpponentId = null);
+                  });
+                }
+                return Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: validId,
+                        decoration: const InputDecoration(
+                          labelText: 'Adversaire',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: opponents
+                            .map(
+                              (o) => DropdownMenuItem(
+                                value: o.id,
+                                child: Row(
+                                  children: [
+                                    if (o.logoAsset != null) ...[
+                                      Image.asset(o.logoAsset!, width: 24, height: 24,
+                                        errorBuilder: (_, __, ___) => const SizedBox(width: 24)),
+                                      const SizedBox(width: 8),
+                                    ],
+                                    Text(o.name),
+                                  ],
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (id) {
+                          setState(() {
+                            _selectedOpponentId = id;
+                            // Auto-set logo de l'adversaire
+                            final opp = opponents.firstWhere((o) => o.id == id);
+                            _selectedLogoAsset = opp.logoAsset;
+                          });
+                        },
+                        validator: (v) => v == null ? 'Champ requis' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      icon: const Icon(Icons.add),
+                      tooltip: 'Ajouter un adversaire',
+                      onPressed: () async {
+                        final id = await _showQuickAddOpponentDialog(context);
+                        if (id != null && mounted) {
+                          setState(() => _selectedOpponentId = id);
+                        }
+                      },
+                    ),
+                  ],
+                );
+              },
+              loading: () => const LinearProgressIndicator(),
+              error: (e, _) => Text('Erreur chargement adversaires : $e'),
             ),
             const SizedBox(height: 16),
             teamsAsync.when(
@@ -198,8 +251,6 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
     );
   }
 
-  String? _required(String? value) =>
-      (value == null || value.trim().isEmpty) ? 'Champ requis' : null;
 
   static DateTime _nextSunday() {
     final now = DateTime.now();
@@ -236,12 +287,18 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
     setState(() => _saving = true);
     final repo = ref.read(matchesRepositoryProvider);
 
+    // Résoudre le nom de l'adversaire depuis l'ID
+    final opponents = ref.read(opponentsListProvider).value ?? [];
+    final selectedOpp = opponents.where((o) => o.id == _selectedOpponentId).firstOrNull;
+    final opponentName = selectedOpp?.name ?? '';
+
     try {
       if (_isEditing) {
         await repo.updateMatch(widget.existing!.id, {
           'date': Timestamp.fromDate(_date),
           'time': _formattedTime,
-          'opponent': _opponent.text.trim(),
+          'opponent': opponentName,
+          'opponentId': _selectedOpponentId,
           'isHome': _isHome,
           'team': _selectedTeam,
           'presentPlayerIds': _presentPlayerIds.toList(),
@@ -252,7 +309,8 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
         await repo.createMatch(
           date: _date,
           time: _formattedTime,
-          opponent: _opponent.text.trim(),
+          opponent: opponentName,
+          opponentId: _selectedOpponentId,
           isHome: _isHome,
           team: _selectedTeam!,
           presentPlayerIds: _presentPlayerIds.toList(),
@@ -272,99 +330,104 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
       if (mounted) setState(() => _saving = false);
     }
   }
-}
 
-/// Rangée horizontale de vignettes sélectionnables — "Aucun" en premier,
-/// puis chaque logo du catalogue (core/config/team_logos_catalog.dart).
-class _LogoPicker extends StatelessWidget {
-  const _LogoPicker({required this.selected, required this.onSelected});
-  final String? selected;
-  final ValueChanged<String?> onSelected;
+  /// Dialog rapide pour ajouter un adversaire sans quitter le formulaire.
+  Future<String?> _showQuickAddOpponentDialog(BuildContext context) {
+    final nameCtrl = TextEditingController();
+    String? selectedLogo;
 
-  @override
-  Widget build(BuildContext context) {
-    if (teamLogosCatalog.isEmpty) {
-      return Text(
-        'Aucun logo disponible pour l\'instant — ajoute-en dans '
-        'lib/core/config/team_logos_catalog.dart.',
-        style: Theme.of(context).textTheme.bodySmall,
-      );
-    }
-    return SizedBox(
-      height: 84,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          _LogoOption(
-            label: 'Aucun',
-            selected: selected == null,
-            onTap: () => onSelected(null),
-            child: const Icon(Icons.block),
-          ),
-          for (final option in teamLogosCatalog)
-            _LogoOption(
-              label: option.name,
-              selected: selected == option.assetPath,
-              onTap: () => onSelected(option.assetPath),
-              child: Image.asset(option.assetPath, fit: BoxFit.contain),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LogoOption extends StatelessWidget {
-  const _LogoOption({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    required this.child,
-  });
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(right: 10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: SizedBox(
-          width: 68,
-          child: Column(
-            children: [
-              Container(
-                height: 52,
-                width: 52,
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: selected
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.outlineVariant,
-                    width: selected ? 2.5 : 1,
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Nouvel adversaire'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Nom'),
+                  textCapitalization: TextCapitalization.words,
+                  autofocus: true,
+                ),
+                const SizedBox(height: 16),
+                Text('Logo (optionnel)', style: Theme.of(ctx).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 60,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      GestureDetector(
+                        onTap: () => setDialogState(() => selectedLogo = null),
+                        child: Container(
+                          width: 50, height: 50,
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: selectedLogo == null
+                                  ? Theme.of(ctx).colorScheme.primary
+                                  : Colors.grey,
+                              width: selectedLogo == null ? 2 : 1,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Center(child: Icon(Icons.block, color: Colors.grey)),
+                        ),
+                      ),
+                      ...teamLogosCatalog
+                          .where((l) => l.name != 'CHC')
+                          .map(
+                            (logo) => GestureDetector(
+                              onTap: () =>
+                                  setDialogState(() => selectedLogo = logo.assetPath),
+                              child: Container(
+                                width: 50, height: 50,
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: selectedLogo == logo.assetPath
+                                        ? Theme.of(ctx).colorScheme.primary
+                                        : Colors.grey,
+                                    width: selectedLogo == logo.assetPath ? 2 : 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Image.asset(logo.assetPath, fit: BoxFit.contain),
+                                ),
+                              ),
+                            ),
+                          ),
+                    ],
                   ),
                 ),
-                child: child,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: theme.textTheme.labelSmall,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+                final id = await ref.read(opponentsRepositoryProvider).addOpponent(
+                  name: name,
+                  logoAsset: selectedLogo,
+                );
+                if (ctx.mounted) Navigator.pop(ctx, id);
+              },
+              child: const Text('Ajouter'),
+            ),
+          ],
         ),
       ),
     );
   }
 }
+

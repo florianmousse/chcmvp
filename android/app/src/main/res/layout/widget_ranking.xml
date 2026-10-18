@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🏆 Mon classement"
+        android:textSize="13sp"
+        android:textColor="#888888"
+        android:layout_alignParentTop="true" />
+
+    <TextView
+        android:id="@+id/ranking_position"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="—"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:textColor="?android:textColorPrimary"
+        android:layout_below="@id/widget_title"
+        android:layout_marginTop="4dp" />
+
+    <TextView
+        android:id="@+id/ranking_suffix"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="16sp"
+        android:textColor="?android:textColorSecondary"
+        android:layout_toEndOf="@id/ranking_position"
+        android:layout_alignBaseline="@id/ranking_position"
+        android:layout_marginStart="2dp" />
+
+    <TextView
+        android:id="@+id/ranking_points"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="14sp"
+        android:textColor="?android:textColorSecondary"
+        android:layout_below="@id/ranking_position"
+        android:layout_marginTop="4dp" />
+
+</RelativeLayout>

@@ -39,12 +39,14 @@ class SeasonRecord {
     required this.label,
     required this.value,
     this.detail,
+    this.onTap,
   });
 
   final String emoji;
   final String label;
   final String value;
   final String? detail;
+  final VoidCallback? onTap;
 }
 
 class _RecordTile extends StatelessWidget {
@@ -57,45 +59,50 @@ class _RecordTile extends StatelessWidget {
 
     return Card(
       margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              children: [
-                Text(record.emoji, style: const TextStyle(fontSize: 20)),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    record.label,
-                    style: theme.textTheme.labelMedium,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+      child: InkWell(
+        onTap: record.onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Text(record.emoji, style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      record.label,
+                      style: theme.textTheme.labelMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              record.value,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+                ],
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (record.detail != null)
+              const SizedBox(height: 6),
               Text(
-                record.detail!,
-                style: theme.textTheme.bodySmall,
+                record.value,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-          ],
+              if (record.detail != null)
+                Text(
+                  record.detail!,
+                  style: theme.textTheme.bodySmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+

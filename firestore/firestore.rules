@@ -42,6 +42,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ---------- opponents ----------
+    match /opponents/{opponentId} {
+      allow read: if isActiveMember();
+      allow write: if isAdmin();
+    }
+
     // ---------- seasons ----------
     match /seasons/{seasonId} {
       allow read: if isActiveMember();
@@ -73,6 +79,12 @@ service cloud.firestore {
         allow read: if isActiveMember();
         allow write: if false; // uniquement via Cloud Function avec les privilèges admin
       }
+
+      // Stats individuelles (buts, passes, cartons) — saisies par l'admin.
+      match /playerStats/{playerId} {
+        allow read: if isActiveMember();
+        allow create, update, delete: if isAdmin();
+      }
     }
 
     // ---------- rankings_cache ----------
@@ -90,6 +102,12 @@ service cloud.firestore {
         allow read: if isActiveMember();
         allow write: if false;
       }
+    }
+
+    // ---------- userBadges ----------
+    match /userBadges/{userId} {
+      allow read: if isActiveMember();
+      allow write: if isSignedIn() && request.auth.uid == userId;
     }
   }
 }

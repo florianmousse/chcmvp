@@ -220,6 +220,9 @@ mixin _$MatchModel {
   DateTime get date => throw _privateConstructorUsedError;
   String get time => throw _privateConstructorUsedError;
   String get opponent => throw _privateConstructorUsedError;
+
+  /// ID du document dans la collection `opponents`.
+  String? get opponentId => throw _privateConstructorUsedError;
   bool get isHome => throw _privateConstructorUsedError;
   String get team => throw _privateConstructorUsedError;
   MatchStatus get status => throw _privateConstructorUsedError;
@@ -235,6 +238,10 @@ mixin _$MatchModel {
   /// core/config/team_logos_catalog.dart) — null si aucun logo choisi,
   /// auquel cas une icône de secours s'affiche à la place.
   String? get opponentLogoAsset => throw _privateConstructorUsedError;
+
+  /// Score du match — saisi par l'admin après le match.
+  int? get scoreHome => throw _privateConstructorUsedError;
+  int? get scoreAway => throw _privateConstructorUsedError;
 
   /// Serializes this MatchModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -258,6 +265,7 @@ abstract class $MatchModelCopyWith<$Res> {
     @TimestampConverter() DateTime date,
     String time,
     String opponent,
+    String? opponentId,
     bool isHome,
     String team,
     MatchStatus status,
@@ -267,6 +275,8 @@ abstract class $MatchModelCopyWith<$Res> {
     PointsScale pointsScale,
     bool allowSelfVote,
     String? opponentLogoAsset,
+    int? scoreHome,
+    int? scoreAway,
   });
 
   $PointsScaleCopyWith<$Res> get pointsScale;
@@ -291,6 +301,7 @@ class _$MatchModelCopyWithImpl<$Res, $Val extends MatchModel>
     Object? date = null,
     Object? time = null,
     Object? opponent = null,
+    Object? opponentId = freezed,
     Object? isHome = null,
     Object? team = null,
     Object? status = null,
@@ -300,6 +311,8 @@ class _$MatchModelCopyWithImpl<$Res, $Val extends MatchModel>
     Object? pointsScale = null,
     Object? allowSelfVote = null,
     Object? opponentLogoAsset = freezed,
+    Object? scoreHome = freezed,
+    Object? scoreAway = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -319,6 +332,10 @@ class _$MatchModelCopyWithImpl<$Res, $Val extends MatchModel>
                 ? _value.opponent
                 : opponent // ignore: cast_nullable_to_non_nullable
                       as String,
+            opponentId: freezed == opponentId
+                ? _value.opponentId
+                : opponentId // ignore: cast_nullable_to_non_nullable
+                      as String?,
             isHome: null == isHome
                 ? _value.isHome
                 : isHome // ignore: cast_nullable_to_non_nullable
@@ -355,6 +372,14 @@ class _$MatchModelCopyWithImpl<$Res, $Val extends MatchModel>
                 ? _value.opponentLogoAsset
                 : opponentLogoAsset // ignore: cast_nullable_to_non_nullable
                       as String?,
+            scoreHome: freezed == scoreHome
+                ? _value.scoreHome
+                : scoreHome // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            scoreAway: freezed == scoreAway
+                ? _value.scoreAway
+                : scoreAway // ignore: cast_nullable_to_non_nullable
+                      as int?,
           )
           as $Val,
     );
@@ -385,6 +410,7 @@ abstract class _$$MatchModelImplCopyWith<$Res>
     @TimestampConverter() DateTime date,
     String time,
     String opponent,
+    String? opponentId,
     bool isHome,
     String team,
     MatchStatus status,
@@ -394,6 +420,8 @@ abstract class _$$MatchModelImplCopyWith<$Res>
     PointsScale pointsScale,
     bool allowSelfVote,
     String? opponentLogoAsset,
+    int? scoreHome,
+    int? scoreAway,
   });
 
   @override
@@ -418,6 +446,7 @@ class __$$MatchModelImplCopyWithImpl<$Res>
     Object? date = null,
     Object? time = null,
     Object? opponent = null,
+    Object? opponentId = freezed,
     Object? isHome = null,
     Object? team = null,
     Object? status = null,
@@ -427,6 +456,8 @@ class __$$MatchModelImplCopyWithImpl<$Res>
     Object? pointsScale = null,
     Object? allowSelfVote = null,
     Object? opponentLogoAsset = freezed,
+    Object? scoreHome = freezed,
+    Object? scoreAway = freezed,
   }) {
     return _then(
       _$MatchModelImpl(
@@ -446,6 +477,10 @@ class __$$MatchModelImplCopyWithImpl<$Res>
             ? _value.opponent
             : opponent // ignore: cast_nullable_to_non_nullable
                   as String,
+        opponentId: freezed == opponentId
+            ? _value.opponentId
+            : opponentId // ignore: cast_nullable_to_non_nullable
+                  as String?,
         isHome: null == isHome
             ? _value.isHome
             : isHome // ignore: cast_nullable_to_non_nullable
@@ -482,6 +517,14 @@ class __$$MatchModelImplCopyWithImpl<$Res>
             ? _value.opponentLogoAsset
             : opponentLogoAsset // ignore: cast_nullable_to_non_nullable
                   as String?,
+        scoreHome: freezed == scoreHome
+            ? _value.scoreHome
+            : scoreHome // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        scoreAway: freezed == scoreAway
+            ? _value.scoreAway
+            : scoreAway // ignore: cast_nullable_to_non_nullable
+                  as int?,
       ),
     );
   }
@@ -495,6 +538,7 @@ class _$MatchModelImpl extends _MatchModel {
     @TimestampConverter() required this.date,
     required this.time,
     required this.opponent,
+    this.opponentId,
     required this.isHome,
     required this.team,
     this.status = MatchStatus.upcoming,
@@ -504,6 +548,8 @@ class _$MatchModelImpl extends _MatchModel {
     this.pointsScale = const PointsScale(),
     this.allowSelfVote = false,
     this.opponentLogoAsset,
+    this.scoreHome,
+    this.scoreAway,
   }) : _presentPlayerIds = presentPlayerIds,
        super._();
 
@@ -519,6 +565,10 @@ class _$MatchModelImpl extends _MatchModel {
   final String time;
   @override
   final String opponent;
+
+  /// ID du document dans la collection `opponents`.
+  @override
+  final String? opponentId;
   @override
   final bool isHome;
   @override
@@ -555,9 +605,15 @@ class _$MatchModelImpl extends _MatchModel {
   @override
   final String? opponentLogoAsset;
 
+  /// Score du match — saisi par l'admin après le match.
+  @override
+  final int? scoreHome;
+  @override
+  final int? scoreAway;
+
   @override
   String toString() {
-    return 'MatchModel(id: $id, date: $date, time: $time, opponent: $opponent, isHome: $isHome, team: $team, status: $status, presentPlayerIds: $presentPlayerIds, votingOpensAt: $votingOpensAt, votingClosesAt: $votingClosesAt, pointsScale: $pointsScale, allowSelfVote: $allowSelfVote, opponentLogoAsset: $opponentLogoAsset)';
+    return 'MatchModel(id: $id, date: $date, time: $time, opponent: $opponent, opponentId: $opponentId, isHome: $isHome, team: $team, status: $status, presentPlayerIds: $presentPlayerIds, votingOpensAt: $votingOpensAt, votingClosesAt: $votingClosesAt, pointsScale: $pointsScale, allowSelfVote: $allowSelfVote, opponentLogoAsset: $opponentLogoAsset, scoreHome: $scoreHome, scoreAway: $scoreAway)';
   }
 
   @override
@@ -570,6 +626,8 @@ class _$MatchModelImpl extends _MatchModel {
             (identical(other.time, time) || other.time == time) &&
             (identical(other.opponent, opponent) ||
                 other.opponent == opponent) &&
+            (identical(other.opponentId, opponentId) ||
+                other.opponentId == opponentId) &&
             (identical(other.isHome, isHome) || other.isHome == isHome) &&
             (identical(other.team, team) || other.team == team) &&
             (identical(other.status, status) || other.status == status) &&
@@ -586,7 +644,11 @@ class _$MatchModelImpl extends _MatchModel {
             (identical(other.allowSelfVote, allowSelfVote) ||
                 other.allowSelfVote == allowSelfVote) &&
             (identical(other.opponentLogoAsset, opponentLogoAsset) ||
-                other.opponentLogoAsset == opponentLogoAsset));
+                other.opponentLogoAsset == opponentLogoAsset) &&
+            (identical(other.scoreHome, scoreHome) ||
+                other.scoreHome == scoreHome) &&
+            (identical(other.scoreAway, scoreAway) ||
+                other.scoreAway == scoreAway));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -597,6 +659,7 @@ class _$MatchModelImpl extends _MatchModel {
     date,
     time,
     opponent,
+    opponentId,
     isHome,
     team,
     status,
@@ -606,6 +669,8 @@ class _$MatchModelImpl extends _MatchModel {
     pointsScale,
     allowSelfVote,
     opponentLogoAsset,
+    scoreHome,
+    scoreAway,
   );
 
   /// Create a copy of MatchModel
@@ -628,6 +693,7 @@ abstract class _MatchModel extends MatchModel {
     @TimestampConverter() required final DateTime date,
     required final String time,
     required final String opponent,
+    final String? opponentId,
     required final bool isHome,
     required final String team,
     final MatchStatus status,
@@ -637,6 +703,8 @@ abstract class _MatchModel extends MatchModel {
     final PointsScale pointsScale,
     final bool allowSelfVote,
     final String? opponentLogoAsset,
+    final int? scoreHome,
+    final int? scoreAway,
   }) = _$MatchModelImpl;
   const _MatchModel._() : super._();
 
@@ -652,6 +720,10 @@ abstract class _MatchModel extends MatchModel {
   String get time;
   @override
   String get opponent;
+
+  /// ID du document dans la collection `opponents`.
+  @override
+  String? get opponentId;
   @override
   bool get isHome;
   @override
@@ -676,6 +748,12 @@ abstract class _MatchModel extends MatchModel {
   /// auquel cas une icône de secours s'affiche à la place.
   @override
   String? get opponentLogoAsset;
+
+  /// Score du match — saisi par l'admin après le match.
+  @override
+  int? get scoreHome;
+  @override
+  int? get scoreAway;
 
   /// Create a copy of MatchModel
   /// with the given fields replaced by the non-null parameter values.

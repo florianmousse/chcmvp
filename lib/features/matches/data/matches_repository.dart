@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
+import 'package:chc_mvp/core/models/player_match_stats_model.dart';
 import 'package:chc_mvp/core/services/server_client.dart';
 import 'package:chc_mvp/core/utils/firestore_json.dart';
 
@@ -41,6 +42,7 @@ class MatchesRepository {
     required PointsScale pointsScale,
     required bool allowSelfVote,
     String? opponentLogoAsset,
+    String? opponentId,
   }) async {
     await _matches.add({
       'date': Timestamp.fromDate(date),
@@ -56,6 +58,7 @@ class MatchesRepository {
       'pointsScale': pointsScale.toJson(),
       'allowSelfVote': allowSelfVote,
       'opponentLogoAsset': opponentLogoAsset,
+      if (opponentId != null) 'opponentId': opponentId,
     });
   }
 
@@ -92,5 +95,64 @@ class MatchesRepository {
   /// après un pépin sur le cache.
   Future<Map<String, dynamic>> rebuildRankings() {
     return _server.post('/matches/rankings/rebuild', {});
+  }
+
+  // ─── Stats individuelles par match ───────────────────────────────────
+
+  /// Met à jour le score global du match.
+  Future<void> updateMatchScore(
+    String matchId, {
+    required int scoreHome,
+    required int scoreAway,
+  }) {
+    return _matches.doc(matchId).update({
+      'scoreHome': scoreHome,
+      'scoreAway': scoreAway,
+    });
+  }
+
+  /// Stream des stats individuelles d'un match.
+  Stream<List<PlayerMatchStats>> watchPlayerMatchStats(String matchId) {
+    return _matches
+        .doc(matchId)
+        .collection('playerStats')
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map(
+                (d) => PlayerMatchStats.fromJson(
+                  {...d.data(), 'playerId': d.id},
+                ),
+              )
+              .toList(),
+        );
+  }
+
+  /// Sauvegarde les stats d'un joueur pour un match (upsert).
+  Future<void> savePlayerMatchStats(
+    String matchId,
+    String playerId,
+    PlayerMatchStats stats,
+  ) {
+    final data = stats.toJson()..remove('playerId');
+    return _matches
+        .doc(matchId)
+        .collection('playerStats')
+        .doc(playerId)
+        .set(data, SetOptions(merge: true));
+  }
+
+  /// Sauvegarde les stats de tous les joueurs en batch (une écriture atomique).
+  Future<void> saveAllPlayerMatchStats(
+    String matchId,
+    List<PlayerMatchStats> statsList,
+  ) async {
+    final batch = _firestore.batch();
+    final col = _matches.doc(matchId).collection('playerStats');
+    for (final stats in statsList) {
+      final data = stats.toJson()..remove('playerId');
+      batch.set(col.doc(stats.playerId), data, SetOptions(merge: true));
+    }
+    return batch.commit();
   }
 }

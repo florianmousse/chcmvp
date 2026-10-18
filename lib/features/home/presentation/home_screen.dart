@@ -5,6 +5,8 @@ import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/core/widgets/opponent_logo.dart';
 import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 import 'package:chc_mvp/features/home/domain/advanced_stats_calculator.dart';
+import 'package:chc_mvp/features/opponents/presentation/opponent_detail_screen.dart';
+import 'package:chc_mvp/features/opponents/presentation/opponents_providers.dart';
 import 'package:chc_mvp/features/home/presentation/fun_stat_card.dart';
 import 'package:chc_mvp/features/home/presentation/highlight_cards.dart';
 import 'package:chc_mvp/features/home/presentation/season_records_section.dart';
@@ -372,6 +374,51 @@ class _HighlightCardsWrapper extends ConsumerWidget {
       );
     }
 
+    // ⚽ Meilleur buteur de la saison
+    final aggAsync = ref.watch(aggregatedPlayerStatsProvider);
+    final aggData = aggAsync.value;
+    if (aggData != null && aggData.isNotEmpty) {
+      final scorers = aggData.entries
+          .where((e) => e.value.goals > 0)
+          .toList()
+        ..sort((a, b) => b.value.goals.compareTo(a.value.goals));
+      if (scorers.isNotEmpty) {
+        final top = scorers.first;
+        cards.add(
+          HighlightCardData(
+            emoji: '⚽',
+            title: 'Meilleur buteur',
+            playerName: name(top.key),
+            value: '${top.value.goals} but${top.value.goals > 1 ? 's' : ''} en ${top.value.matchesPlayed} matchs',
+            subtitle: top.value.assists > 0
+                ? '+ ${top.value.assists} passe${top.value.assists > 1 ? 's' : ''} D.'
+                : null,
+          ),
+        );
+      }
+
+      // 😇 Joueur le plus fair-play (max matchs sans jaune/rouge)
+      final fairPlayers = aggData.entries
+          .where((e) =>
+              e.value.matchesPlayed >= 2 &&
+              e.value.greenCards == 0 &&
+              e.value.yellowCards == 0 &&
+              e.value.redCards == 0)
+          .toList()
+        ..sort((a, b) => b.value.matchesPlayed.compareTo(a.value.matchesPlayed));
+      if (fairPlayers.isNotEmpty) {
+        final fp = fairPlayers.first;
+        cards.add(
+          HighlightCardData(
+            emoji: '😇',
+            title: 'Fair-play',
+            playerName: name(fp.key),
+            value: '0 carton en ${fp.value.matchesPlayed} matchs',
+          ),
+        );
+      }
+    }
+
     return HighlightCardsSection(cards: cards);
   }
 }
@@ -471,6 +518,151 @@ class _SeasonRecordsWrapper extends ConsumerWidget {
         ),
       );
     }
+    // ─── Records de jeu ───
+    final aggAsync = ref.watch(aggregatedPlayerStatsProvider);
+    final aggData = aggAsync.value;
+    if (aggData != null && aggData.isNotEmpty) {
+      // ⚽ Meilleur buteur
+      final scorers = aggData.entries
+          .where((e) => e.value.goals > 0)
+          .toList()
+        ..sort((a, b) => b.value.goals.compareTo(a.value.goals));
+      if (scorers.isNotEmpty) {
+        records.add(
+          SeasonRecord(
+            emoji: '⚽',
+            label: 'Meilleur buteur',
+            value: '${scorers.first.value.goals} buts',
+            detail: name(scorers.first.key),
+          ),
+        );
+      }
+
+      // 🅰️ Meilleur passeur
+      final assisters = aggData.entries
+          .where((e) => e.value.assists > 0)
+          .toList()
+        ..sort((a, b) => b.value.assists.compareTo(a.value.assists));
+      if (assisters.isNotEmpty) {
+        records.add(
+          SeasonRecord(
+            emoji: '🅰️',
+            label: 'Meilleur passeur',
+            value: '${assisters.first.value.assists} passes D.',
+            detail: name(assisters.first.key),
+          ),
+        );
+      }
+
+      // 😇 Le plus fair-play
+      final fairPlay = aggData.entries
+          .where((e) =>
+              e.value.matchesPlayed >= 2 &&
+              e.value.greenCards == 0 &&
+              e.value.yellowCards == 0 &&
+              e.value.redCards == 0)
+          .toList()
+        ..sort((a, b) => b.value.matchesPlayed.compareTo(a.value.matchesPlayed));
+      if (fairPlay.isNotEmpty) {
+        records.add(
+          SeasonRecord(
+            emoji: '😇',
+            label: 'Le plus fair-play',
+            value: name(fairPlay.first.key),
+            detail: '0 carton en ${fairPlay.first.value.matchesPlayed} matchs',
+          ),
+        );
+      }
+    }
+
+    // 📊 Bilan victoires/défaites
+    var wins = 0;
+    var draws = 0;
+    var losses = 0;
+    for (final match in closedMatches) {
+      if (match.scoreHome != null && match.scoreAway != null) {
+        if (match.scoreHome! > match.scoreAway!) {
+          wins++;
+        } else if (match.scoreHome! == match.scoreAway!) {
+          draws++;
+        } else {
+          losses++;
+        }
+      }
+    }
+    if (wins + draws + losses > 0) {
+      records.add(
+        SeasonRecord(
+          emoji: '📊',
+          label: 'Bilan du club',
+          value: '$wins V / $draws N / $losses D',
+          detail: '${wins + draws + losses} matchs joués',
+        ),
+      );
+    }
+    // ─── Stats adversaires ───
+    final oppMatches = <MatchForOpponent>[];
+    for (final match in closedMatches) {
+      if (match.opponentId != null &&
+          match.scoreHome != null &&
+          match.scoreAway != null) {
+        oppMatches.add(
+          MatchForOpponent(
+            opponentId: match.opponentId!,
+            opponentName: match.opponent,
+            scoreHome: match.scoreHome!,
+            scoreAway: match.scoreAway!,
+            date: match.date,
+          ),
+        );
+      }
+    }
+    if (oppMatches.isNotEmpty) {
+      final opponents = ref.watch(opponentsListProvider).value ?? [];
+
+      final victim = favoriteVictim(oppMatches);
+      if (victim != null && victim.wins >= 1) {
+        final victimOpp =
+            opponents.where((o) => o.id == victim.opponentId).firstOrNull;
+        records.add(
+          SeasonRecord(
+            emoji: '😈',
+            label: 'Victime favorite',
+            value: victim.opponentName,
+            detail: '${victim.wins} V / ${victim.draws} N / ${victim.losses} D',
+            onTap: victimOpp != null
+                ? () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            OpponentDetailScreen(opponent: victimOpp),
+                      ),
+                    )
+                : null,
+          ),
+        );
+      }
+      final bully = nemesis(oppMatches);
+      if (bully != null && bully.losses >= 1) {
+        final bullyOpp =
+            opponents.where((o) => o.id == bully.opponentId).firstOrNull;
+        records.add(
+          SeasonRecord(
+            emoji: '💀',
+            label: 'Bourreau',
+            value: bully.opponentName,
+            detail: '${bully.wins} V / ${bully.draws} N / ${bully.losses} D',
+            onTap: bullyOpp != null
+                ? () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            OpponentDetailScreen(opponent: bullyOpp),
+                      ),
+                    )
+                : null,
+          ),
+        );
+      }
+    }
 
     return SeasonRecordsSection(records: records);
   }
@@ -489,6 +681,7 @@ class _FunStatWrapper extends ConsumerWidget {
     final allHistoriesAsync = ref.watch(allPlayerHistoriesProvider);
     final rankingAsync = ref.watch(rankingProvider('general'));
     final membersAsync = ref.watch(membersListProvider(null));
+    final aggStatsAsync = ref.watch(aggregatedPlayerStatsProvider);
 
     if (allStatsAsync.isLoading ||
         allHistoriesAsync.isLoading ||
@@ -503,6 +696,22 @@ class _FunStatWrapper extends ConsumerWidget {
     final nameOf = <String, String>{for (final m in members) m.uid: m.fullName};
     String name(String uid) => nameOf[uid] ?? 'Joueur inconnu';
 
+    // Convertir AggregatedPlayerStats → GameStats pour le domaine
+    final gameStatsMap = <String, GameStats>{};
+    final aggData = aggStatsAsync.value;
+    if (aggData != null) {
+      for (final e in aggData.entries) {
+        gameStatsMap[e.key] = GameStats(
+          goals: e.value.goals,
+          assists: e.value.assists,
+          greenCards: e.value.greenCards,
+          yellowCards: e.value.yellowCards,
+          redCards: e.value.redCards,
+          matchesPlayed: e.value.matchesPlayed,
+        );
+      }
+    }
+
     final now = DateTime.now();
     final pages = <Widget>[];
 
@@ -513,6 +722,7 @@ class _FunStatWrapper extends ConsumerWidget {
       ranking: ranking,
       nameOf: name,
       now: now,
+      gameStats: gameStatsMap.isEmpty ? null : gameStatsMap,
     );
     if (fact != null) {
       pages.add(

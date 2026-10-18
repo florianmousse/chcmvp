@@ -143,6 +143,27 @@ export async function rebuildRankingsAndStats(): Promise<{
     }
   }
 
+  // ── Nettoyage : supprimer tous les documents existants avant de reconstruire ──
+  // Si tous les matchs ont été supprimés, les boucles ci-dessus n'ont rien
+  // produit → sans ce nettoyage, les anciens documents resteraient en place.
+  const rankingsCacheSnap = await firestore.collection("rankings_cache").get();
+  const playerStatsSnap = await firestore.collection("player_stats").get();
+
+  const deleteBatch = firestore.batch();
+  for (const doc of rankingsCacheSnap.docs) {
+    deleteBatch.delete(doc.ref);
+  }
+  for (const doc of playerStatsSnap.docs) {
+    // Supprimer aussi la sous-collection history
+    const historySnap = await doc.ref.collection("history").get();
+    for (const h of historySnap.docs) {
+      deleteBatch.delete(h.ref);
+    }
+    deleteBatch.delete(doc.ref);
+  }
+  await deleteBatch.commit();
+
+  // ── Écriture des nouvelles données recalculées ──
   const batch = firestore.batch();
   for (const [scopeId, entries] of Object.entries(rankingTotals)) {
     batch.set(firestore.collection("rankings_cache").doc(scopeId), { entries });

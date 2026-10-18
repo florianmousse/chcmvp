@@ -5,6 +5,8 @@ import 'package:chc_mvp/core/widgets/opponent_logo.dart';
 import 'package:chc_mvp/features/home/presentation/vote_rate_indicator.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:chc_mvp/features/members/presentation/members_providers.dart';
+import 'package:chc_mvp/features/opponents/presentation/opponent_detail_screen.dart';
+import 'package:chc_mvp/features/opponents/presentation/opponents_providers.dart';
 import 'package:chc_mvp/features/voting/presentation/vote_screen.dart';
 import 'package:chc_mvp/features/voting/presentation/voting_providers.dart';
 import 'package:intl/intl.dart';
@@ -182,6 +184,16 @@ class _MatchCard extends ConsumerWidget {
                 _StatusChip(status: match.status),
               ],
             ),
+            if (match.scoreLabel != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                match.scoreLabel!,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ],
             const SizedBox(height: 4),
             Text(
               '${DateFormat('EEEE dd MMMM', 'fr_FR').format(match.date)} à ${match.time}',
@@ -202,7 +214,7 @@ class _MatchCard extends ConsumerWidget {
                   },
                 ),
                 const SizedBox(width: 12),
-                OpponentLogo(logoAssetPath: match.opponentLogoAsset, size: 56),
+                _OpponentLogoTappable(match: match),
               ],
             ),
           ],
@@ -379,3 +391,35 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
+/// Logo adverse tappable — navigue vers le détail de l'adversaire si un
+/// `opponentId` est associé au match.
+class _OpponentLogoTappable extends ConsumerWidget {
+  const _OpponentLogoTappable({required this.match});
+  final MatchModel match;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final logo = OpponentLogo(logoAssetPath: match.opponentLogoAsset, size: 56);
+
+    if (match.opponentId == null) return logo;
+
+    return GestureDetector(
+      onTap: () {
+        final opponents = ref.read(opponentsListProvider).value ?? [];
+        final opp =
+            opponents.where((o) => o.id == match.opponentId).firstOrNull;
+        if (opp != null) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => OpponentDetailScreen(opponent: opp),
+            ),
+          );
+        }
+      },
+      child: Tooltip(
+        message: 'Voir le bilan vs ${match.opponent}',
+        child: logo,
+      ),
+    );
+  }
+}

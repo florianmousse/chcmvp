@@ -6,6 +6,26 @@ import 'package:chc_mvp/features/ranking/data/ranking_repository.dart';
 /// avancées affichées sur l'écran d'accueil — testables unitairement avec
 /// des données fictives.
 
+/// Stats de jeu agrégées d'un joueur — utilisé par [funFact] et les sections
+/// d'accueil. Découplé du provider pour rester dans le domaine pur.
+class GameStats {
+  const GameStats({
+    this.goals = 0,
+    this.assists = 0,
+    this.greenCards = 0,
+    this.yellowCards = 0,
+    this.redCards = 0,
+    this.matchesPlayed = 0,
+  });
+  final int goals;
+  final int assists;
+  final int greenCards;
+  final int yellowCards;
+  final int redCards;
+  final int matchesPlayed;
+  int get totalCards => greenCards + yellowCards + redCards;
+}
+
 // ---------------------------------------------------------------------------
 // Joueur le plus plébiscité
 // ---------------------------------------------------------------------------
@@ -163,13 +183,14 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
   required List<RankingEntry> ranking,
   required String Function(String uid) nameOf,
   required DateTime now,
+  Map<String, GameStats>? gameStats,
 }) {
   final weekNumber = _isoWeekNumber(now);
 
-  // 5 catégories fixes — on en choisit une par numéro de semaine.
+  // 10 catégories fixes — on en choisit une par numéro de semaine.
   // Même si les données évoluent en cours de semaine, la catégorie
   // sélectionnée ne change pas jusqu'au lundi suivant.
-  final category = weekNumber % 5;
+  final category = weekNumber % 10;
 
   switch (category) {
     // Catégorie 0 : joueur avec beaucoup de votes mais jamais 1er
@@ -277,6 +298,132 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
         body:
             'Aucun joueur n\'a terminé dans le top 3 lors de ses 3 derniers matchs.',
       );
+
+    // ─── Nouvelles catégories basées sur les stats de jeu ───
+
+    // Catégorie 5 : meilleur buteur de la saison
+    case 5:
+      if (gameStats != null && gameStats.isNotEmpty) {
+        final sorted = gameStats.entries
+            .where((e) => e.value.goals > 0)
+            .toList()
+          ..sort((a, b) => b.value.goals.compareTo(a.value.goals));
+        if (sorted.isNotEmpty) {
+          final e = sorted.first;
+          final ratio = e.value.matchesPlayed > 0
+              ? (e.value.goals / e.value.matchesPlayed).toStringAsFixed(2)
+              : '0';
+          return (
+            emoji: '⚽',
+            title: 'Machine à buts',
+            body:
+                '${nameOf(e.key)} mène le classement des buteurs avec ${e.value.goals} but${e.value.goals > 1 ? 's' : ''} en ${e.value.matchesPlayed} match${e.value.matchesPlayed > 1 ? 's' : ''} ($ratio but/match).',
+          );
+        }
+      }
+      return (
+        emoji: '⚽',
+        title: 'En attente de buts',
+        body: 'Aucun but enregistré cette saison. Le premier buteur se fera remarquer !',
+      );
+
+    // Catégorie 6 : meilleur passeur
+    case 6:
+      if (gameStats != null && gameStats.isNotEmpty) {
+        final sorted = gameStats.entries
+            .where((e) => e.value.assists > 0)
+            .toList()
+          ..sort((a, b) => b.value.assists.compareTo(a.value.assists));
+        if (sorted.isNotEmpty) {
+          final e = sorted.first;
+          return (
+            emoji: '🅰️',
+            title: 'Le stratège',
+            body:
+                '${nameOf(e.key)} est le roi de la passe décisive avec ${e.value.assists} assist${e.value.assists > 1 ? 's' : ''} cette saison !',
+          );
+        }
+      }
+      return (
+        emoji: '🅰️',
+        title: 'En attente de passes',
+        body: 'Aucune passe décisive enregistrée cette saison.',
+      );
+
+    // Catégorie 7 : joueur le plus fair-play (0 carton jaune/rouge)
+    case 7:
+      if (gameStats != null && gameStats.isNotEmpty) {
+        final fairPlayers = gameStats.entries
+            .where((e) =>
+                e.value.matchesPlayed >= 3 &&
+                e.value.greenCards == 0 &&
+                e.value.yellowCards == 0 &&
+                e.value.redCards == 0)
+            .toList();
+        if (fairPlayers.isNotEmpty) {
+          final best = fairPlayers
+            ..sort((a, b) => b.value.matchesPlayed.compareTo(a.value.matchesPlayed));
+          return (
+            emoji: '😇',
+            title: 'Ange du terrain',
+            body:
+                '${nameOf(best.first.key)} n\'a reçu aucun carton en ${best.first.value.matchesPlayed} matchs !',
+          );
+        }
+      }
+      return (
+        emoji: '😇',
+        title: 'Fair-play',
+        body: 'Pas encore assez de données pour élire le joueur le plus fair-play.',
+      );
+
+    // Catégorie 8 : buteur mais pas sur le podium des votes
+    case 8:
+      if (gameStats != null && gameStats.isNotEmpty) {
+        for (final e in gameStats.entries) {
+          if (e.value.goals >= 3) {
+            final stats = allStats[e.key];
+            if (stats != null && stats.firstCount == 0) {
+              return (
+                emoji: '🤔',
+                title: 'Le buteur discret',
+                body:
+                    '${nameOf(e.key)} a marqué ${e.value.goals} buts cette saison mais n\'a jamais fini 1er aux votes !',
+              );
+            }
+          }
+        }
+      }
+      return (
+        emoji: '🤔',
+        title: 'Pas de stat insolite cette semaine',
+        body: 'Aucun buteur n\'est passé sous les radars du podium cette saison.',
+      );
+
+    // Catégorie 9 : joueur le plus polyvalent (buts + passes + cartons verts)
+    case 9:
+      if (gameStats != null && gameStats.isNotEmpty) {
+        final polyvalent = gameStats.entries
+            .where((e) => e.value.goals > 0 && e.value.assists > 0 && e.value.greenCards > 0)
+            .toList();
+        if (polyvalent.isNotEmpty) {
+          polyvalent.sort((a, b) =>
+              (b.value.goals + b.value.assists + b.value.greenCards)
+                  .compareTo(a.value.goals + a.value.assists + a.value.greenCards));
+          final e = polyvalent.first;
+          return (
+            emoji: '🦸',
+            title: 'Le couteau suisse',
+            body:
+                '${nameOf(e.key)} cumule ${e.value.goals} but${e.value.goals > 1 ? 's' : ''}, ${e.value.assists} passe${e.value.assists > 1 ? 's' : ''} D. et ${e.value.greenCards} carton${e.value.greenCards > 1 ? 's' : ''} vert${e.value.greenCards > 1 ? 's' : ''} !',
+          );
+        }
+      }
+      return (
+        emoji: '🦸',
+        title: 'Le couteau suisse',
+        body: 'Aucun joueur n\'a encore combiné buts, passes et cartons verts cette saison.',
+      );
   }
 
   return null;
@@ -293,6 +440,82 @@ double averageVoteRate(List<({int totalVotes, int presentCount})> matches) {
     (m) => m.presentCount > 0 ? m.totalVotes / m.presentCount * 100 : 0.0,
   );
   return rates.reduce((a, b) => a + b) / matches.length;
+}
+
+// ---------------------------------------------------------------------------
+// Stats par adversaire
+// ---------------------------------------------------------------------------
+
+/// Bilan d'un adversaire : victoires, nuls, défaites.
+class OpponentRecord {
+  const OpponentRecord({
+    required this.opponentId,
+    required this.opponentName,
+    this.wins = 0,
+    this.draws = 0,
+    this.losses = 0,
+  });
+  final String opponentId;
+  final String opponentName;
+  final int wins;
+  final int draws;
+  final int losses;
+  int get played => wins + draws + losses;
+}
+
+/// Données minimales d'un match pour le calcul des stats adversaire.
+class MatchForOpponent {
+  const MatchForOpponent({
+    required this.opponentId,
+    required this.opponentName,
+    required this.scoreHome,
+    required this.scoreAway,
+    required this.date,
+  });
+  final String opponentId;
+  final String opponentName;
+  final int scoreHome;
+  final int scoreAway;
+  final DateTime date;
+
+  String get result {
+    if (scoreHome > scoreAway) return 'win';
+    if (scoreHome < scoreAway) return 'loss';
+    return 'draw';
+  }
+}
+
+/// Calcule le bilan par adversaire à partir d'une liste de matchs terminés.
+Map<String, OpponentRecord> opponentRecords(List<MatchForOpponent> matches) {
+  final map = <String, OpponentRecord>{};
+  for (final m in matches) {
+    final existing = map[m.opponentId] ??
+        OpponentRecord(opponentId: m.opponentId, opponentName: m.opponentName);
+    map[m.opponentId] = OpponentRecord(
+      opponentId: m.opponentId,
+      opponentName: m.opponentName,
+      wins: existing.wins + (m.result == 'win' ? 1 : 0),
+      draws: existing.draws + (m.result == 'draw' ? 1 : 0),
+      losses: existing.losses + (m.result == 'loss' ? 1 : 0),
+    );
+  }
+  return map;
+}
+
+/// Adversaire le plus battu (victime favorite).
+OpponentRecord? favoriteVictim(List<MatchForOpponent> matches) {
+  final records = opponentRecords(matches);
+  final sorted = records.values.where((r) => r.wins > 0).toList()
+    ..sort((a, b) => b.wins.compareTo(a.wins));
+  return sorted.isNotEmpty ? sorted.first : null;
+}
+
+/// Adversaire qui nous bat le plus (bourreau).
+OpponentRecord? nemesis(List<MatchForOpponent> matches) {
+  final records = opponentRecords(matches);
+  final sorted = records.values.where((r) => r.losses > 0).toList()
+    ..sort((a, b) => b.losses.compareTo(a.losses));
+  return sorted.isNotEmpty ? sorted.first : null;
 }
 
 // ---------------------------------------------------------------------------

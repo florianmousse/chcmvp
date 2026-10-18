@@ -3,8 +3,8 @@ import 'package:chc_mvp/features/home/domain/badge_model.dart';
 import 'package:chc_mvp/features/ranking/data/ranking_repository.dart';
 
 /// Détermine les badges gagnés par un joueur à partir de ses stats, de son
-/// historique et du contexte de la saison. Calcul pur côté client — pas de
-/// persistence Firestore, recalculé à chaque rendu.
+/// historique et du contexte de la saison. Le résultat est ensuite synchronisé
+/// dans Firestore par le `_BadgesWrapper` du profil.
 class BadgeCalculator {
   /// Calcule la liste de badges d'un joueur donné.
   ///
@@ -18,6 +18,8 @@ class BadgeCalculator {
   /// [playerVotedCount] Nombre de matchs où le joueur a effectivement voté.
   /// [isSeasonFinished] Si true, la saison est terminée et les badges de fin
   ///                    de saison (MVP, Votant assidu) peuvent être décernés.
+  /// [gameStats]        Stats de jeu agrégées (buts, passes, cartons) — peut
+  ///                    être null si aucune stat de jeu n'a été saisie.
   static List<Badge> compute({
     required String uid,
     required PlayerStats stats,
@@ -28,6 +30,7 @@ class BadgeCalculator {
     required int playerMatchesEligibleCount,
     required int playerVotedCount,
     required bool isSeasonFinished,
+    GameStats? gameStats,
   }) {
     final badges = <Badge>[];
     const def = Badge.allDefinitions;
@@ -106,6 +109,35 @@ class BadgeCalculator {
       }
       if (isLowest) {
         badges.add(def[BadgeType.regularite]!);
+      }
+    }
+
+    // ─── Badges basés sur les stats de jeu ───
+
+    if (gameStats != null) {
+      // ⚽ Buteur — 5+ buts en une saison
+      if (gameStats.goals >= 5) {
+        badges.add(def[BadgeType.buteur]!);
+      }
+
+      // 🎯 Passeur d'or — 5+ passes décisives en une saison
+      if (gameStats.assists >= 5) {
+        badges.add(def[BadgeType.passeurDor]!);
+      }
+
+      // 😇 Fair-play — 0 carton (vert/jaune/rouge) en 5+ matchs
+      if (gameStats.matchesPlayed >= 5 &&
+          gameStats.greenCards == 0 &&
+          gameStats.yellowCards == 0 &&
+          gameStats.redCards == 0) {
+        badges.add(def[BadgeType.fairPlay]!);
+      }
+
+      // 🦸 Couteau suisse — 3+ buts, 3+ passes, 3+ cartons verts
+      if (gameStats.goals >= 3 &&
+          gameStats.assists >= 3 &&
+          gameStats.greenCards >= 3) {
+        badges.add(def[BadgeType.couteauSuisse]!);
       }
     }
 

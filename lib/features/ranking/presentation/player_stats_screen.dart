@@ -1,6 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chc_mvp/features/ranking/data/ranking_repository.dart';
+import 'package:chc_mvp/features/badges/presentation/badges_providers.dart';
+import 'package:chc_mvp/features/home/domain/badge_model.dart';
+import 'package:chc_mvp/features/home/presentation/badges_section.dart';
+import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:chc_mvp/features/ranking/presentation/ranking_providers.dart';
 import 'package:intl/intl.dart';
 
@@ -24,6 +27,9 @@ class PlayerStatsScreen extends ConsumerWidget {
         data: (stats) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // ── Badges du joueur (lus depuis Firestore) ──
+            _PublicBadgesSection(uid: uid, playerName: playerName),
+            const SizedBox(height: 8),
             Row(
               children: [
                 _StatCard(
@@ -62,6 +68,14 @@ class PlayerStatsScreen extends ConsumerWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 24),
+            // ─── Stats de jeu ───
+            Text(
+              'Stats de jeu',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            _GameStatsSection(uid: uid),
             const SizedBox(height: 24),
             Text(
               'Évolution des performances',
@@ -193,4 +207,90 @@ class _SparklinePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _SparklinePainter oldDelegate) =>
       oldDelegate.points != points;
+}
+
+/// Affiche buts, passes, cartons agrégés pour un joueur.
+class _GameStatsSection extends ConsumerWidget {
+  const _GameStatsSection({required this.uid});
+  final String uid;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final aggAsync = ref.watch(aggregatedPlayerStatsProvider);
+
+    return aggAsync.when(
+      data: (statsMap) {
+        final stats = statsMap[uid];
+        if (stats == null) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text('Aucune stat de jeu enregistrée.'),
+          );
+        }
+
+        return Column(
+          children: [
+            Row(
+              children: [
+                _StatCard(label: '⚽ Buts', value: '${stats.goals}'),
+                const SizedBox(width: 12),
+                _StatCard(label: '🅰️ Passes D.', value: '${stats.assists}'),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _StatCard(label: '🟢 Verts', value: '${stats.greenCards}'),
+                const SizedBox(width: 12),
+                _StatCard(label: '🟡 Jaunes', value: '${stats.yellowCards}'),
+                const SizedBox(width: 12),
+                _StatCard(label: '🔴 Rouges', value: '${stats.redCards}'),
+              ],
+            ),
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Text('Erreur : $e'),
+    );
+  }
+}
+
+/// Affiche les badges d'un joueur lus depuis Firestore — utilisé pour
+/// les profils publics (quand on consulte les stats d'un autre joueur).
+class _PublicBadgesSection extends ConsumerWidget {
+  const _PublicBadgesSection({required this.uid, required this.playerName});
+  final String uid;
+  final String playerName;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final badgesAsync = ref.watch(userBadgesProvider(uid));
+
+    return badgesAsync.when(
+      data: (earnedDates) {
+        if (earnedDates.isEmpty) return const SizedBox.shrink();
+
+        // Reconstruire la liste de Badge à partir des types stockés
+        final badges = <Badge>[];
+        for (final typeName in earnedDates.keys) {
+          try {
+            final type = BadgeType.values.byName(typeName);
+            final badge = Badge.allDefinitions[type];
+            if (badge != null) badges.add(badge);
+          } catch (_) {
+            // Type inconnu (badge supprimé ou renommé) — on l'ignore
+          }
+        }
+
+        return BadgesSection(
+          earnedBadges: badges,
+          earnedDates: earnedDates,
+          title: 'Badges de $playerName',
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
 }

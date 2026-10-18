@@ -2,6 +2,7 @@ import "./firebase"; // initialise firebase-admin avant tout le reste
 import express from "express";
 import path from "path";
 import cron from "node-cron";
+import { startBadgeListener } from "./badgeListener";
 import { startMatchListeners } from "./matchListeners";
 import { processScheduledVoting } from "./scheduledVoting";
 import { authRouter } from "./routes/auth";
@@ -31,6 +32,7 @@ app.use(express.static(path.join(process.cwd(), "public")));
 // en continu, viable ici car le VPS ne s'endort jamais (contrairement à un
 // service serverless gratuit qui se met en veille).
 startMatchListeners();
+startBadgeListener();
 
 // Traitement périodique du cycle de vie des votes : ouverture automatique,
 // rappels, clôture. Toutes les 10 minutes pour une réactivité raisonnable

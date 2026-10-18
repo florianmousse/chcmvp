@@ -26,6 +26,7 @@ _$MatchModelImpl _$$MatchModelImplFromJson(Map<String, dynamic> json) =>
       date: DateTime.parse(json['date'] as String),
       time: json['time'] as String,
       opponent: json['opponent'] as String,
+      opponentId: json['opponentId'] as String?,
       isHome: json['isHome'] as bool,
       team: json['team'] as String,
       status:
@@ -45,6 +46,8 @@ _$MatchModelImpl _$$MatchModelImplFromJson(Map<String, dynamic> json) =>
           : PointsScale.fromJson(json['pointsScale'] as Map<String, dynamic>),
       allowSelfVote: json['allowSelfVote'] as bool? ?? false,
       opponentLogoAsset: json['opponentLogoAsset'] as String?,
+      scoreHome: (json['scoreHome'] as num?)?.toInt(),
+      scoreAway: (json['scoreAway'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$$MatchModelImplToJson(
@@ -54,6 +57,7 @@ Map<String, dynamic> _$$MatchModelImplToJson(
   'date': instance.date.toIso8601String(),
   'time': instance.time,
   'opponent': instance.opponent,
+  'opponentId': instance.opponentId,
   'isHome': instance.isHome,
   'team': instance.team,
   'status': _$MatchStatusEnumMap[instance.status]!,
@@ -63,6 +67,8 @@ Map<String, dynamic> _$$MatchModelImplToJson(
   'pointsScale': instance.pointsScale,
   'allowSelfVote': instance.allowSelfVote,
   'opponentLogoAsset': instance.opponentLogoAsset,
+  'scoreHome': instance.scoreHome,
+  'scoreAway': instance.scoreAway,
 };
 
 const _$MatchStatusEnumMap = {

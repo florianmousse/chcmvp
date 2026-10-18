@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/core/services/server_client.dart';
 import 'package:chc_mvp/features/matches/presentation/match_form_screen.dart';
+import 'package:chc_mvp/features/matches/presentation/match_stats_form_screen.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:intl/intl.dart';
 
@@ -78,6 +79,12 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
                 await repo.openVoting(match.id);
               case 'close_voting':
                 await repo.closeVoting(match.id);
+              case 'stats':
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => MatchStatsFormScreen(match: match),
+                  ),
+                );
               case 'recompute':
                 setState(() => _recomputing = true);
                 await repo.recomputeResults(match.id);
@@ -102,6 +109,10 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
         },
         itemBuilder: (context) => [
           const PopupMenuItem(value: 'edit', child: Text('Modifier')),
+          const PopupMenuItem(
+            value: 'stats',
+            child: Text('Stats du match'),
+          ),
           if (match.status == MatchStatus.upcoming)
             const PopupMenuItem(
               value: 'open_voting',

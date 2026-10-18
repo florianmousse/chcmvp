@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:chc_mvp/features/home/domain/badge_model.dart';
+import 'package:intl/intl.dart';
 
 /// Section badges — affiche TOUS les badges (gagnés + non gagnés).
 /// Les badges gagnés sont mis en valeur. Les badges non gagnés apparaissent
 /// avec un « ? » et une opacité réduite pour montrer ce qu'il y a à débloquer.
 /// Tap sur n'importe quel badge → BottomSheet avec le détail et l'état.
 class BadgesSection extends StatelessWidget {
-  const BadgesSection({super.key, required this.earnedBadges});
+  const BadgesSection({
+    super.key,
+    required this.earnedBadges,
+    this.earnedDates = const {},
+    this.title = 'Mes badges',
+  });
 
   /// Badges effectivement gagnés par le joueur.
   final List<Badge> earnedBadges;
+
+  /// Dates d'obtention par type de badge (BadgeType.name → DateTime).
+  final Map<String, DateTime> earnedDates;
+
+  /// Titre de la section (« Mes badges » ou « Badges de X »).
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +33,7 @@ class BadgesSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text('Mes badges', style: Theme.of(context).textTheme.titleMedium),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(width: 8),
             Text(
               '${earnedBadges.length}/${allBadges.length}',
@@ -41,7 +53,11 @@ class BadgesSection extends StatelessWidget {
             itemBuilder: (context, index) {
               final badge = allBadges[index];
               final earned = earnedTypes.contains(badge.type);
-              return _BadgeChip(badge: badge, earned: earned);
+              return _BadgeChip(
+                badge: badge,
+                earned: earned,
+                earnedDate: earnedDates[badge.type.name],
+              );
             },
           ),
         ),
@@ -52,16 +68,21 @@ class BadgesSection extends StatelessWidget {
 }
 
 class _BadgeChip extends StatelessWidget {
-  const _BadgeChip({required this.badge, required this.earned});
+  const _BadgeChip({
+    required this.badge,
+    required this.earned,
+    this.earnedDate,
+  });
   final Badge badge;
   final bool earned;
+  final DateTime? earnedDate;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return GestureDetector(
-      onTap: () => _showBadgeDetail(context, badge, earned),
+      onTap: () => _showBadgeDetail(context, badge, earned, earnedDate),
       child: Opacity(
         opacity: earned ? 1.0 : 0.35,
         child: Container(
@@ -135,7 +156,12 @@ class _BadgeChip extends StatelessWidget {
     );
   }
 
-  void _showBadgeDetail(BuildContext context, Badge badge, bool earned) {
+  void _showBadgeDetail(
+    BuildContext context,
+    Badge badge,
+    bool earned,
+    DateTime? earnedDate,
+  ) {
     final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
@@ -163,7 +189,11 @@ class _BadgeChip extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                earned ? '✅ Obtenu' : '🔒 Non débloqué',
+                earned
+                    ? earnedDate != null
+                        ? '✅ Obtenu le ${DateFormat('dd/MM/yyyy', 'fr_FR').format(earnedDate)}'
+                        : '✅ Obtenu'
+                    : '🔒 Non débloqué',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: earned ? Colors.green : theme.colorScheme.outline,
                   fontWeight: FontWeight.bold,

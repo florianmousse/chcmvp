@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/utils/season.dart' as season_util;
+import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:chc_mvp/features/members/presentation/members_providers.dart';
-import 'package:chc_mvp/features/ranking/data/ranking_repository.dart';
 import 'package:chc_mvp/features/ranking/presentation/player_stats_screen.dart';
 import 'package:chc_mvp/features/ranking/presentation/ranking_providers.dart';
 import 'package:intl/intl.dart';
@@ -19,7 +19,7 @@ final _seasonPattern = RegExp(r'^\d{4}-\d{4}$');
 
 class _RankingScreenState extends ConsumerState<RankingScreen>
     with SingleTickerProviderStateMixin {
-  late final _tabController = TabController(length: 3, vsync: this);
+  late final _tabController = TabController(length: 4, vsync: this);
   DateTime _monthCursor = DateTime.now();
   int _seasonStartYear = season_util.currentSeasonStartYear();
 
@@ -45,6 +45,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
             Tab(text: 'Général'),
             Tab(text: 'Mensuel'),
             Tab(text: 'Saison'),
+            Tab(text: 'Stats'),
           ],
         ),
       ),
@@ -94,6 +95,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
               Expanded(child: _RankingList(scope: currentSeasonKey)),
             ],
           ),
+          const _StatsRankingTab(),
         ],
       ),
     );
@@ -274,5 +276,180 @@ class _RankingList extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Erreur : $e')),
     );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Onglet Stats — classement des buteurs, passeurs, fair-play
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum _StatSort { goals, assists, fairPlay }
+
+class _StatsRankingTab extends ConsumerStatefulWidget {
+  const _StatsRankingTab();
+
+  @override
+  ConsumerState<_StatsRankingTab> createState() => _StatsRankingTabState();
+}
+
+class _StatsRankingTabState extends ConsumerState<_StatsRankingTab> {
+  _StatSort _sort = _StatSort.goals;
+
+  @override
+  Widget build(BuildContext context) {
+    final aggAsync = ref.watch(aggregatedPlayerStatsProvider);
+    final membersAsync = ref.watch(membersListProvider(null));
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SegmentedButton<_StatSort>(
+            segments: const [
+              ButtonSegment(
+                value: _StatSort.goals,
+                label: Text('⚽ Buteurs'),
+              ),
+              ButtonSegment(
+                value: _StatSort.assists,
+                label: Text('🅰️ Passeurs'),
+              ),
+              ButtonSegment(
+                value: _StatSort.fairPlay,
+                label: Text('🤝 Fair-play'),
+              ),
+            ],
+            selected: {_sort},
+            onSelectionChanged: (s) => setState(() => _sort = s.first),
+          ),
+        ),
+        Expanded(
+          child: aggAsync.when(
+            data: (statsMap) {
+              if (statsMap.isEmpty) {
+                return const Center(
+                  child: Text('Aucune stat disponible pour le moment.'),
+                );
+              }
+
+              final members = membersAsync.value ?? [];
+              final nameOf = <String, String>{
+                for (final m in members) m.uid: m.fullName,
+              };
+
+              // Trier selon le mode sélectionné
+              final entries = statsMap.entries.toList();
+              entries.sort((a, b) {
+                switch (_sort) {
+                  case _StatSort.goals:
+                    return b.value.goals.compareTo(a.value.goals);
+                  case _StatSort.assists:
+                    return b.value.assists.compareTo(a.value.assists);
+                  case _StatSort.fairPlay:
+                    // Moins de cartons = mieux → tri ascendant
+                    return a.value.totalCards.compareTo(b.value.totalCards);
+                }
+              });
+
+              return ListView.builder(
+                itemCount: entries.length,
+                itemBuilder: (context, i) {
+                  final uid = entries[i].key;
+                  final stats = entries[i].value;
+                  final name = nameOf[uid] ?? 'Joueur inconnu';
+                  final rank = i + 1;
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: rank <= 3
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : null,
+                      child: Text(
+                        '$rank',
+                        style: TextStyle(
+                          fontWeight:
+                              rank <= 3 ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                    title: Text(name),
+                    subtitle: Text(
+                      '${stats.matchesPlayed} match${stats.matchesPlayed > 1 ? 's' : ''}',
+                    ),
+                    trailing: _StatValue(stats: stats, sort: _sort),
+                  );
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('Erreur : $e')),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatValue extends StatelessWidget {
+  const _StatValue({required this.stats, required this.sort});
+  final AggregatedPlayerStats stats;
+  final _StatSort sort;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (sort) {
+      case _StatSort.goals:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${stats.goals}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Text('⚽'),
+            if (stats.assists > 0) ...[
+              const SizedBox(width: 8),
+              Text('${stats.assists}', style: Theme.of(context).textTheme.bodySmall),
+              const Text(' 🅰️'),
+            ],
+          ],
+        );
+      case _StatSort.assists:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${stats.assists}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Text('🅰️'),
+            if (stats.goals > 0) ...[
+              const SizedBox(width: 8),
+              Text('${stats.goals}', style: Theme.of(context).textTheme.bodySmall),
+              const Text(' ⚽'),
+            ],
+          ],
+        );
+      case _StatSort.fairPlay:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (stats.greenCards > 0)
+              Text('${stats.greenCards} 🟢 ', style: Theme.of(context).textTheme.bodySmall),
+            if (stats.yellowCards > 0)
+              Text('${stats.yellowCards} 🟡 ', style: Theme.of(context).textTheme.bodySmall),
+            if (stats.redCards > 0)
+              Text('${stats.redCards} 🔴', style: Theme.of(context).textTheme.bodySmall),
+            if (stats.totalCards == 0)
+              Text('✅', style: Theme.of(context).textTheme.bodySmall),
+          ],
+        );
+    }
   }
 }

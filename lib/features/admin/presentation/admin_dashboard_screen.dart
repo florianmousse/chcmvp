@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_admin_screen.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:chc_mvp/features/members/presentation/members_list_screen.dart';
+import 'package:chc_mvp/features/opponents/presentation/opponents_admin_screen.dart';
 import 'package:chc_mvp/features/teams/presentation/teams_list_screen.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
@@ -50,6 +51,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             onTap: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const TeamsListScreen())),
+          ),
+          const SizedBox(height: 12),
+          _AdminTile(
+            icon: Icons.sports_outlined,
+            title: 'Adversaires',
+            subtitle: 'Gérer les équipes adverses',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const OpponentsAdminScreen()),
+            ),
           ),
           const SizedBox(height: 24),
           _RankingsMaintenanceCard(

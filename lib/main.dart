@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:chc_mvp/core/navigation/navigator_key.dart';
+import 'package:chc_mvp/core/providers/home_widget_providers.dart';
 import 'package:chc_mvp/core/providers/messaging_providers.dart';
+import 'package:chc_mvp/core/services/home_widget_service.dart';
 import 'package:chc_mvp/core/theme/app_theme.dart';
+import 'package:chc_mvp/core/theme/theme_provider.dart';
 import 'package:chc_mvp/features/admin/presentation/admin_dashboard_screen.dart';
 import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 import 'package:chc_mvp/features/auth/presentation/login_screen.dart';
@@ -23,6 +26,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('fr_FR');
+  await HomeWidgetService.initialize();
   try {
     // Obligatoire depuis google_sign_in v7, avant tout signInWithGoogle().
     await GoogleSignIn.instance.initialize();
@@ -47,6 +51,11 @@ class HockeyClubApp extends ConsumerWidget {
     // démarré, d'où fcmTokens qui restait vide indéfiniment.
     ref.watch(messagingSyncProvider);
 
+    // Maintient les widgets Android de l'écran d'accueil à jour.
+    ref.watch(homeWidgetSyncProvider);
+
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp(
       navigatorKey: rootNavigatorKey,
       title: 'CHC MVP',
@@ -60,7 +69,7 @@ class HockeyClubApp extends ConsumerWidget {
       locale: const Locale('fr'),
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       home: const _RootRouter(),
     );
   }

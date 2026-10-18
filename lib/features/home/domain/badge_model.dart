@@ -1,6 +1,6 @@
 /// Modèle de badge — représente un accomplissement qu'un joueur peut
-/// débloquer au fil de la saison. Calculé côté client à chaque rendu,
-/// pas persisté dans Firestore.
+/// débloquer au fil de la saison. Calculé côté client puis synchronisé
+/// dans Firestore (`userBadges/{userId}`) avec la date d'obtention.
 enum BadgeType {
   mvpSaison,
   serieTop3,
@@ -10,6 +10,10 @@ enum BadgeType {
   centurion,
   podiumMaster,
   regularite,
+  buteur,
+  passeurDor,
+  fairPlay,
+  couteauSuisse,
 }
 
 class Badge {
@@ -77,6 +81,32 @@ class Badge {
       emoji: '📊',
       description:
           'L\'écart-type de points le plus faible de l\'équipe (min. 5 matchs).',
+    ),
+    BadgeType.buteur: Badge(
+      type: BadgeType.buteur,
+      label: 'Buteur',
+      emoji: '⚽',
+      description: '5 buts ou plus marqués en une saison.',
+    ),
+    BadgeType.passeurDor: Badge(
+      type: BadgeType.passeurDor,
+      label: 'Passeur d\'or',
+      emoji: '🎯',
+      description: '5 passes décisives ou plus en une saison.',
+    ),
+    BadgeType.fairPlay: Badge(
+      type: BadgeType.fairPlay,
+      label: 'Fair-play',
+      emoji: '😇',
+      description:
+          'Aucun carton jaune ou rouge en au moins 5 matchs joués.',
+    ),
+    BadgeType.couteauSuisse: Badge(
+      type: BadgeType.couteauSuisse,
+      label: 'Couteau suisse',
+      emoji: '🦸',
+      description:
+          'Au moins 3 buts, 3 passes D. et 3 cartons verts en une saison.',
     ),
   };
 }
