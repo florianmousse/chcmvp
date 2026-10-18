@@ -7,7 +7,7 @@ const zero: Tally = { points: 0, firstCount: 0, secondCount: 0, thirdCount: 0 };
 /**
  * Reconstruit entièrement rankings_cache et player_stats en recalculant
  * chaque match clôturé DIRECTEMENT à partir de ses votes bruts (même calcul
- * que handleVotingClosed, via computeMatchTally) — pas depuis les
+ * que handleVotingClosed, via computeMatchTally) - pas depuis les
  * results/summary existants. Ça rend cette fonction totalement autonome :
  * peu importe l'état actuel des documents (vides, corrompus, calculés avec
  * une ancienne version du code...), le résultat final ne dépend que des
@@ -32,7 +32,11 @@ export async function rebuildRankingsAndStats(): Promise<{
   const rankingTotals: Record<string, Record<string, Tally>> = {};
   const playerStatsTotals: Record<
     string,
-    Tally & { matchesPlayed: number; votesReceived: number; distinctVoters: number }
+    Tally & {
+      matchesPlayed: number;
+      votesReceived: number;
+      distinctVoters: number;
+    }
   > = {};
   const historyEntries: {
     uid: string;
@@ -58,7 +62,11 @@ export async function rebuildRankingsAndStats(): Promise<{
     for (const doc of votesSnap.docs) {
       const vote = doc.data();
       const voterUid = vote.voterUid ?? doc.id;
-      for (const place of [vote.firstPlaceUid, vote.secondPlaceUid, vote.thirdPlaceUid]) {
+      for (const place of [
+        vote.firstPlaceUid,
+        vote.secondPlaceUid,
+        vote.thirdPlaceUid,
+      ]) {
         if (place) {
           if (!voterSets[place]) voterSets[place] = new Set<string>();
           voterSets[place].add(voterUid);
@@ -71,9 +79,10 @@ export async function rebuildRankingsAndStats(): Promise<{
     }
 
     const presentPlayerIds: string[] = match.presentPlayerIds ?? [];
-    const voteRate = presentPlayerIds.length > 0
-      ? Math.round((totalVotes / presentPlayerIds.length) * 100)
-      : 0;
+    const voteRate =
+      presentPlayerIds.length > 0
+        ? Math.round((totalVotes / presentPlayerIds.length) * 100)
+        : 0;
 
     matchesProcessed++;
 

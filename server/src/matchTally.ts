@@ -27,17 +27,17 @@ interface RawVote {
  * Calcule le résultat RÉEL d'un match à partir de ses votes bruts, en trois
  * temps :
  * 1. Un score BRUT par joueur (somme pondérée des votes individuels selon
- *    le barème) — sert UNIQUEMENT à les classer entre eux pour ce match, ce
+ *    le barème) - sert UNIQUEMENT à les classer entre eux pour ce match, ce
  *    n'est jamais le nombre de points final attribué.
  * 2. Le classement du match (qui a fini 1er/2e/3e) via un rang "olympique"
  *    standard sur ce score brut : le rang d'un joueur est 1 + le nombre de
  *    joueurs strictement devant lui. Une égalité CONSOMME autant de rangs
- *    qu'il y a de joueurs à égalité — si 4 joueurs sont à égalité en tête,
+ *    qu'il y a de joueurs à égalité - si 4 joueurs sont à égalité en tête,
  *    ils sont tous 1ers (et tous MVP), et le joueur suivant est 5e, pas 2e.
  * 3. Les points FINAUX (ceux qui comptent pour le classement général) ne
  *    dépendent QUE du rang obtenu à cette étape, pas du score brut : 5
  *    points pour avoir fini 1er de CE match, 3 pour 2e, 1 pour 3e, peu
- *    importe le nombre de votes reçus ou l'écart entre les joueurs — jamais
+ *    importe le nombre de votes reçus ou l'écart entre les joueurs - jamais
  *    5 points par votant ayant choisi ce joueur en 1ère place.
  */
 export function computeMatchTally(
@@ -73,7 +73,7 @@ export function computeMatchTally(
     };
   }
 
-  // MVP(s) : tous les joueurs de rang 1 — pluriel assumé, en cas d'égalité
+  // MVP(s) : tous les joueurs de rang 1 - pluriel assumé, en cas d'égalité
   // pour la 1ère place ils sont tous MVP.
   const mvpUids = Object.entries(entries)
     .filter(([, t]) => t.firstCount === 1)

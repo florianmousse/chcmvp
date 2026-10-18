@@ -1,6 +1,6 @@
 {
   "name": "hockey-club-server",
-  "description": "Backend autonome (notifications, clôture auto du vote, agrégation des résultats, gestion des membres) — remplace Cloud Functions, déployé sur le VPS du club.",
+  "description": "Backend autonome (notifications, clôture auto du vote, agrégation des résultats, gestion des membres) - remplace Cloud Functions, déployé sur le VPS du club.",
   "engines": {
     "node": ">=20"
   },

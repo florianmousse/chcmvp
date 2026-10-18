@@ -11,20 +11,22 @@ import { matchesRouter } from "./routes/matches";
 import { createCorsMiddleware } from "./middleware/cors";
 
 const app = express();
-app.use(createCorsMiddleware((process.env.WEB_ALLOWED_ORIGINS ?? "").split(",")));
+app.use(
+  createCorsMiddleware((process.env.WEB_ALLOWED_ORIGINS ?? "").split(",")),
+);
 app.use(express.json());
 
 app.get("/health", (_req, res) =>
   res.json({ status: "ok", time: new Date().toISOString() }),
 );
 
-// authRouter est volontairement public (pas de requireAuth) — contrairement
+// authRouter est volontairement public (pas de requireAuth) - contrairement
 // aux deux routeurs suivants, qui exigent un admin authentifié.
 app.use("/auth", authRouter);
 app.use("/members", membersRouter);
 app.use("/matches", matchesRouter);
 
-// Sert server/public/ tel quel (ex: /privacy.html) — dossier à côté de src/,
+// Sert server/public/ tel quel (ex: /privacy.html) - dossier à côté de src/,
 // jamais compilé par TypeScript, donc pas dans dist/. process.cwd() vaut
 // /opt/hockey-club-server puisque c'est le WorkingDirectory du service
 // systemd (voir deploy/hockey-club-server.service).

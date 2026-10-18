@@ -9,7 +9,7 @@ export interface AuthedRequest extends Request {
 /**
  * L'app envoie le token Firebase de l'utilisateur connecté dans l'en-tête
  * Authorization: Bearer <idToken> (voir server_client.dart côté Flutter).
- * On le vérifie cryptographiquement avec l'Admin SDK — c'est l'équivalent
+ * On le vérifie cryptographiquement avec l'Admin SDK - c'est l'équivalent
  * exact de `request.auth` que Cloud Functions fournissait automatiquement.
  */
 export async function requireAuth(

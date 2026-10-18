@@ -18,13 +18,13 @@ function matchDateTime(dateTs: Timestamp, time: string): number {
  * Traitement périodique (cron toutes les 10 min) qui gère le cycle de vie
  * automatique des votes :
  *
- * 1. **Rappel admin** — si un match `upcoming` est dans moins de Xh et que
+ * 1. **Rappel admin** - si un match `upcoming` est dans moins de Xh et que
  *    la feuille de présence est vide → notification aux admins.
- * 2. **Auto-ouverture** — si un match `upcoming` a commencé depuis ≥ 2h et
+ * 2. **Auto-ouverture** - si un match `upcoming` a commencé depuis ≥ 2h et
  *    que la feuille de présence est remplie → passe à `voting_open`.
- * 3. **Rappel joueurs** — si un vote est ouvert et qu'il reste ≤ 24h avant
+ * 3. **Rappel joueurs** - si un vote est ouvert et qu'il reste ≤ 24h avant
  *    la clôture → rappel aux joueurs qui n'ont pas encore voté.
- * 4. **Auto-clôture** — si `votingClosesAt` est passé → passe à `voting_closed`.
+ * 4. **Auto-clôture** - si `votingClosesAt` est passé → passe à `voting_closed`.
  */
 export async function processScheduledVoting(): Promise<void> {
   const firestore = getFirestore();
@@ -52,7 +52,8 @@ export async function processScheduledVoting(): Promise<void> {
     // ── Phase 1 : Rappel admin si feuille de présence vide ──
     // Envoyé quand on est à moins de adminReminderBeforeHours du match
     // ET que les joueurs présents n'ont pas encore été saisis.
-    const reminderThresholdMs = matchMs - settings.adminReminderBeforeHours * 3600 * 1000;
+    const reminderThresholdMs =
+      matchMs - settings.adminReminderBeforeHours * 3600 * 1000;
     if (
       presentIds.length === 0 &&
       nowMs >= reminderThresholdMs &&
@@ -65,7 +66,9 @@ export async function processScheduledVoting(): Promise<void> {
         data: { type: "admin_presence_reminder", matchId: doc.id },
       });
       await doc.ref.update({ adminReminderSentAt: now });
-      console.log(`Rappel admin envoyé pour le match ${doc.id} (feuille de présence vide)`);
+      console.log(
+        `Rappel admin envoyé pour le match ${doc.id} (feuille de présence vide)`,
+      );
       continue; // pas d'ouverture de vote si pas de présence
     }
 
@@ -73,7 +76,8 @@ export async function processScheduledVoting(): Promise<void> {
     // Le match a commencé depuis au moins voteOpenDelayHours ET la feuille
     // de présence est renseignée → on passe le statut à voting_open.
     // Le listener matchListeners.ts détecte la transition et envoie la notif.
-    const voteOpenThresholdMs = matchMs + settings.voteOpenDelayHours * 3600 * 1000;
+    const voteOpenThresholdMs =
+      matchMs + settings.voteOpenDelayHours * 3600 * 1000;
     if (presentIds.length > 0 && nowMs >= voteOpenThresholdMs) {
       const closesAt = Timestamp.fromMillis(
         voteOpenThresholdMs + settings.voteDurationHours * 3600 * 1000,
@@ -105,7 +109,7 @@ export async function processScheduledVoting(): Promise<void> {
     if (closesAt.toMillis() <= nowMs) {
       // Ce write déclenche le listener de matchListeners.ts (transition vers
       // "voting_closed"), qui calcule les résultats et envoie la notification
-      // de clôture — pas besoin de dupliquer cette logique ici.
+      // de clôture - pas besoin de dupliquer cette logique ici.
       await doc.ref.update({ status: "voting_closed" });
       console.log(`Vote clôturé automatiquement pour le match ${doc.id}`);
       continue;

@@ -10,7 +10,7 @@ matchesRouter.use(requireAuth, requireAdmin);
 /**
  * Recalcule results/summary + rankings_cache + player_stats pour un match
  * déjà clôturé, sans dépendre du listener Firestore (qui réinitialise sa
- * mémoire des statuts à chaque redémarrage du serveur — voir le commentaire
+ * mémoire des statuts à chaque redémarrage du serveur - voir le commentaire
  * dans matchListeners.ts). Le calcul est idempotent (voir handleVotingClosed),
  * donc rappeler cette route plusieurs fois sur le même match est sans danger.
  */
@@ -35,7 +35,7 @@ matchesRouter.post("/:matchId/recompute", async (req, res) => {
 
 /**
  * Reconstruit entièrement rankings_cache et player_stats à partir de tous
- * les results/summary existants (voir rebuildRankings.ts) — l'outil à
+ * les results/summary existants (voir rebuildRankings.ts) - l'outil à
  * utiliser après un pépin sur le cache (suppression, bug corrigé après
  * coup, etc.), plutôt que de rejouer chaque match un par un : celui-ci ne
  * dépend d'aucun état préalable, contrairement au recalcul par match qui

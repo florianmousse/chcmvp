@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 /**
  * Gmail SMTP avec un mot de passe d'application (nécessite la validation en
  * 2 étapes activée sur le compte Gmail utilisé). Recommandé : un compte
- * Gmail dédié au club plutôt qu'un compte personnel — voir
+ * Gmail dédié au club plutôt qu'un compte personnel - voir
  * DEPLOY_ORACLE_VPS.md ou le message de Claude pour la marche à suivre
  * (nom, adresse, photo).
  */
@@ -65,7 +65,7 @@ export async function sendInviteEmail({
 }): Promise<void> {
   if (!isSmtpConfigured()) {
     console.warn(
-      `SMTP non configuré (.env) — e-mail d'invitation pour ${to} non envoyé. Lien : ${resetLink}`,
+      `SMTP non configuré (.env) - e-mail d'invitation pour ${to} non envoyé. Lien : ${resetLink}`,
     );
     return;
   }
@@ -73,7 +73,7 @@ export async function sendInviteEmail({
   await transporter.sendMail({
     from: `"${CLUB_NAME}" <${process.env.SMTP_USER}>`,
     to,
-    subject: `${CLUB_NAME} — active ton compte`,
+    subject: `${CLUB_NAME} - active ton compte`,
     text:
       `Bonjour ${firstName},\n\n` +
       `Un compte t'a été créé sur l'application du ${CLUB_NAME}. ` +
@@ -88,7 +88,7 @@ export async function sendInviteEmail({
 }
 
 /**
- * "Mot de passe oublié" — appelée depuis une route PUBLIQUE (voir
+ * "Mot de passe oublié" - appelée depuis une route PUBLIQUE (voir
  * routes/auth.ts), puisque quelqu'un qui a oublié son mot de passe n'est
  * par définition pas connecté et ne peut fournir aucun token.
  */
@@ -101,7 +101,7 @@ export async function sendPasswordResetEmail({
 }): Promise<void> {
   if (!isSmtpConfigured()) {
     console.warn(
-      `SMTP non configuré (.env) — e-mail de réinitialisation pour ${to} non envoyé. Lien : ${resetLink}`,
+      `SMTP non configuré (.env) - e-mail de réinitialisation pour ${to} non envoyé. Lien : ${resetLink}`,
     );
     return;
   }
@@ -109,7 +109,7 @@ export async function sendPasswordResetEmail({
   await transporter.sendMail({
     from: `"${CLUB_NAME}" <${process.env.SMTP_USER}>`,
     to,
-    subject: `${CLUB_NAME} — réinitialise ton mot de passe`,
+    subject: `${CLUB_NAME} - réinitialise ton mot de passe`,
     text:
       `Bonjour,\n\n` +
       `Clique sur ce lien pour choisir un nouveau mot de passe :\n${resetLink}\n\n` +
@@ -118,7 +118,7 @@ export async function sendPasswordResetEmail({
       <p>Bonjour,</p>
       <p>Tu as demandé à réinitialiser ton mot de passe sur l'application du <strong>${CLUB_NAME}</strong>.</p>
       ${button(resetLink, "Réinitialiser mon mot de passe")}
-      <p style="font-size:13px;color:#666;">Si tu n'es pas à l'origine de cette demande, ignore simplement cet e-mail — rien ne sera changé.</p>
+      <p style="font-size:13px;color:#666;">Si tu n'es pas à l'origine de cette demande, ignore simplement cet e-mail - rien ne sera changé.</p>
     `),
   });
 }

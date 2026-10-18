@@ -10,7 +10,7 @@ const zero: Tally = { points: 0, firstCount: 0, secondCount: 0, thirdCount: 0 };
  * Sur un onSnapshot classique, il faut reconstituer soi-même la transition
  * en gardant le dernier statut connu de chaque match en mémoire. C'est
  * possible ici parce que ce process tourne en continu sur le VPS (contrairement
- * à une fonction serverless qui redémarre à froid) — le cache reste cohérent
+ * à une fonction serverless qui redémarre à froid) - le cache reste cohérent
  * tant que le serveur ne redémarre pas. Au redémarrage, le premier instantané
  * sert uniquement à initialiser le cache (voir `isFirstSnapshot`), pour ne pas
  * redéclencher des notifications sur des matchs déjà traités auparavant.
@@ -115,7 +115,11 @@ export async function handleVotingClosed(
   for (const doc of votesSnap.docs) {
     const vote = doc.data();
     const voterUid = vote.voterUid ?? doc.id;
-    for (const place of [vote.firstPlaceUid, vote.secondPlaceUid, vote.thirdPlaceUid]) {
+    for (const place of [
+      vote.firstPlaceUid,
+      vote.secondPlaceUid,
+      vote.thirdPlaceUid,
+    ]) {
       if (place) {
         if (!voterSets[place]) voterSets[place] = new Set<string>();
         voterSets[place].add(voterUid);
@@ -128,16 +132,17 @@ export async function handleVotingClosed(
   }
 
   const presentPlayerIds: string[] = match.presentPlayerIds ?? [];
-  const voteRate = presentPlayerIds.length > 0
-    ? Math.round((totalVotes / presentPlayerIds.length) * 100)
-    : 0;
+  const voteRate =
+    presentPlayerIds.length > 0
+      ? Math.round((totalVotes / presentPlayerIds.length) * 100)
+      : 0;
 
   const resultsRef = matchRef.collection("results").doc("summary");
 
   // Idempotence : si ce match avait déjà été calculé une première fois (ex:
   // recalcul manuel en rouvrant/refermant le vote), on ne veut incrémenter
   // rankings_cache/player_stats que de la DIFFÉRENCE avec le calcul
-  // précédent — jamais réappliquer le total en entier une deuxième fois.
+  // précédent - jamais réappliquer le total en entier une deuxième fois.
   // results/summary lui-même est un set() sans merge (réécriture complète à
   // chaque fois), donc toujours fiable comme référence de "ce qui a déjà été
   // compté avant" ; c'est justement pour ça qu'il restait juste alors que
@@ -145,7 +150,8 @@ export async function handleVotingClosed(
   const previousSnap = await resultsRef.get();
   const prevData = previousSnap.data();
   const previousEntries = (prevData?.entries ?? {}) as Record<string, Tally>;
-  const previousDistinctVotersMap = (prevData?.distinctVotersMap ?? {}) as Record<string, number>;
+  const previousDistinctVotersMap = (prevData?.distinctVotersMap ??
+    {}) as Record<string, number>;
   const alreadyComputedBefore = previousSnap.exists;
 
   await resultsRef.set({
@@ -206,7 +212,7 @@ export async function handleVotingClosed(
     }
     // Objet réellement imbriqué (et non des clés à points comme
     // "entries.uid.points") : avec set(), contrairement à update(), les clés
-    // à points ne sont PAS interprétées comme des chemins imbriqués — elles
+    // à points ne sont PAS interprétées comme des chemins imbriqués - elles
     // créent un champ littéral nommé "entries.uid.points" au lieu de la
     // structure entries -> uid -> champ attendue. merge:true sur un objet
     // imbriqué fusionne correctement sans écraser les autres joueurs déjà
@@ -227,7 +233,7 @@ export async function handleVotingClosed(
       statsRef,
       {
         // matchesPlayed ne doit être compté qu'une seule fois par match,
-        // jamais à chaque recalcul — d'où le +1 conditionné à "première fois".
+        // jamais à chaque recalcul - d'où le +1 conditionné à "première fois".
         matchesPlayed: FieldValue.increment(alreadyComputedBefore ? 0 : 1),
         totalPoints: FieldValue.increment(d.points),
         votesReceived: FieldValue.increment(
@@ -241,7 +247,7 @@ export async function handleVotingClosed(
       { merge: true },
     );
     // L'historique reflète le résultat réel du joueur pour CE match (pas la
-    // différence) — c'est un set() sans merge, un doc par match, déjà
+    // différence) - c'est un set() sans merge, un doc par match, déjà
     // naturellement idempotent en soi.
     const matchTally = entries[uid] ?? zero;
     batch.set(statsRef.collection("history").doc(matchId), {
@@ -271,12 +277,16 @@ export async function handleVotingClosed(
   const nameOf: Record<string, string> = {};
   membersSnap.forEach((doc) => {
     const d = doc.data();
-    nameOf[doc.id] = `${d.firstName ?? ""} ${d.lastName ?? ""}`.trim() || "Joueur";
+    nameOf[doc.id] =
+      `${d.firstName ?? ""} ${d.lastName ?? ""}`.trim() || "Joueur";
   });
-  const mvpNames = mvpUids.map((uid: string) => nameOf[uid] ?? "Joueur inconnu").join(", ");
-  const notifBody = mvpUids.length > 0
-    ? `Le classement a été mis à jour. MVP : ${mvpNames} 🏆`
-    : "Le classement a été mis à jour.";
+  const mvpNames = mvpUids
+    .map((uid: string) => nameOf[uid] ?? "Joueur inconnu")
+    .join(", ");
+  const notifBody =
+    mvpUids.length > 0
+      ? `Le classement a été mis à jour. MVP : ${mvpNames} 🏆`
+      : "Le classement a été mis à jour.";
 
   await notifyMembers({
     title: "Vote clôturé ✅",
