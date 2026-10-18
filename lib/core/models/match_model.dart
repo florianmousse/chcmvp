@@ -32,6 +32,7 @@ class MatchModel with _$MatchModel {
     @TimestampConverter() required DateTime date,
     required String time,
     required String opponent,
+
     /// ID du document dans la collection `opponents`.
     String? opponentId,
     required bool isHome,
@@ -44,11 +45,11 @@ class MatchModel with _$MatchModel {
     @Default(false) bool allowSelfVote,
 
     /// Chemin de l'asset local choisi dans le formulaire de match (voir
-    /// core/config/team_logos_catalog.dart) — null si aucun logo choisi,
+    /// core/config/team_logos_catalog.dart) - null si aucun logo choisi,
     /// auquel cas une icône de secours s'affiche à la place.
     String? opponentLogoAsset,
 
-    /// Score du match — saisi par l'admin après le match.
+    /// Score du match - saisi par l'admin après le match.
     int? scoreHome,
     int? scoreAway,
   }) = _MatchModel;
@@ -60,9 +61,7 @@ class MatchModel with _$MatchModel {
 
   String get label => 'CHC vs $opponent';
 
-  /// Ex: "3 - 2" — null si le score n'a pas été saisi.
+  /// Ex: "3 - 2" - null si le score n'a pas été saisi.
   String? get scoreLabel =>
-      scoreHome != null && scoreAway != null
-          ? '$scoreHome - $scoreAway'
-          : null;
+      scoreHome != null && scoreAway != null ? '$scoreHome - $scoreAway' : null;
 }

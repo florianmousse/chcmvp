@@ -45,16 +45,16 @@ class PlayerHistoryPoint {
   final int? rank;
 
   /// Nombre de coéquipiers distincts ayant voté pour ce joueur lors de ce
-  /// match — écrit par le serveur, null si le serveur n'a pas encore été
+  /// match - écrit par le serveur, null si le serveur n'a pas encore été
   /// mis à jour.
   final int? distinctVotersThisMatch;
 
-  /// Nombre de joueurs présents lors de ce match — permet de calculer le
+  /// Nombre de joueurs présents lors de ce match - permet de calculer le
   /// ratio pour le badge « plébiscité ».
   final int? presentCount;
 }
 
-/// scope : "general", une année ("2026"), ou un mois ("2026-08") — construit
+/// scope : "general", une année ("2026"), ou un mois ("2026-08") - construit
 /// par le sélecteur des écrans, correspond aux clés écrites par
 /// `computeMatchResults` côté Cloud Function.
 class RankingRepository {
@@ -118,15 +118,14 @@ class RankingRepository {
               matchDate: (data['matchDate'] as Timestamp).toDate(),
               points: (data['points'] ?? 0) as int,
               rank: data['rank'] as int?,
-              distinctVotersThisMatch:
-                  data['distinctVotersThisMatch'] as int?,
+              distinctVotersThisMatch: data['distinctVotersThisMatch'] as int?,
               presentCount: data['presentCount'] as int?,
             );
           }).toList(),
         );
   }
 
-  /// Stats agrégées de TOUS les joueurs — utilisé par l'écran d'accueil pour
+  /// Stats agrégées de TOUS les joueurs - utilisé par l'écran d'accueil pour
   /// calculer le joueur le plus plébiscité, la révélation, etc. sans charger
   /// un provider par joueur.
   Stream<Map<String, PlayerStats>> watchAllPlayerStats() {
@@ -148,7 +147,7 @@ class RankingRepository {
     });
   }
 
-  /// Historiques de TOUS les joueurs — utilisé par l'écran d'accueil pour
+  /// Historiques de TOUS les joueurs - utilisé par l'écran d'accueil pour
   /// les séries top 3, la révélation, les stats insolites, etc.
   Stream<Map<String, List<PlayerHistoryPoint>>> watchAllPlayerHistories() {
     return _firestore.collection('player_stats').snapshots().asyncMap((
@@ -176,7 +175,7 @@ class RankingRepository {
   }
 
   /// Tous les scopes (mois "YYYY-MM" et années "YYYY") ayant au moins une
-  /// entrée — sert à savoir vers quelle période sauter quand l'utilisateur
+  /// entrée - sert à savoir vers quelle période sauter quand l'utilisateur
   /// navigue vers un mois/année vide plutôt que d'afficher une liste vide.
   Stream<List<String>> watchAvailableScopes() {
     return _firestore.collection('rankings_cache').snapshots().map((snap) {

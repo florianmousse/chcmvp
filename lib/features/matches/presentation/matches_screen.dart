@@ -11,7 +11,7 @@ import 'package:chc_mvp/features/voting/presentation/vote_screen.dart';
 import 'package:chc_mvp/features/voting/presentation/voting_providers.dart';
 import 'package:intl/intl.dart';
 
-/// Vue membre (lecture + vote) — distincte de MatchesAdminScreen qui gère la
+/// Vue membre (lecture + vote) - distincte de MatchesAdminScreen qui gère la
 /// création/édition et n'a pas vocation à être utilisée pour voter.
 class MatchesScreen extends ConsumerStatefulWidget {
   const MatchesScreen({super.key});
@@ -222,9 +222,9 @@ class _MatchCard extends ConsumerWidget {
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
-            // Le logo se place à droite de ce qui suit — le classement des
+            // Le logo se place à droite de ce qui suit - le classement des
             // joueurs pour un match terminé, le bouton de vote pour un vote
-            // ouvert, ou rien pour un match à venir — jamais dans l'en-tête.
+            // ouvert, ou rien pour un match à venir - jamais dans l'en-tête.
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -413,7 +413,7 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-/// Logo adverse tappable — navigue vers le détail de l'adversaire si un
+/// Logo adverse tappable - navigue vers le détail de l'adversaire si un
 /// `opponentId` est associé au match.
 class _OpponentLogoTappable extends ConsumerWidget {
   const _OpponentLogoTappable({required this.match});

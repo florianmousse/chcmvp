@@ -112,7 +112,7 @@ class _MatchStatsFormScreenState extends ConsumerState<MatchStatsFormScreen> {
                     ),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('—', style: TextStyle(fontSize: 24)),
+                      child: Text('-', style: TextStyle(fontSize: 24)),
                     ),
                     Expanded(
                       child: TextFormField(

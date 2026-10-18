@@ -3,7 +3,7 @@
 > **Note** : Ce fichier est la version publique (sans IP ni chemin de clé privée).
 > La version avec tes valeurs réelles est dans `DEPLOY_ORACLE_VPS.local.md` (gitignored).
 
-## Étape 0 — Nom de domaine (gratuit, sans carte)
+## Étape 0 - Nom de domaine (gratuit, sans carte)
 
 Let's Encrypt (certbot, étape 7) ne délivre de certificat HTTPS que pour un nom de
 domaine, jamais pour une IP brute. **InfinityFree et services similaires ne conviennent
@@ -17,7 +17,7 @@ Utilise plutôt **DuckDNS** (duckdns.org), gratuit et sans carte :
 3. Une fois ton VPS créé (étape 1), colle son IP publique dans le champ "current ip" de
    DuckDNS et clique "update ip".
 
-Le reste de ce guide utilise `<VOTRE_DOMAINE>.duckdns.org` comme exemple — remplace par
+Le reste de ce guide utilise `<VOTRE_DOMAINE>.duckdns.org` comme exemple - remplace par
 ton propre sous-domaine partout où tu le vois.
 
 ## Piège n°1 (celui qui bloque presque tout le monde sur Oracle)
@@ -30,7 +30,7 @@ seul des deux ne suffit pas.
 Sur les images **Ubuntu** d'Oracle en particulier, ce n'est en général pas `ufw` qui
 bloque (souvent inactif par défaut) mais des règles **`iptables` déjà préconfigurées** à
 l'installation, qui n'autorisent que le port 22 (SSH). Symptôme typique côté Certbot :
-un **"Timeout during connect"** plutôt qu'un "connection refused" — signature classique
+un **"Timeout during connect"** plutôt qu'un "connection refused" - signature classique
 d'un `DROP`/`REJECT` iptables.
 
 ## 1. Ouvrir les ports côté Oracle Cloud (console web)
@@ -168,7 +168,7 @@ curl https://<VOTRE_DOMAINE>.duckdns.org/health
 ## Mettre à jour le code plus tard
 
 ```bash
-# Depuis ta machine locale — supprime d'abord l'ancien contenu temp côté VPS
+# Depuis ta machine locale - supprime d'abord l'ancien contenu temp côté VPS
 ssh -i <CHEMIN_CLE_SSH> <USER>@<IP_VPS> "rm -rf /tmp/src-public /tmp/src-update /tmp/package.json"
 
 scp -i <CHEMIN_CLE_SSH> -r server/public <USER>@<IP_VPS>:/tmp/src-public

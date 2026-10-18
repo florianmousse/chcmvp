@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Charte graphique du club — chaque couleur est assignée à un rôle Material
+/// Charte graphique du club - chaque couleur est assignée à un rôle Material
 /// 3 précis plutôt que dérivée algorithmiquement d'une seule couleur de base.
 class AppTheme {
   static const _lightBackground = Color(0xFFF3F5FC);
@@ -30,7 +30,7 @@ class AppTheme {
       elevation: 2,
       shadowColor: Colors.black.withValues(alpha: 0.15),
       // Sans ça, Material 3 teinte automatiquement la carte avec la couleur
-      // primaire selon son élévation — c'est cette teinte automatique,
+      // primaire selon son élévation - c'est cette teinte automatique,
       // proche du fond, qui rendait les cartes peu visibles.
       surfaceTintColor: Colors.transparent,
     ),

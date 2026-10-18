@@ -20,7 +20,7 @@ final membersListProvider = StreamProvider.family<List<UserModel>, String?>((
   // Force la recréation du listener Firestore à chaque changement de compte
   // connecté (connexion/déconnexion/changement d'utilisateur). Sans ça, un
   // flux qui a déjà émis une erreur "permission-denied" (par ex. pendant la
-  // brève fenêtre de déconnexion) reste mort indéfiniment — Firestore ne
+  // brève fenêtre de déconnexion) reste mort indéfiniment - Firestore ne
   // relance pas tout seul un flux après une erreur de permission, et ce
   // provider n'étant pas recréé, l'app restait bloquée sur l'erreur même
   // après une reconnexion valide avec un autre compte.

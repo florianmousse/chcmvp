@@ -38,26 +38,24 @@ final playerHistoryProvider =
       return ref.watch(rankingRepositoryProvider).watchPlayerHistory(uid);
     });
 
-/// Mois "YYYY-MM" et années "YYYY" qui ont au moins un résultat — utilisé
+/// Mois "YYYY-MM" et années "YYYY" qui ont au moins un résultat - utilisé
 /// par l'écran classement pour sauter les périodes vides à la navigation.
 final availableRankingScopesProvider = StreamProvider<List<String>>((ref) {
   ref.watch(authStateProvider);
   return ref.watch(rankingRepositoryProvider).watchAvailableScopes();
 });
 
-/// Stats agrégées de TOUS les joueurs — utilisé par l'écran d'accueil pour
+/// Stats agrégées de TOUS les joueurs - utilisé par l'écran d'accueil pour
 /// les stats avancées (joueur le plus plébiscité, révélation, etc.).
-final allPlayerStatsProvider =
-    StreamProvider<Map<String, PlayerStats>>((ref) {
-      ref.watch(authStateProvider);
-      return ref.watch(rankingRepositoryProvider).watchAllPlayerStats();
-    });
+final allPlayerStatsProvider = StreamProvider<Map<String, PlayerStats>>((ref) {
+  ref.watch(authStateProvider);
+  return ref.watch(rankingRepositoryProvider).watchAllPlayerStats();
+});
 
-/// Historiques match par match de TOUS les joueurs — utilisé par l'écran
+/// Historiques match par match de TOUS les joueurs - utilisé par l'écran
 /// d'accueil pour les séries top 3, la révélation, les stats insolites.
 final allPlayerHistoriesProvider =
     StreamProvider<Map<String, List<PlayerHistoryPoint>>>((ref) {
       ref.watch(authStateProvider);
       return ref.watch(rankingRepositoryProvider).watchAllPlayerHistories();
     });
-

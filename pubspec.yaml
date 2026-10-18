@@ -64,7 +64,7 @@ flutter:
 
 # Génère l'icône de l'app pour Android et iOS à partir d'une seule image
 # source. Remplace assets/icon/icon.png par ton logo (1024x1024 recommandé,
-# fond plein — pas de transparence pour l'icône principale) puis lance :
+# fond plein - pas de transparence pour l'icône principale) puis lance :
 #   dart run flutter_launcher_icons
 #   flutter clean
 #   flutter run
@@ -74,7 +74,7 @@ flutter_launcher_icons:
   image_path: "assets/icon/icon.png"
   min_sdk_android: 21
   # Sans ça, Android génère seulement l'ancienne icône carrée "à plat" au
-  # lieu d'une vraie icône adaptative — d'où l'effet carré, en retrait, qui
+  # lieu d'une vraie icône adaptative - d'où l'effet carré, en retrait, qui
   # ne remplit pas l'espace comme les autres icônes du launcher.
   adaptive_icon_background: "#081725"
   adaptive_icon_foreground: "assets/icon/icon.png"

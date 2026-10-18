@@ -55,7 +55,7 @@ app.*.map.json
 local.properties
 .cxx/
 
-# Signing — NEVER commit keystores or signing config
+# Signing - NEVER commit keystores or signing config
 key.properties
 **/*.keystore
 **/*.jks
@@ -69,7 +69,7 @@ key.properties
 /ios/Flutter/Flutter.podspec
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Secrets & credentials — CRITICAL, never push these
+# Secrets & credentials - CRITICAL, never push these
 # ═══════════════════════════════════════════════════════════════════════════
 
 # Firebase Admin SDK service account keys

@@ -5,7 +5,7 @@ import 'package:chc_mvp/core/services/server_client.dart';
 import 'package:chc_mvp/core/utils/firestore_json.dart';
 
 /// Toutes ces opérations sont limitées aux admins par les règles Firestore
-/// (voir firestore/firestore.rules) — pas besoin de Cloud Function ici, ce
+/// (voir firestore/firestore.rules) - pas besoin de Cloud Function ici, ce
 /// sont de simples écritures de document.
 class MatchesRepository {
   MatchesRepository(this._firestore, this._server);
@@ -67,7 +67,7 @@ class MatchesRepository {
   }
 
   /// Ouvre le vote : le serveur prend le relais pour calculer
-  /// `votingClosesAt` et notifier les membres — ce repository ne fait que
+  /// `votingClosesAt` et notifier les membres - ce repository ne fait que
   /// déclencher la transition d'état.
   Future<void> openVoting(String matchId) {
     return _matches.doc(matchId).update({'status': 'voting_open'});
@@ -91,7 +91,7 @@ class MatchesRepository {
   }
 
   /// Reconstruit entièrement rankings_cache et player_stats à partir de tous
-  /// les results/summary existants — l'outil de récupération à utiliser
+  /// les results/summary existants - l'outil de récupération à utiliser
   /// après un pépin sur le cache.
   Future<Map<String, dynamic>> rebuildRankings() {
     return _server.post('/matches/rankings/rebuild', {});
@@ -120,9 +120,8 @@ class MatchesRepository {
         .map(
           (snap) => snap.docs
               .map(
-                (d) => PlayerMatchStats.fromJson(
-                  {...d.data(), 'playerId': d.id},
-                ),
+                (d) =>
+                    PlayerMatchStats.fromJson({...d.data(), 'playerId': d.id}),
               )
               .toList(),
         );

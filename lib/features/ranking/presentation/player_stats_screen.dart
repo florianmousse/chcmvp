@@ -110,7 +110,7 @@ class PlayerStatsScreen extends ConsumerWidget {
                       1 => '🥇',
                       2 => '🥈',
                       3 => '🥉',
-                      _ => '—',
+                      _ => '-',
                     };
                     return ListTile(
                       leading: Text(
@@ -266,7 +266,7 @@ class _GameStatsSection extends ConsumerWidget {
   }
 }
 
-/// Affiche les badges d'un joueur lus depuis Firestore — utilisé pour
+/// Affiche les badges d'un joueur lus depuis Firestore - utilisé pour
 /// les profils publics (quand on consulte les stats d'un autre joueur).
 class _PublicBadgesSection extends ConsumerWidget {
   const _PublicBadgesSection({required this.uid, required this.playerName});
@@ -289,7 +289,7 @@ class _PublicBadgesSection extends ConsumerWidget {
             final badge = Badge.allDefinitions[type];
             if (badge != null) badges.add(badge);
           } catch (_) {
-            // Type inconnu (badge supprimé ou renommé) — on l'ignore
+            // Type inconnu (badge supprimé ou renommé) - on l'ignore
           }
         }
 

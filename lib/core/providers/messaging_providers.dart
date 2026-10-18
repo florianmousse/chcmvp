@@ -32,7 +32,7 @@ final messagingServiceProvider = Provider<MessagingService>((ref) {
 /// À observer une fois quelque part en haut de l'arbre de widgets (voir
 /// HockeyClubApp dans main.dart) pour enregistrer/retirer le token FCM à la
 /// connexion/déconnexion, ET pour amener directement sur l'écran de vote
-/// quand on tape une notification d'ouverture de vote — dans les 3 cas
+/// quand on tape une notification d'ouverture de vote - dans les 3 cas
 /// possibles : app fermée, en arrière-plan, ou déjà ouverte.
 final messagingSyncProvider = Provider<void>((ref) {
   ref.listen(authStateProvider, (previous, next) {

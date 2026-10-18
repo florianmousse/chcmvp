@@ -14,7 +14,7 @@ class MessagingService {
 
   /// À appeler juste après la connexion réussie d'un membre. [onNotificationTap]
   /// reçoit le matchId (payload) quand l'utilisateur tape une notification
-  /// affichée pendant que l'app est déjà ouverte au premier plan — les deux
+  /// affichée pendant que l'app est déjà ouverte au premier plan - les deux
   /// autres cas (app en arrière-plan / fermée) sont gérés séparément via
   /// FirebaseMessaging.onMessageOpenedApp et getInitialMessage (voir
   /// messaging_providers.dart, qui a accès à `ref` contrairement à ce service).

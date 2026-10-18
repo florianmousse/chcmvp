@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
 
 /// Cartes « temps forts » affichées dans un PageView horizontal sur l'écran
-/// d'accueil — chaque carte met en avant une stat-clé avec un design
+/// d'accueil - chaque carte met en avant une stat-clé avec un design
 /// visuel distinctif (gradient, grand emoji, nom du joueur, valeur).
 class HighlightCardsSection extends StatelessWidget {
   const HighlightCardsSection({super.key, required this.cards});

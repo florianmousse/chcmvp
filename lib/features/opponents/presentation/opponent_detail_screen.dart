@@ -5,7 +5,7 @@ import 'package:chc_mvp/core/models/opponent_model.dart';
 import 'package:chc_mvp/core/widgets/opponent_logo.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 
-/// Écran de détail d'un adversaire — bilan des confrontations et historique.
+/// Écran de détail d'un adversaire - bilan des confrontations et historique.
 class OpponentDetailScreen extends ConsumerWidget {
   const OpponentDetailScreen({super.key, required this.opponent});
   final OpponentModel opponent;
@@ -29,15 +29,16 @@ class OpponentDetailScreen extends ConsumerWidget {
       body: matchesAsync.when(
         data: (allMatches) {
           // Filtrer les matchs avec cet adversaire et un score
-          final confrontations = allMatches
-              .where(
-                (m) =>
-                    m.opponentId == opponent.id &&
-                    m.scoreHome != null &&
-                    m.scoreAway != null,
-              )
-              .toList()
-            ..sort((a, b) => b.date.compareTo(a.date));
+          final confrontations =
+              allMatches
+                  .where(
+                    (m) =>
+                        m.opponentId == opponent.id &&
+                        m.scoreHome != null &&
+                        m.scoreAway != null,
+                  )
+                  .toList()
+                ..sort((a, b) => b.date.compareTo(a.date));
 
           // Calculer le bilan
           var wins = 0;
@@ -131,12 +132,9 @@ class _BilanCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _statColumn('Matchs', '$played', theme),
-                _statColumn('Victoires', '$wins', theme,
-                    color: Colors.green),
-                _statColumn('Nuls', '$draws', theme,
-                    color: Colors.orange),
-                _statColumn('Défaites', '$losses', theme,
-                    color: Colors.red),
+                _statColumn('Victoires', '$wins', theme, color: Colors.green),
+                _statColumn('Nuls', '$draws', theme, color: Colors.orange),
+                _statColumn('Défaites', '$losses', theme, color: Colors.red),
               ],
             ),
             const SizedBox(height: 16),
@@ -145,10 +143,18 @@ class _BilanCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _statColumn('Buts marqués', '$goalsFor', theme,
-                    color: Colors.green),
-                _statColumn('Buts encaissés', '$goalsAgainst', theme,
-                    color: Colors.red),
+                _statColumn(
+                  'Buts marqués',
+                  '$goalsFor',
+                  theme,
+                  color: Colors.green,
+                ),
+                _statColumn(
+                  'Buts encaissés',
+                  '$goalsAgainst',
+                  theme,
+                  color: Colors.red,
+                ),
                 _statColumn(
                   'Diff.',
                   '${goalsFor - goalsAgainst >= 0 ? '+' : ''}${goalsFor - goalsAgainst}',
@@ -163,7 +169,12 @@ class _BilanCard extends StatelessWidget {
     );
   }
 
-  Widget _statColumn(String label, String value, ThemeData theme, {Color? color}) {
+  Widget _statColumn(
+    String label,
+    String value,
+    ThemeData theme, {
+    Color? color,
+  }) {
     return Column(
       children: [
         Text(
@@ -195,14 +206,18 @@ class _ConfrontationTile extends StatelessWidget {
     final resultIcon = isWin
         ? Icons.check_circle
         : isDraw
-            ? Icons.remove_circle
-            : Icons.cancel;
+        ? Icons.remove_circle
+        : Icons.cancel;
     final resultColor = isWin
         ? Colors.green
         : isDraw
-            ? Colors.orange
-            : Colors.red;
-    final resultLabel = isWin ? 'V' : isDraw ? 'N' : 'D';
+        ? Colors.orange
+        : Colors.red;
+    final resultLabel = isWin
+        ? 'V'
+        : isDraw
+        ? 'N'
+        : 'D';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),

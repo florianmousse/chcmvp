@@ -13,7 +13,7 @@ class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   /// À appeler une seule fois au démarrage de l'app (voir main.dart), avant
-  /// tout appel à signInWithGoogle — obligatoire depuis google_sign_in v7.
+  /// tout appel à signInWithGoogle - obligatoire depuis google_sign_in v7.
   Future<void> initializeGoogleSignIn() => _googleSignIn.initialize();
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -46,7 +46,7 @@ class AuthService {
 
   /// Passe par notre serveur (e-mail personnalisé au nom et à la couleur du
   /// club) plutôt que par Firebase directement, qui enverrait sinon depuis
-  /// noreply@chc-mvp.firebaseapp.com — voir server/src/routes/auth.ts.
+  /// noreply@chc-mvp.firebaseapp.com - voir server/src/routes/auth.ts.
   /// Route volontairement publique côté serveur : quelqu'un qui a oublié
   /// son mot de passe n'est par définition pas connecté.
   Future<void> sendPasswordResetEmail(String email) async {
@@ -77,7 +77,7 @@ class AuthService {
         ); // annulé par l'utilisateur, pas une vraie erreur
       }
       throw AuthFailure(
-        'Connexion Google échouée : ${e.code} — ${e.description ?? "(pas de détail)"}',
+        'Connexion Google échouée : ${e.code} - ${e.description ?? "(pas de détail)"}',
       );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'popup-closed-by-user' ||

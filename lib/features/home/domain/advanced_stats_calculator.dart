@@ -3,10 +3,10 @@ import 'dart:math';
 import 'package:chc_mvp/features/ranking/data/ranking_repository.dart';
 
 /// Fonctions pures (sans dépendance Firebase) pour calculer les statistiques
-/// avancées affichées sur l'écran d'accueil — testables unitairement avec
+/// avancées affichées sur l'écran d'accueil - testables unitairement avec
 /// des données fictives.
 
-/// Stats de jeu agrégées d'un joueur — utilisé par [funFact] et les sections
+/// Stats de jeu agrégées d'un joueur - utilisé par [funFact] et les sections
 /// d'accueil. Découplé du provider pour rester dans le domaine pur.
 class GameStats {
   const GameStats({
@@ -31,7 +31,7 @@ class GameStats {
 // ---------------------------------------------------------------------------
 
 /// Retourne l'UID du joueur ayant reçu des votes du plus grand nombre de
-/// coéquipiers *distincts sur un seul match* — le max de
+/// coéquipiers *distincts sur un seul match* - le max de
 /// `distinctVotersThisMatch` parmi tous les matchs de la saison. On ne peut
 /// pas cumuler les votants distincts sur plusieurs matchs car les mêmes
 /// votants reviennent d'un match à l'autre, ce qui donnerait un total
@@ -114,7 +114,7 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
 // ---------------------------------------------------------------------------
 
 /// Retourne (uid, pourcentageProgression) du joueur ayant le plus progressé
-/// entre ses 5 premiers matchs et la suite — null si personne n'a assez de
+/// entre ses 5 premiers matchs et la suite - null si personne n'a assez de
 /// matchs ou si aucune progression.
 ({String uid, double progressionPercent})? seasonRevelation(
   Map<String, List<PlayerHistoryPoint>> allHistories,
@@ -187,7 +187,7 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
 }) {
   final weekNumber = _isoWeekNumber(now);
 
-  // 10 catégories fixes — on en choisit une par numéro de semaine.
+  // 10 catégories fixes - on en choisit une par numéro de semaine.
   // Même si les données évoluent en cours de semaine, la catégorie
   // sélectionnée ne change pas jusqu'au lundi suivant.
   final category = weekNumber % 10;
@@ -304,10 +304,9 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
     // Catégorie 5 : meilleur buteur de la saison
     case 5:
       if (gameStats != null && gameStats.isNotEmpty) {
-        final sorted = gameStats.entries
-            .where((e) => e.value.goals > 0)
-            .toList()
-          ..sort((a, b) => b.value.goals.compareTo(a.value.goals));
+        final sorted =
+            gameStats.entries.where((e) => e.value.goals > 0).toList()
+              ..sort((a, b) => b.value.goals.compareTo(a.value.goals));
         if (sorted.isNotEmpty) {
           final e = sorted.first;
           final ratio = e.value.matchesPlayed > 0
@@ -324,16 +323,16 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
       return (
         emoji: '⚽',
         title: 'En attente de buts',
-        body: 'Aucun but enregistré cette saison. Le premier buteur se fera remarquer !',
+        body:
+            'Aucun but enregistré cette saison. Le premier buteur se fera remarquer !',
       );
 
     // Catégorie 6 : meilleur passeur
     case 6:
       if (gameStats != null && gameStats.isNotEmpty) {
-        final sorted = gameStats.entries
-            .where((e) => e.value.assists > 0)
-            .toList()
-          ..sort((a, b) => b.value.assists.compareTo(a.value.assists));
+        final sorted =
+            gameStats.entries.where((e) => e.value.assists > 0).toList()
+              ..sort((a, b) => b.value.assists.compareTo(a.value.assists));
         if (sorted.isNotEmpty) {
           final e = sorted.first;
           return (
@@ -354,15 +353,19 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
     case 7:
       if (gameStats != null && gameStats.isNotEmpty) {
         final fairPlayers = gameStats.entries
-            .where((e) =>
-                e.value.matchesPlayed >= 3 &&
-                e.value.greenCards == 0 &&
-                e.value.yellowCards == 0 &&
-                e.value.redCards == 0)
+            .where(
+              (e) =>
+                  e.value.matchesPlayed >= 3 &&
+                  e.value.greenCards == 0 &&
+                  e.value.yellowCards == 0 &&
+                  e.value.redCards == 0,
+            )
             .toList();
         if (fairPlayers.isNotEmpty) {
           final best = fairPlayers
-            ..sort((a, b) => b.value.matchesPlayed.compareTo(a.value.matchesPlayed));
+            ..sort(
+              (a, b) => b.value.matchesPlayed.compareTo(a.value.matchesPlayed),
+            );
           return (
             emoji: '😇',
             title: 'Ange du terrain',
@@ -374,7 +377,8 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
       return (
         emoji: '😇',
         title: 'Fair-play',
-        body: 'Pas encore assez de données pour élire le joueur le plus fair-play.',
+        body:
+            'Pas encore assez de données pour élire le joueur le plus fair-play.',
       );
 
     // Catégorie 8 : buteur mais pas sur le podium des votes
@@ -397,19 +401,28 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
       return (
         emoji: '🤔',
         title: 'Pas de stat insolite cette semaine',
-        body: 'Aucun buteur n\'est passé sous les radars du podium cette saison.',
+        body:
+            'Aucun buteur n\'est passé sous les radars du podium cette saison.',
       );
 
     // Catégorie 9 : joueur le plus polyvalent (buts + passes + cartons verts)
     case 9:
       if (gameStats != null && gameStats.isNotEmpty) {
         final polyvalent = gameStats.entries
-            .where((e) => e.value.goals > 0 && e.value.assists > 0 && e.value.greenCards > 0)
+            .where(
+              (e) =>
+                  e.value.goals > 0 &&
+                  e.value.assists > 0 &&
+                  e.value.greenCards > 0,
+            )
             .toList();
         if (polyvalent.isNotEmpty) {
-          polyvalent.sort((a, b) =>
-              (b.value.goals + b.value.assists + b.value.greenCards)
-                  .compareTo(a.value.goals + a.value.assists + a.value.greenCards));
+          polyvalent.sort(
+            (a, b) => (b.value.goals + b.value.assists + b.value.greenCards)
+                .compareTo(
+                  a.value.goals + a.value.assists + a.value.greenCards,
+                ),
+          );
           final e = polyvalent.first;
           return (
             emoji: '🦸',
@@ -422,7 +435,8 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
       return (
         emoji: '🦸',
         title: 'Le couteau suisse',
-        body: 'Aucun joueur n\'a encore combiné buts, passes et cartons verts cette saison.',
+        body:
+            'Aucun joueur n\'a encore combiné buts, passes et cartons verts cette saison.',
       );
   }
 
@@ -489,7 +503,8 @@ class MatchForOpponent {
 Map<String, OpponentRecord> opponentRecords(List<MatchForOpponent> matches) {
   final map = <String, OpponentRecord>{};
   for (final m in matches) {
-    final existing = map[m.opponentId] ??
+    final existing =
+        map[m.opponentId] ??
         OpponentRecord(opponentId: m.opponentId, opponentName: m.opponentName);
     map[m.opponentId] = OpponentRecord(
       opponentId: m.opponentId,

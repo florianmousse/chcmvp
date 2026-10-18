@@ -20,7 +20,7 @@ import 'package:chc_mvp/features/voting/presentation/vote_screen.dart';
 import 'package:chc_mvp/features/voting/presentation/voting_providers.dart';
 import 'package:intl/intl.dart';
 
-/// Tableau de bord perso — volontairement différent de l'onglet Matchs (qui
+/// Tableau de bord perso - volontairement différent de l'onglet Matchs (qui
 /// liste tout) : ici, seulement ce qui demande une action ou donne un aperçu
 /// rapide (vote en attente, ma position au classement, ma participation,
 /// forme de l'équipe, progression, prochain match, dernier résultat).
@@ -257,7 +257,7 @@ class _SwipableSectionState extends State<_SwipableSection> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Section 2 — À l'affiche (votes ouverts + prochain match + dernier résultat)
+// Section 2 - À l'affiche (votes ouverts + prochain match + dernier résultat)
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _ActionCardsSection extends ConsumerWidget {
@@ -277,7 +277,7 @@ class _ActionCardsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pages = <Widget>[];
 
-    // Votes ouverts — on n'ajoute que ceux pour lesquels le joueur
+    // Votes ouverts - on n'ajoute que ceux pour lesquels le joueur
     // n'a PAS encore voté (sinon on a un bloc vide dans le PageView).
     for (final match in votingOpen) {
       final hasVoted = ref.watch(hasVotedProvider(match.id)).value ?? true;
@@ -307,7 +307,7 @@ class _ActionCardsSection extends ConsumerWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Section 4 — Les temps forts
+// Section 4 - Les temps forts
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _HighlightCardsWrapper extends ConsumerWidget {
@@ -357,7 +357,7 @@ class _HighlightCardsWrapper extends ConsumerWidget {
       }
     }
 
-    // 🚀 Meilleure progression (existant — plus grand écart par rapport à
+    // 🚀 Meilleure progression (existant - plus grand écart par rapport à
     //     la moyenne personnelle au dernier match)
     if (recentMatches.isNotEmpty) {
       final latestMatch = recentMatches.first;
@@ -482,7 +482,7 @@ class _HighlightCardsWrapper extends ConsumerWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Section 5 — Records de la saison
+// Section 5 - Records de la saison
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _SeasonRecordsWrapper extends ConsumerWidget {
@@ -729,7 +729,7 @@ class _SeasonRecordsWrapper extends ConsumerWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Section 3 — Stat insolite + duel de la semaine
+// Section 3 - Stat insolite + duel de la semaine
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _FunStatWrapper extends ConsumerWidget {
@@ -982,7 +982,7 @@ class _MyRankingCard extends ConsumerWidget {
 }
 
 /// Combien de fois l'utilisateur a voté sur les matchs où il a été présent
-/// (et où le vote a au moins été ouvert — impossible de voter avant), avec
+/// (et où le vote a au moins été ouvert - impossible de voter avant), avec
 /// un petit 🔥 si au moins 2 votes d'affilée sans en rater un.
 class _VotingParticipationCard extends ConsumerWidget {
   const _VotingParticipationCard({required this.uid, required this.allMatches});
@@ -1243,7 +1243,7 @@ class _LastResultCard extends ConsumerWidget {
 }
 
 /// Affiche le logo du club depuis les assets locaux (core/config/
-/// club_config.dart) — chargement instantané, pas de requête réseau.
+/// club_config.dart) - chargement instantané, pas de requête réseau.
 class _ClubLogo extends StatelessWidget {
   const _ClubLogo();
 

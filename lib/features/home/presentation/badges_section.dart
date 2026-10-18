@@ -2,7 +2,7 @@ import 'package:flutter/material.dart' hide Badge;
 import 'package:chc_mvp/features/home/domain/badge_model.dart';
 import 'package:intl/intl.dart';
 
-/// Section badges — affiche TOUS les badges (gagnés + non gagnés).
+/// Section badges - affiche TOUS les badges (gagnés + non gagnés).
 /// Les badges gagnés sont mis en valeur. Les badges non gagnés apparaissent
 /// avec un « ? » et une opacité réduite pour montrer ce qu'il y a à débloquer.
 /// Tap sur n'importe quel badge → BottomSheet avec le détail et l'état.

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Affiche le logo local choisi pour un match (voir MatchModel.opponentLogoAsset
 /// et le sélecteur dans MatchFormScreen), ou une icône de secours si aucun
-/// n'a été choisi — jamais de requête réseau.
+/// n'a été choisi - jamais de requête réseau.
 class OpponentLogo extends StatelessWidget {
   const OpponentLogo({super.key, required this.logoAssetPath, this.size = 40});
 

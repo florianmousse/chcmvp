@@ -109,7 +109,7 @@ class TeamsListScreen extends ConsumerWidget {
         title: const Text('Supprimer cette équipe ?'),
         content: Text(
           'Les membres et matchs déjà associés à "${team.name}" garderont ce nom '
-          "jusqu'à modification manuelle — rien n'est supprimé en cascade.",
+          "jusqu'à modification manuelle - rien n'est supprimé en cascade.",
         ),
         actions: [
           TextButton(

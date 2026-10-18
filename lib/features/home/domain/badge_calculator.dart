@@ -18,7 +18,7 @@ class BadgeCalculator {
   /// [playerVotedCount] Nombre de matchs où le joueur a effectivement voté.
   /// [isSeasonFinished] Si true, la saison est terminée et les badges de fin
   ///                    de saison (MVP, Votant assidu) peuvent être décernés.
-  /// [gameStats]        Stats de jeu agrégées (buts, passes, cartons) — peut
+  /// [gameStats]        Stats de jeu agrégées (buts, passes, cartons) - peut
   ///                    être null si aucune stat de jeu n'a été saisie.
   static List<Badge> compute({
     required String uid,
@@ -35,20 +35,18 @@ class BadgeCalculator {
     final badges = <Badge>[];
     const def = Badge.allDefinitions;
 
-    // 🏆 MVP de la saison — numéro 1 au classement général EN FIN DE SAISON.
+    // 🏆 MVP de la saison - numéro 1 au classement général EN FIN DE SAISON.
     //     Pas attribué en cours de saison (ça n'aurait pas de sens).
-    if (isSeasonFinished &&
-        ranking.isNotEmpty &&
-        ranking.first.uid == uid) {
+    if (isSeasonFinished && ranking.isNotEmpty && ranking.first.uid == uid) {
       badges.add(def[BadgeType.mvpSaison]!);
     }
 
-    // 🔥 Série top 3 — 5 matchs consécutifs ou plus dans le top 3
+    // 🔥 Série top 3 - 5 matchs consécutifs ou plus dans le top 3
     if (bestTop3StreakEver(history) >= 5) {
       badges.add(def[BadgeType.serieTop3]!);
     }
 
-    // 🤝 Plébiscité — au moins un match où 80%+ des coéquipiers ont voté
+    // 🤝 Plébiscité - au moins un match où 80%+ des coéquipiers ont voté
     //     pour lui. On utilise `distinctVotersThisMatch` dans l'historique.
     for (final h in history) {
       if (h.distinctVotersThisMatch != null &&
@@ -62,7 +60,7 @@ class BadgeCalculator {
       }
     }
 
-    // 🚀 Révélation — +40% de moyenne par rapport aux 5 premiers matchs
+    // 🚀 Révélation - +40% de moyenne par rapport aux 5 premiers matchs
     if (history.length >= 6) {
       final first5 =
           history.take(5).map((h) => h.points).reduce((a, b) => a + b) / 5.0;
@@ -74,7 +72,7 @@ class BadgeCalculator {
       }
     }
 
-    // 🗳️ Votant assidu — 100% de participation sur une saison complète
+    // 🗳️ Votant assidu - 100% de participation sur une saison complète
     //     UNIQUEMENT décerné une fois la saison terminée.
     if (isSeasonFinished &&
         seasonMatchCount > 0 &&
@@ -83,25 +81,26 @@ class BadgeCalculator {
       badges.add(def[BadgeType.votantAssidu]!);
     }
 
-    // 💯 Centurion — 100+ points cumulés
+    // 💯 Centurion - 100+ points cumulés
     if (stats.totalPoints >= 100) {
       badges.add(def[BadgeType.centurion]!);
     }
 
-    // 🥇 Podium Master — 10+ premières places
+    // 🥇 Podium Master - 10+ premières places
     if (stats.firstCount >= 10) {
       badges.add(def[BadgeType.podiumMaster]!);
     }
 
-    // 📊 Régularité — écart-type le plus faible parmi tous les joueurs
+    // 📊 Régularité - écart-type le plus faible parmi tous les joueurs
     //     ayant joué au moins 5 matchs
     if (history.length >= 5) {
       final myStdDev = standardDeviation(history.map((h) => h.points).toList());
       var isLowest = true;
       for (final other in allHistories.entries) {
         if (other.key == uid || other.value.length < 5) continue;
-        final otherStdDev =
-            standardDeviation(other.value.map((h) => h.points).toList());
+        final otherStdDev = standardDeviation(
+          other.value.map((h) => h.points).toList(),
+        );
         if (otherStdDev < myStdDev) {
           isLowest = false;
           break;
@@ -115,17 +114,17 @@ class BadgeCalculator {
     // ─── Badges basés sur les stats de jeu ───
 
     if (gameStats != null) {
-      // ⚽ Buteur — 5+ buts en une saison
+      // ⚽ Buteur - 5+ buts en une saison
       if (gameStats.goals >= 5) {
         badges.add(def[BadgeType.buteur]!);
       }
 
-      // 🎯 Passeur d'or — 5+ passes décisives en une saison
+      // 🎯 Passeur d'or - 5+ passes décisives en une saison
       if (gameStats.assists >= 5) {
         badges.add(def[BadgeType.passeurDor]!);
       }
 
-      // 😇 Fair-play — 0 carton (vert/jaune/rouge) en 5+ matchs
+      // 😇 Fair-play - 0 carton (vert/jaune/rouge) en 5+ matchs
       if (gameStats.matchesPlayed >= 5 &&
           gameStats.greenCards == 0 &&
           gameStats.yellowCards == 0 &&
@@ -133,7 +132,7 @@ class BadgeCalculator {
         badges.add(def[BadgeType.fairPlay]!);
       }
 
-      // 🦸 Couteau suisse — 3+ buts, 3+ passes, 3+ cartons verts
+      // 🦸 Couteau suisse - 3+ buts, 3+ passes, 3+ cartons verts
       if (gameStats.goals >= 3 &&
           gameStats.assists >= 3 &&
           gameStats.greenCards >= 3) {

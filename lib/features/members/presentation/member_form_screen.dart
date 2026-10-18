@@ -120,7 +120,7 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    "Aucune équipe créée pour l'instant — crée-en une depuis Administration > Équipes.",
+                    "Aucune équipe créée pour l'instant - crée-en une depuis Administration > Équipes.",
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),

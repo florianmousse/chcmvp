@@ -24,7 +24,7 @@ class TeamsRepository {
   Future<void> renameTeam(String id, String name) =>
       _teams.doc(id).update({'name': name});
 
-  /// Ne supprime que l'équipe elle-même — les membres et matchs qui la
+  /// Ne supprime que l'équipe elle-même - les membres et matchs qui la
   /// référencent encore gardent l'ancien nom en texte jusqu'à modification
   /// manuelle (pas de suppression en cascade, pour éviter de casser
   /// l'historique des matchs déjà joués).

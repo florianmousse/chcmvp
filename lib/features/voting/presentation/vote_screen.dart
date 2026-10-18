@@ -32,7 +32,7 @@ class _VoteScreenState extends ConsumerState<VoteScreen> {
     final submitting = ref.watch(voteSubmissionControllerProvider).isLoading;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Vote — ${widget.match.label}')),
+      appBar: AppBar(title: Text('Vote - ${widget.match.label}')),
       body: ResponsiveContent(
         maxWidth: 760,
         child: ListView(

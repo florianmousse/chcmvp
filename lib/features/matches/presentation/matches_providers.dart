@@ -21,7 +21,7 @@ final matchesListProvider = StreamProvider.family<List<MatchModel>, String?>((
   return ref.watch(matchesRepositoryProvider).watchMatches(team: team);
 });
 
-/// Résumé calculé côté serveur (voir server/src/matchListeners.ts) — entries
+/// Résumé calculé côté serveur (voir server/src/matchListeners.ts) - entries
 /// par joueur + mvpUid. Nul tant que le vote n'est pas clôturé.
 final matchResultProvider =
     StreamProvider.family<Map<String, dynamic>?, String>((ref, matchId) {

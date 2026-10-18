@@ -1,6 +1,6 @@
 /// Un logo à ajouter ici = un fichier ajouté dans assets/team_logos/ (voir
 /// pubspec.yaml) + une entrée dans cette liste + un rebuild de l'app. Une
-/// fois fait, il apparaît dans le sélecteur du formulaire de match — plus
+/// fois fait, il apparaît dans le sélecteur du formulaire de match - plus
 /// besoin de retoucher au code pour l'associer à tel ou tel match ensuite,
 /// ça se choisit directement dans l'app à la création/édition.
 class TeamLogoOption {

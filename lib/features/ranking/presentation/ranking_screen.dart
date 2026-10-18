@@ -126,7 +126,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
     );
   }
 
-  /// Idem pour les saisons — une saison va de septembre à août (voir
+  /// Idem pour les saisons - une saison va de septembre à août (voir
   /// core/utils/season.dart), pas de l'année civile.
   void _jumpToAdjacentSeason(
     List<String> availableSeasons,
@@ -251,7 +251,7 @@ class _RankingList extends ConsumerWidget {
             final entry = entries[i];
             final member = membersByUid[entry.uid];
             // Classement "olympique" : le rang affiché est 1 + le nombre de
-            // joueurs strictement devant en points — deux joueurs à égalité
+            // joueurs strictement devant en points - deux joueurs à égalité
             // de points affichent donc le MÊME rang (ex: 1er, 1er, 3e), et
             // pas des rangs consécutifs comme le ferait l'index brut de la
             // liste. Même logique que pour le classement d'un match (voir
@@ -287,7 +287,7 @@ class _RankingList extends ConsumerWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Onglet Stats — classement des buteurs, passeurs, fair-play
+// Onglet Stats - classement des buteurs, passeurs, fair-play
 // ═══════════════════════════════════════════════════════════════════════════
 
 enum _StatSort { goals, assists, fairPlay }

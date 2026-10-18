@@ -1,8 +1,8 @@
-# Club Hockey — App de vote MVP
+# Club Hockey - App de vote MVP
 
 Application mobile Flutter pour un club de hockey : vote des meilleurs joueurs après chaque
 match, classement général/mensuel/par saison, badges, statistiques avancées, et notifications
-push — le tout sur un backend auto-hébergé (gratuit, sans carte bancaire).
+push - le tout sur un backend auto-hébergé (gratuit, sans carte bancaire).
 
 Voir **[ARCHITECTURE.md](ARCHITECTURE.md)** pour le détail de l'architecture, du modèle
 de données, du système de badges, et de la feuille de route.
@@ -20,18 +20,18 @@ les réglages Vercel, Firebase et CORS, ainsi que les points juridiques à valid
 
 ## Fonctionnalités
 
-- 🗳️ **Vote** — Chaque joueur présent vote pour ses 3 meilleurs coéquipiers (anonyme)
-- 🏆 **Classement** — Général, mensuel, par saison avec barème configurable (5/3/1 pts)
-- 📊 **Statistiques** — Évolution par match, moyenne, badges, série top 3
-- 🏠 **Écran d'accueil** — Stat insolite hebdomadaire, duel de la semaine, temps forts, records
-- 🔔 **Notifications push** — Ouverture/clôture du vote, rappels automatiques
-- 🤖 **Cycle de vote automatique** — Ouverture 2h après le match, rappel 24h avant clôture, clôture à 48h
-- 🛡️ **Admin** — Gestion des membres, création de matchs, feuille de présence
-- 🎖️ **8 badges** — MVP de la saison, En feu, Plébiscité, Révélation, Votant assidu, etc.
+- 🗳️ **Vote** - Chaque joueur présent vote pour ses 3 meilleurs coéquipiers (anonyme)
+- 🏆 **Classement** - Général, mensuel, par saison avec barème configurable (5/3/1 pts)
+- 📊 **Statistiques** - Évolution par match, moyenne, badges, série top 3
+- 🏠 **Écran d'accueil** - Stat insolite hebdomadaire, duel de la semaine, temps forts, records
+- 🔔 **Notifications push** - Ouverture/clôture du vote, rappels automatiques
+- 🤖 **Cycle de vote automatique** - Ouverture 2h après le match, rappel 24h avant clôture, clôture à 48h
+- 🛡️ **Admin** - Gestion des membres, création de matchs, feuille de présence
+- 🎖️ **8 badges** - MVP de la saison, En feu, Plébiscité, Révélation, Votant assidu, etc.
 
 ---
 
-## Mise en route — App Flutter
+## Mise en route - App Flutter
 
 ### Prérequis
 
@@ -68,7 +68,7 @@ flutter run
 
 ---
 
-## Mise en route — Backend (VPS)
+## Mise en route - Backend (VPS)
 
 Le backend Node.js/Express/TypeScript tourne dans `server/` sur un VPS (Oracle Cloud Free
 Tier, gratuit sans carte bancaire). Il gère :
@@ -91,14 +91,14 @@ npm start
 
 ### Déploiement en production
 
-Voir **[deploy/DEPLOY_ORACLE_VPS.md](deploy/DEPLOY_ORACLE_VPS.md)** — guide pas à pas
+Voir **[deploy/DEPLOY_ORACLE_VPS.md](deploy/DEPLOY_ORACLE_VPS.md)** - guide pas à pas
 pour Oracle Cloud Free Tier, incluant les pièges classiques (double pare-feu, iptables).
 
 ---
 
 ## Déploiement Play Store
 
-Voir **[deploy/PLAYSTORE_DEPLOYMENT.md](deploy/PLAYSTORE_DEPLOYMENT.md)** — de la
+Voir **[deploy/PLAYSTORE_DEPLOYMENT.md](deploy/PLAYSTORE_DEPLOYMENT.md)** - de la
 génération de la clé de signature à la publication.
 
 ---
@@ -127,6 +127,7 @@ firestore/             # Règles de sécurité Firestore
 ## Sécurité
 
 ⚠️ **Ne jamais commiter** :
+
 - Clés de service Firebase (`*-firebase-adminsdk-*.json`)
 - Fichiers `.env` (mots de passe SMTP, chemins vers les clés)
 - Keystores Android (`*.jks`, `*.keystore`, `key.properties`)
@@ -147,4 +148,4 @@ Ces pages sont servies par Express depuis `server/public/` et sont requises par 
 
 ## Licence
 
-Projet privé — usage réservé au club.
+Projet privé - usage réservé au club.

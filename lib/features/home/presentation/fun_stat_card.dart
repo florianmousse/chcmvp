@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Carte « stat insolite de la semaine » — rotation hebdomadaire (change
+/// Carte « stat insolite de la semaine » - rotation hebdomadaire (change
 /// chaque lundi). Design amusant avec un fond teinté et une icône fun.
 class FunStatCard extends StatelessWidget {
   const FunStatCard({
@@ -35,9 +35,7 @@ class FunStatCard extends StatelessWidget {
               theme.colorScheme.tertiaryContainer.withValues(
                 alpha: isDark ? 0.3 : 0.5,
               ),
-              isDark
-                  ? theme.colorScheme.surface
-                  : Colors.white,
+              isDark ? theme.colorScheme.surface : Colors.white,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -92,7 +90,7 @@ class FunStatCard extends StatelessWidget {
   }
 }
 
-/// Carte « duel de la semaine » — deux joueurs proches au classement
+/// Carte « duel de la semaine » - deux joueurs proches au classement
 /// mis en compétition avec un design versus.
 class WeeklyDuelCard extends StatelessWidget {
   const WeeklyDuelCard({
@@ -181,9 +179,7 @@ class WeeklyDuelCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              pts1 == pts2
-                  ? 'Égalité parfaite !'
-                  : '$leader prend la tête !',
+              pts1 == pts2 ? 'Égalité parfaite !' : '$leader prend la tête !',
               style: theme.textTheme.bodySmall?.copyWith(
                 fontStyle: FontStyle.italic,
               ),

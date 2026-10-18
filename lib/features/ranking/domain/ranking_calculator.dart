@@ -4,7 +4,7 @@ import 'package:chc_mvp/core/models/match_model.dart';
 part 'ranking_calculator.freezed.dart';
 
 /// Entrée : le résumé déjà agrégé d'UN match (voir results/summary dans
-/// ARCHITECTURE.md), pas les votes bruts — ceux-ci ne sont jamais exposés
+/// ARCHITECTURE.md), pas les votes bruts - ceux-ci ne sont jamais exposés
 /// côté client pour préserver l'anonymat.
 class MatchResultSummary {
   MatchResultSummary({
@@ -34,7 +34,7 @@ class PlayerRankingEntry with _$PlayerRankingEntry {
 }
 
 /// Pure Dart, sans dépendance Firebase : peut tourner côté client pour un
-/// aperçu instantané ET côté Cloud Function pour le calcul officiel —
+/// aperçu instantané ET côté Cloud Function pour le calcul officiel -
 /// même code, un seul endroit à faire évoluer si le barème change.
 class RankingCalculator {
   static List<PlayerRankingEntry> compute({

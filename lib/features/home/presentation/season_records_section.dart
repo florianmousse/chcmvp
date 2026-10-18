@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Section « Records de la saison » — grille compacte de 4 stats iconiques.
+/// Section « Records de la saison » - grille compacte de 4 stats iconiques.
 class SeasonRecordsSection extends StatelessWidget {
   const SeasonRecordsSection({super.key, required this.records});
 

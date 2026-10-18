@@ -25,7 +25,7 @@ class MembersListScreen extends ConsumerWidget {
         maxWidth: 1040,
         child: membersAsync.when(
           data: (members) {
-            // Admins en premier, puis ordre alphabétique dans chaque groupe —
+            // Admins en premier, puis ordre alphabétique dans chaque groupe -
             // tri côté app pour ne pas dépendre d'un index composite Firestore.
             final sorted = [...members]
               ..sort((a, b) {

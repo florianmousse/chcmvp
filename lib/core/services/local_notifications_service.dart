@@ -20,7 +20,7 @@ class LocalNotificationsService {
     await _plugin.initialize(
       const InitializationSettings(android: androidInit, iOS: iosInit),
       // Notification locale tapée pendant que l'app est déjà ouverte (premier
-      // plan) — le seul des 3 cas qui ne passe pas par les callbacks FCM
+      // plan) - le seul des 3 cas qui ne passe pas par les callbacks FCM
       // classiques (onMessageOpenedApp / getInitialMessage), puisque ce n'est
       // pas FCM qui affiche la notif dans ce cas, mais nous.
       onDidReceiveNotificationResponse: (response) =>

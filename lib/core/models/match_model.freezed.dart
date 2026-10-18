@@ -235,11 +235,11 @@ mixin _$MatchModel {
   bool get allowSelfVote => throw _privateConstructorUsedError;
 
   /// Chemin de l'asset local choisi dans le formulaire de match (voir
-  /// core/config/team_logos_catalog.dart) — null si aucun logo choisi,
+  /// core/config/team_logos_catalog.dart) - null si aucun logo choisi,
   /// auquel cas une icône de secours s'affiche à la place.
   String? get opponentLogoAsset => throw _privateConstructorUsedError;
 
-  /// Score du match — saisi par l'admin après le match.
+  /// Score du match - saisi par l'admin après le match.
   int? get scoreHome => throw _privateConstructorUsedError;
   int? get scoreAway => throw _privateConstructorUsedError;
 
@@ -600,12 +600,12 @@ class _$MatchModelImpl extends _MatchModel {
   final bool allowSelfVote;
 
   /// Chemin de l'asset local choisi dans le formulaire de match (voir
-  /// core/config/team_logos_catalog.dart) — null si aucun logo choisi,
+  /// core/config/team_logos_catalog.dart) - null si aucun logo choisi,
   /// auquel cas une icône de secours s'affiche à la place.
   @override
   final String? opponentLogoAsset;
 
-  /// Score du match — saisi par l'admin après le match.
+  /// Score du match - saisi par l'admin après le match.
   @override
   final int? scoreHome;
   @override
@@ -744,12 +744,12 @@ abstract class _MatchModel extends MatchModel {
   bool get allowSelfVote;
 
   /// Chemin de l'asset local choisi dans le formulaire de match (voir
-  /// core/config/team_logos_catalog.dart) — null si aucun logo choisi,
+  /// core/config/team_logos_catalog.dart) - null si aucun logo choisi,
   /// auquel cas une icône de secours s'affiche à la place.
   @override
   String? get opponentLogoAsset;
 
-  /// Score du match — saisi par l'admin après le match.
+  /// Score du match - saisi par l'admin après le match.
   @override
   int? get scoreHome;
   @override

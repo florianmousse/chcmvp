@@ -1,4 +1,4 @@
-# App Club Hockey — Architecture & Feuille de route
+# App Club Hockey - Architecture & Feuille de route
 
 ## 1. Stack
 
@@ -42,7 +42,7 @@ server/
     matchListeners.ts  # listener Firestore temps réel (onSnapshot), calcul des résultats
     matchTally.ts      # logique de décompte des votes
     scheduledVoting.ts # cycle automatique des votes (4 phases)
-    notify.ts          # notifications push (FCM) — notifyMembers, notifyAdmins
+    notify.ts          # notifications push (FCM) - notifyMembers, notifyAdmins
     season.ts          # calcul de l'identifiant de saison
     rebuildRankings.ts # reconstruction complète des classements
     mailer.ts          # envoi d'emails (inscription)
@@ -126,27 +126,27 @@ indépendamment de leur participation au match.
 
 L'écran d'accueil est organisé en sections avec des cartes swipables :
 
-1. **Mon classement** — position, médailles, points
-2. **📅 À l'affiche** (swipable) — votes ouverts, prochain match, dernier résultat
-3. **🎲 Le coin des stats** (swipable) — stat insolite hebdomadaire, duel de la semaine
-4. **Les temps forts** (swipable) — joueur en forme, révélation, plébiscité, meilleure série
-5. **Records de la saison** — meilleur buteur, plus longue série
-6. **Ma participation aux votes** — taux + série en cours
+1. **Mon classement** - position, médailles, points
+2. **📅 À l'affiche** (swipable) - votes ouverts, prochain match, dernier résultat
+3. **🎲 Le coin des stats** (swipable) - stat insolite hebdomadaire, duel de la semaine
+4. **Les temps forts** (swipable) - joueur en forme, révélation, plébiscité, meilleure série
+5. **Records de la saison** - meilleur buteur, plus longue série
+6. **Ma participation aux votes** - taux + série en cours
 
 ## 6. Badges
 
 8 badges calculés côté client (pas persistés en Firestore) :
 
-| Badge | Emoji | Condition | Quand |
-|-------|:-----:|-----------|-------|
-| MVP de la saison | 🏆 | 1ᵉʳ au classement général | Fin de saison |
-| En feu | 🔥 | 5+ matchs consécutifs dans le top 3 | En cours |
-| Plébiscité | 🤝 | 80%+ des coéquipiers ont voté pour lui sur un match | En cours |
-| Révélation | 🚀 | Moyenne +40% vs 5 premiers matchs | En cours |
-| Votant assidu | 🗳️ | 100% de participation aux votes sur une saison | Fin de saison |
-| Centurion | 💯 | 100+ points cumulés | En cours |
-| Podium Master | 🥇 | 10+ premières places | En cours |
-| Régularité | 📊 | Écart-type le plus faible (min. 5 matchs) | En cours |
+| Badge            | Emoji | Condition                                           | Quand         |
+| ---------------- | :---: | --------------------------------------------------- | ------------- |
+| MVP de la saison |  🏆   | 1ᵉʳ au classement général                           | Fin de saison |
+| En feu           |  🔥   | 5+ matchs consécutifs dans le top 3                 | En cours      |
+| Plébiscité       |  🤝   | 80%+ des coéquipiers ont voté pour lui sur un match | En cours      |
+| Révélation       |  🚀   | Moyenne +40% vs 5 premiers matchs                   | En cours      |
+| Votant assidu    |  🗳️   | 100% de participation aux votes sur une saison      | Fin de saison |
+| Centurion        |  💯   | 100+ points cumulés                                 | En cours      |
+| Podium Master    |  🥇   | 10+ premières places                                | En cours      |
+| Régularité       |  📊   | Écart-type le plus faible (min. 5 matchs)           | En cours      |
 
 Les badges non gagnés apparaissent verrouillés (opacité réduite + « ? ») dans le profil.
 
@@ -156,20 +156,20 @@ Les badges non gagnés apparaissent verrouillés (opacité réduite + « ? ») d
   `isActive`, ou le profil d'un autre membre.
 - Un membre ne peut créer un vote que pour `voterUid == request.auth.uid`, seulement si
   le statut du match est `voting_open`, et seulement une fois.
-- Personne ne peut lire les votes individuels des autres — seul le serveur (admin SDK) y
+- Personne ne peut lire les votes individuels des autres - seul le serveur (admin SDK) y
   accède pour calculer `results/summary`.
 - Seul un admin peut écrire dans `matches/`, `users/*.role`, `settings/`.
 
-## 8. Backend VPS — remplace Cloud Functions
+## 8. Backend VPS - remplace Cloud Functions
 
 **Pourquoi** : Firebase Cloud Functions exige le plan payant Blaze (carte bancaire
 obligatoire). Le club préfère un VPS Oracle Cloud Free Tier, gratuit et toujours allumé.
 
-| Cloud Functions | Équivalent VPS |
-|---|---|
-| Trigger Firestore (`onDocumentUpdated`) | `onSnapshot` longue durée (`matchListeners.ts`) |
-| Tâche planifiée (Cloud Scheduler) | `node-cron` toutes les 10 min (`scheduledVoting.ts`) |
-| Fonction `onCall` | Route Express + auth middleware (`routes/*.ts`) |
+| Cloud Functions                         | Équivalent VPS                                       |
+| --------------------------------------- | ---------------------------------------------------- |
+| Trigger Firestore (`onDocumentUpdated`) | `onSnapshot` longue durée (`matchListeners.ts`)      |
+| Tâche planifiée (Cloud Scheduler)       | `node-cron` toutes les 10 min (`scheduledVoting.ts`) |
+| Fonction `onCall`                       | Route Express + auth middleware (`routes/*.ts`)      |
 
 Côté Flutter, `cloud_functions` est remplacé par des requêtes HTTP
 (`core/services/server_client.dart`) avec le token Firebase en en-tête `Authorization`.
@@ -183,12 +183,12 @@ selon `authStateProvider` + `currentUserProfileProvider`. La coquille utilise un
 `IndexedStack` : `HomeScreen`, `MatchesScreen`, `RankingScreen`, `ProfileScreen`, et
 `AdminDashboardScreen` (visible si admin).
 
-## 10. Feuille de route — ce qu'il reste à construire
+## 10. Feuille de route - ce qu'il reste à construire
 
-| Fonctionnalité | Où la brancher |
-|---|---|
-| Export Excel / PDF | Nouvelle route HTTP admin sur le serveur, génère et renvoie le fichier directement |
-| Partage réseaux sociaux du MVP | `share_plus` sur l'écran résultats |
-| Admin web | Second client Flutter Web (ou React) ciblant les mêmes collections Firestore |
-| Réinitialisation de saison | Fonction admin qui archive `rankings_cache` courant puis le vide |
-| Photos de profil | À remplacer par un service gratuit (Cloudinary) — Firebase Storage exige aussi Blaze |
+| Fonctionnalité                 | Où la brancher                                                                       |
+| ------------------------------ | ------------------------------------------------------------------------------------ |
+| Export Excel / PDF             | Nouvelle route HTTP admin sur le serveur, génère et renvoie le fichier directement   |
+| Partage réseaux sociaux du MVP | `share_plus` sur l'écran résultats                                                   |
+| Admin web                      | Second client Flutter Web (ou React) ciblant les mêmes collections Firestore         |
+| Réinitialisation de saison     | Fonction admin qui archive `rankings_cache` courant puis le vide                     |
+| Photos de profil               | À remplacer par un service gratuit (Cloudinary) - Firebase Storage exige aussi Blaze |

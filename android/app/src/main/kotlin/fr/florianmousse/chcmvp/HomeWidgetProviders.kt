@@ -43,7 +43,7 @@ class RankingWidgetProvider : HomeWidgetProvider() {
             val suffix = widgetData.getString("ranking_suffix", null)
             val points = widgetData.getString("ranking_points", null)
 
-            views.setTextViewText(R.id.ranking_position, position ?: "—")
+            views.setTextViewText(R.id.ranking_position, position ?: "-")
             views.setTextViewText(R.id.ranking_suffix, suffix ?: "")
             views.setTextViewText(R.id.ranking_points, points ?: "")
 
@@ -66,7 +66,7 @@ class LastResultWidgetProvider : HomeWidgetProvider() {
             val opponent = widgetData.getString("last_result_opponent", null)
             val mvp = widgetData.getString("last_result_mvp", null)
 
-            views.setTextViewText(R.id.last_result_score, score ?: "—")
+            views.setTextViewText(R.id.last_result_score, score ?: "-")
             views.setTextViewText(R.id.last_result_opponent, opponent ?: "")
             views.setTextViewText(R.id.last_result_mvp, mvp ?: "")
 

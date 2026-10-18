@@ -6,7 +6,7 @@ import 'package:chc_mvp/core/utils/firestore_json.dart';
 /// Les lectures et la mise à jour de son propre profil passent par Firestore
 /// direct (autorisé par les règles). Les opérations sensibles (créer un
 /// compte, désactiver, changer de rôle, supprimer) passent par le serveur du
-/// VPS (server/src/routes/members.ts) — impossible à faire depuis le client
+/// VPS (server/src/routes/members.ts) - impossible à faire depuis le client
 /// avec le SDK Auth seul sans déconnecter l'admin.
 class MembersRepository {
   MembersRepository(this._firestore, this._server);
@@ -47,7 +47,7 @@ class MembersRepository {
     });
   }
 
-  /// Modification des champs non sensibles (nom, équipe, numéro, photo) —
+  /// Modification des champs non sensibles (nom, équipe, numéro, photo) -
   /// autorisée directement par les règles Firestore pour un admin.
   Future<void> updateProfile(String uid, Map<String, dynamic> fields) {
     return _firestore.collection('users').doc(uid).update(fields);

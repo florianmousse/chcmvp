@@ -19,7 +19,7 @@ import 'package:chc_mvp/features/matches/presentation/matches_screen.dart';
 import 'package:chc_mvp/features/profile/presentation/profile_screen.dart';
 import 'package:chc_mvp/features/ranking/presentation/ranking_screen.dart';
 
-// Généré par `flutterfire configure` — non inclus dans ce paquet, à créer
+// Généré par `flutterfire configure` - non inclus dans ce paquet, à créer
 // en connectant le projet Firebase du club.
 import 'firebase_options.dart';
 
@@ -33,7 +33,7 @@ Future<void> main() async {
     if (!kIsWeb) await GoogleSignIn.instance.initialize();
   } catch (e) {
     // Ne bloque pas le démarrage de l'app si la config Google Sign-In
-    // (SHA-1, google-services.json...) n'est pas encore en place — l'e-mail/
+    // (SHA-1, google-services.json...) n'est pas encore en place - l'e-mail/
     // mot de passe reste utilisable, seul le bouton Google échouera.
     debugPrint('GoogleSignIn.initialize a échoué : $e');
   }
@@ -46,7 +46,7 @@ class HockeyClubApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // messagingSyncProvider contient un ref.listen(authStateProvider, ...)
-    // qui enregistre/retire le token FCM à la connexion/déconnexion — un
+    // qui enregistre/retire le token FCM à la connexion/déconnexion - un
     // provider Riverpod est paresseux et ne s'active que si quelque chose le
     // lit. Sans cette ligne, ce mécanisme n'était tout simplement jamais
     // démarré, d'où fcmTokens qui restait vide indéfiniment.
@@ -86,7 +86,7 @@ class HockeyClubApp extends ConsumerWidget {
 /// Bascule Connexion <-> Coquille principale (onglets) selon l'état d'auth,
 /// avec un état intermédiaire pour un compte authentifié Firebase mais sans
 /// fiche membre Firestore (ex: connexion Google avec un e-mail jamais
-/// invité par l'admin) — sinon _MainShell planterait sur un profil manquant.
+/// invité par l'admin) - sinon _MainShell planterait sur un profil manquant.
 class _RootRouter extends ConsumerWidget {
   const _RootRouter();
 

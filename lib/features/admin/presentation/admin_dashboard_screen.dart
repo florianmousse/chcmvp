@@ -184,7 +184,7 @@ class _RankingsMaintenanceCard extends StatelessWidget {
               'Recalcule entièrement les classements (général, mensuel, annuel) et les '
               'statistiques de chaque joueur, directement à partir des votes de chaque '
               'match clôturé. À utiliser si des chiffres semblent incohérents, ou après '
-              'une mise à jour du calcul des résultats — sans risque, ça repart toujours '
+              'une mise à jour du calcul des résultats - sans risque, ça repart toujours '
               'des votes réels plutôt que d\'accumuler par-dessus les données existantes.',
               style: theme.textTheme.bodySmall,
             ),

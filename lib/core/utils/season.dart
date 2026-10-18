@@ -1,5 +1,5 @@
 /// Identifiant de saison sportive : de septembre à août, comme côté serveur
-/// (voir server/src/season.ts) — un match de septembre 2026 appartient à la
+/// (voir server/src/season.ts) - un match de septembre 2026 appartient à la
 /// même saison qu'un match de mars 2027 (saison "2026-2027").
 String seasonId(DateTime date) {
   final startYear = date.month >= 9 ? date.year : date.year - 1;

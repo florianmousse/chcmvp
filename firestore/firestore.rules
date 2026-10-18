@@ -100,7 +100,7 @@ service cloud.firestore {
         allow write: if false; // uniquement via Cloud Function avec les privilèges admin
       }
 
-      // Stats individuelles (buts, passes, cartons) — saisies par l'admin.
+      // Stats individuelles (buts, passes, cartons) - saisies par l'admin.
       match /playerStats/{playerId} {
         allow read: if isActiveMember();
         allow create, update, delete: if isAdmin();

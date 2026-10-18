@@ -1,6 +1,6 @@
 # À placer dans /etc/nginx/sites-available/hockey-club puis lier dans
 # sites-enabled. Remplace chc-mvp.duckdns.org par ton propre sous-domaine
-# DuckDNS (gratuit, sans carte bancaire — voir DEPLOY_ORACLE_VPS.md § 0).
+# DuckDNS (gratuit, sans carte bancaire - voir DEPLOY_ORACLE_VPS.md § 0).
 # Lance `sudo certbot --nginx -d chc-mvp.duckdns.org` après coup pour le
 # HTTPS automatique (voir DEPLOY_ORACLE_VPS.md étape 7).
 

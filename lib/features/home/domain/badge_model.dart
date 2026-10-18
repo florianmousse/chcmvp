@@ -1,4 +1,4 @@
-/// Modèle de badge — représente un accomplissement qu'un joueur peut
+/// Modèle de badge - représente un accomplissement qu'un joueur peut
 /// débloquer au fil de la saison. Calculé côté client puis synchronisé
 /// dans Firestore (`userBadges/{userId}`) avec la date d'obtention.
 enum BadgeType {
@@ -98,8 +98,7 @@ class Badge {
       type: BadgeType.fairPlay,
       label: 'Fair-play',
       emoji: '😇',
-      description:
-          'Aucun carton jaune ou rouge en au moins 5 matchs joués.',
+      description: 'Aucun carton jaune ou rouge en au moins 5 matchs joués.',
     ),
     BadgeType.couteauSuisse: Badge(
       type: BadgeType.couteauSuisse,

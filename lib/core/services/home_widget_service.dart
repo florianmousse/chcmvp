@@ -18,11 +18,17 @@ class HomeWidgetService {
     if (match != null) {
       final date = DateFormat('EEEE d MMMM', 'fr_FR').format(match.date);
       final time = DateFormat('HH:mm', 'fr_FR').format(match.date);
-      await HomeWidget.saveWidgetData('next_match_opponent', 'vs ${match.opponent}');
+      await HomeWidget.saveWidgetData(
+        'next_match_opponent',
+        'vs ${match.opponent}',
+      );
       await HomeWidget.saveWidgetData('next_match_date', '📅 $date');
       await HomeWidget.saveWidgetData('next_match_time', '🕐 $time');
     } else {
-      await HomeWidget.saveWidgetData('next_match_opponent', 'Aucun match prévu');
+      await HomeWidget.saveWidgetData(
+        'next_match_opponent',
+        'Aucun match prévu',
+      );
       await HomeWidget.saveWidgetData('next_match_date', '');
       await HomeWidget.saveWidgetData('next_match_time', '');
     }
@@ -58,7 +64,7 @@ class HomeWidgetService {
     final hasScore = match.scoreHome != null && match.scoreAway != null;
     final scoreLabel = hasScore
         ? '${match.scoreHome} - ${match.scoreAway}'
-        : '—';
+        : '-';
     String resultEmoji = '';
     if (hasScore) {
       if (match.scoreHome! > match.scoreAway!) {
