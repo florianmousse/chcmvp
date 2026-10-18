@@ -38,8 +38,9 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
         MatchStatus.upcoming: 1,
         MatchStatus.votingClosed: 2,
       };
-      final cmp =
-          (statusOrder[a.status] ?? 9).compareTo(statusOrder[b.status] ?? 9);
+      final cmp = (statusOrder[a.status] ?? 9).compareTo(
+        statusOrder[b.status] ?? 9,
+      );
       if (cmp != 0) return cmp;
       if (a.status == MatchStatus.votingClosed) {
         return b.date.compareTo(a.date);
@@ -69,8 +70,10 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
               // ── Barre de filtres ──
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     _FilterChipBtn(
@@ -84,30 +87,33 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
                       label: 'Vote ouvert',
                       icon: Icons.how_to_vote_outlined,
                       selected: _filter == MatchStatus.votingOpen,
-                      onTap: () => setState(() => _filter =
-                          _filter == MatchStatus.votingOpen
-                              ? null
-                              : MatchStatus.votingOpen),
+                      onTap: () => setState(
+                        () => _filter = _filter == MatchStatus.votingOpen
+                            ? null
+                            : MatchStatus.votingOpen,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     _FilterChipBtn(
                       label: 'À venir',
                       icon: Icons.schedule_outlined,
                       selected: _filter == MatchStatus.upcoming,
-                      onTap: () => setState(() => _filter =
-                          _filter == MatchStatus.upcoming
-                              ? null
-                              : MatchStatus.upcoming),
+                      onTap: () => setState(
+                        () => _filter = _filter == MatchStatus.upcoming
+                            ? null
+                            : MatchStatus.upcoming,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     _FilterChipBtn(
                       label: 'Terminé',
                       icon: Icons.check_circle_outline,
                       selected: _filter == MatchStatus.votingClosed,
-                      onTap: () => setState(() => _filter =
-                          _filter == MatchStatus.votingClosed
-                              ? null
-                              : MatchStatus.votingClosed),
+                      onTap: () => setState(
+                        () => _filter = _filter == MatchStatus.votingClosed
+                            ? null
+                            : MatchStatus.votingClosed,
+                      ),
                     ),
                   ],
                 ),
@@ -115,13 +121,29 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
               // ── Liste des matchs ──
               Expanded(
                 child: sorted.isEmpty
-                    ? const Center(
-                        child: Text('Aucun match avec ce filtre.'))
+                    ? const Center(child: Text('Aucun match avec ce filtre.'))
+                    : MediaQuery.sizeOf(context).width >= 1100
+                    ? LayoutBuilder(
+                        builder: (context, constraints) =>
+                            SingleChildScrollView(
+                              padding: const EdgeInsets.all(16),
+                              child: Wrap(
+                                spacing: 16,
+                                runSpacing: 16,
+                                children: [
+                                  for (final match in sorted)
+                                    SizedBox(
+                                      width: (constraints.maxWidth - 48) / 2,
+                                      child: _MatchCard(match: match),
+                                    ),
+                                ],
+                              ),
+                            ),
+                      )
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                         itemCount: sorted.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 8),
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, i) =>
                             _MatchCard(match: sorted[i]),
                       ),
@@ -406,8 +428,9 @@ class _OpponentLogoTappable extends ConsumerWidget {
     return GestureDetector(
       onTap: () {
         final opponents = ref.read(opponentsListProvider).value ?? [];
-        final opp =
-            opponents.where((o) => o.id == match.opponentId).firstOrNull;
+        final opp = opponents
+            .where((o) => o.id == match.opponentId)
+            .firstOrNull;
         if (opp != null) {
           Navigator.of(context).push(
             MaterialPageRoute(

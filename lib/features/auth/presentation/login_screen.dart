@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'web_login_form.dart';
 import 'package:chc_mvp/core/widgets/legal_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/config/club_config.dart';
@@ -70,69 +73,84 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      TextFormField(
-                        controller: _email,
-                        decoration: const InputDecoration(
-                          labelText: 'E-mail',
-                          border: OutlineInputBorder(),
+                      if (kIsWeb)
+                        WebLoginForm(
+                          busy: _submittingEmail || _submittingGoogle,
+                          onSubmit: (email, password) {
+                            _email.text = email;
+                            _password.text = password;
+                            _submitEmailPassword();
+                          },
+                          onForgot: (email) {
+                            _email.text = email;
+                            _showForgotPasswordDialog();
+                          },
+                        )
+                      else ...[
+                        TextFormField(
+                          controller: _email,
+                          decoration: const InputDecoration(
+                            labelText: 'E-mail',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          autocorrect: false,
+                          autofillHints: const [
+                            AutofillHints.email,
+                            AutofillHints.username,
+                          ],
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Champ requis'
+                              : null,
                         ),
-                        keyboardType: TextInputType.emailAddress,
-                        autocorrect: false,
-                        autofillHints: const [
-                          AutofillHints.email,
-                          AutofillHints.username,
-                        ],
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Champ requis'
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _password,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Mot de passe',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _password,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'Mot de passe',
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
                             ),
                           ),
+                          autofillHints: const [AutofillHints.password],
+                          validator: (v) =>
+                              (v == null || v.isEmpty) ? 'Champ requis' : null,
+                          onFieldSubmitted: (_) => _submitEmailPassword(),
                         ),
-                        autofillHints: const [AutofillHints.password],
-                        validator: (v) =>
-                            (v == null || v.isEmpty) ? 'Champ requis' : null,
-                        onFieldSubmitted: (_) => _submitEmailPassword(),
-                      ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _submittingEmail
+                                ? null
+                                : _showForgotPasswordDialog,
+                            child: const Text('Mot de passe oublié ?'),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        FilledButton(
                           onPressed: _submittingEmail
                               ? null
-                              : _showForgotPasswordDialog,
-                          child: const Text('Mot de passe oublié ?'),
+                              : _submitEmailPassword,
+                          child: _submittingEmail
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Se connecter'),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      FilledButton(
-                        onPressed: _submittingEmail
-                            ? null
-                            : _submitEmailPassword,
-                        child: _submittingEmail
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text('Se connecter'),
-                      ),
+                      ],
                       const SizedBox(height: 20),
                       Row(
                         children: [
@@ -146,7 +164,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 20),
                       OutlinedButton.icon(
-                        onPressed: _submittingGoogle ? null : _submitGoogle,
+                        onPressed: _submittingGoogle || _submittingEmail
+                            ? null
+                            : _submitGoogle,
                         icon: _submittingGoogle
                             ? const SizedBox(
                                 height: 18,
@@ -178,12 +198,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submitEmailPassword() async {
+    if (_submittingEmail || _submittingGoogle) return;
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submittingEmail = true);
     try {
       await ref
           .read(authServiceProvider)
           .signIn(_email.text.trim(), _password.text);
+      if (!kIsWeb) TextInput.finishAutofillContext();
       // Pas besoin de naviguer manuellement : _RootRouter (main.dart) écoute
       // authStateProvider et bascule automatiquement vers l'app une fois connecté.
     } on AuthFailure catch (e) {
@@ -194,6 +216,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submitGoogle() async {
+    if (_submittingEmail || _submittingGoogle) return;
     setState(() => _submittingGoogle = true);
     try {
       await ref.read(authServiceProvider).signInWithGoogle();

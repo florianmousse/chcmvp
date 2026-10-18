@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/foundation.dart';
+import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:chc_mvp/core/widgets/legal_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
@@ -30,6 +31,108 @@ class ProfileScreen extends ConsumerWidget {
           if (profile == null)
             return const SizedBox.shrink(); // gardé par _AuthenticatedGate
 
+          final identity = <Widget>[
+            CircleAvatar(
+              radius: 40,
+              backgroundImage: profile.photoUrl != null
+                  ? NetworkImage(profile.photoUrl!)
+                  : null,
+              child: profile.photoUrl == null
+                  ? Text(
+                      profile.firstName.isNotEmpty ? profile.firstName[0] : '?',
+                      style: const TextStyle(fontSize: 28),
+                    )
+                  : null,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              profile.fullName,
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            Text(profile.team, textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: const Icon(Icons.email_outlined),
+              title: const Text('E-mail'),
+              subtitle: Text(profile.email),
+            ),
+            if (profile.jerseyNumber != null)
+              ListTile(
+                leading: const Icon(Icons.numbers),
+                title: const Text('Numéro de maillot'),
+                subtitle: Text('#${profile.jerseyNumber}'),
+              ),
+            ListTile(
+              leading: const Icon(Icons.bar_chart),
+              title: const Text('Mes statistiques'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => PlayerStatsScreen(
+                    uid: profile.uid,
+                    playerName: profile.fullName,
+                  ),
+                ),
+              ),
+            ),
+          ];
+          if (MediaQuery.sizeOf(context).width >= 1100) {
+            return ResponsiveContent(
+              maxWidth: 1200,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            children: [
+                              ...identity,
+                              const SizedBox(height: 24),
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.logout),
+                                label: const Text('Se déconnecter'),
+                                onPressed: () =>
+                                    ref.read(authServiceProvider).signOut(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: _BadgesWrapper(uid: profile.uid),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: _ThemeSelector(),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          const LegalLinks(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
@@ -169,11 +272,9 @@ class _BadgesWrapper extends ConsumerWidget {
 
     final now = DateTime.now();
     final currentSeason = seasonId(now);
-    final matchSeasons = closedMatches
-        .map((m) => seasonId(m.date))
-        .toSet();
-    final isSeasonFinished = matchSeasons.isNotEmpty &&
-        !matchSeasons.contains(currentSeason);
+    final matchSeasons = closedMatches.map((m) => seasonId(m.date)).toSet();
+    final isSeasonFinished =
+        matchSeasons.isNotEmpty && !matchSeasons.contains(currentSeason);
 
     final badges = BadgeCalculator.compute(
       uid: uid,
@@ -190,24 +291,22 @@ class _BadgesWrapper extends ConsumerWidget {
 
     // Synchroniser avec Firestore (n'écrit que les nouveaux badges)
     final computedTypes = badges.map((b) => b.type.name).toList();
-    final newTypes = computedTypes.where((t) => !storedDates.containsKey(t)).toList();
+    final newTypes = computedTypes
+        .where((t) => !storedDates.containsKey(t))
+        .toList();
     if (newTypes.isNotEmpty) {
       // Déclencher la sync en post-frame pour ne pas écrire pendant le build
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final written = await ref.read(badgesRepositoryProvider).syncBadges(
-          userId: uid,
-          computedBadgeTypes: computedTypes,
-        );
+        final written = await ref
+            .read(badgesRepositoryProvider)
+            .syncBadges(userId: uid, computedBadgeTypes: computedTypes);
         if (written.isNotEmpty && context.mounted) {
           _showBadgeCelebration(context, written);
         }
       });
     }
 
-    return BadgesSection(
-      earnedBadges: badges,
-      earnedDates: storedDates,
-    );
+    return BadgesSection(earnedBadges: badges, earnedDates: storedDates);
   }
 
   /// Récupère les GameStats agrégées pour un joueur depuis le provider.
@@ -260,32 +359,31 @@ class _BadgesWrapper extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            ...badgeInfos.map((b) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Text(b.emoji, style: const TextStyle(fontSize: 28)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              b.label,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+            ...badgeInfos.map(
+              (b) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Text(b.emoji, style: const TextStyle(fontSize: 28)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            b.label,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
                             ),
-                            Text(
-                              b.description,
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
+                          ),
+                          Text(b.description, style: theme.textTheme.bodySmall),
+                        ],
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -313,7 +411,10 @@ class _ThemeSelector extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.palette_outlined, color: theme.colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.palette_outlined,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 16),
               Text('Thème', style: theme.textTheme.bodyLarge),
             ],
@@ -341,7 +442,9 @@ class _ThemeSelector extends ConsumerWidget {
               ],
               selected: {current},
               onSelectionChanged: (selected) {
-                ref.read(themeModeProvider.notifier).setThemeMode(selected.first);
+                ref
+                    .read(themeModeProvider.notifier)
+                    .setThemeMode(selected.first);
               },
             ),
           ),

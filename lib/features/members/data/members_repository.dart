@@ -57,6 +57,10 @@ class MembersRepository {
     return _server.post('/members/$uid/active', {'isActive': isActive});
   }
 
+  Future<void> inviteExistingMember(String uid, Map<String, dynamic> fields) {
+    return _server.post('/members/$uid/invite', fields);
+  }
+
   Future<void> setRole(String uid, UserRole role) {
     return _server.post('/members/$uid/role', {'role': role.name});
   }

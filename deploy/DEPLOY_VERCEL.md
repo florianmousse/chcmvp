@@ -85,8 +85,8 @@ Recompiler et redémarrer le backend avec la procédure VPS habituelle :
 
 ```bash
 cd /opt/hockey-club-server
-npm ci
-npm run build
+sudo -u hockey npm ci
+sudo -u hockey npm run build
 sudo systemctl restart hockey-club-server
 ```
 
@@ -115,8 +115,8 @@ firebase emulators:exec --only firestore --project demo-chc-web --config firesto
 Pour vérifier les accès web du backend sans lancer les traitements du club :
 
 ```powershell
-npm --prefix server ci
-npm --prefix server run build
+sudo -u hockey npm --prefix server ci
+sudo -u hockey npm --prefix server run build
 node --test server/test/cors.test.cjs
 ```
 

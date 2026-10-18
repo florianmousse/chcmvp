@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/utils/season.dart' as season_util;
@@ -49,54 +50,60 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _RankingList(scope: 'general'),
-          Column(
-            children: [
-              _MonthPicker(
-                cursor: _monthCursor,
-                hasPrevious: availableMonths.any(
-                  (m) => m.compareTo(currentMonthKey) < 0,
+      body: ResponsiveContent(
+        maxWidth: 1000,
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _RankingList(scope: 'general'),
+            Column(
+              children: [
+                _MonthPicker(
+                  cursor: _monthCursor,
+                  hasPrevious: availableMonths.any(
+                    (m) => m.compareTo(currentMonthKey) < 0,
+                  ),
+                  hasNext: availableMonths.any(
+                    (m) => m.compareTo(currentMonthKey) > 0,
+                  ),
+                  onPrevious: () => _jumpToAdjacentMonth(
+                    availableMonths,
+                    currentMonthKey,
+                    -1,
+                  ),
+                  onNext: () =>
+                      _jumpToAdjacentMonth(availableMonths, currentMonthKey, 1),
                 ),
-                hasNext: availableMonths.any(
-                  (m) => m.compareTo(currentMonthKey) > 0,
+                Expanded(child: _RankingList(scope: currentMonthKey)),
+              ],
+            ),
+            Column(
+              children: [
+                _SeasonPicker(
+                  startYear: _seasonStartYear,
+                  hasPrevious: availableSeasons.any(
+                    (s) => s.compareTo(currentSeasonKey) < 0,
+                  ),
+                  hasNext: availableSeasons.any(
+                    (s) => s.compareTo(currentSeasonKey) > 0,
+                  ),
+                  onPrevious: () => _jumpToAdjacentSeason(
+                    availableSeasons,
+                    currentSeasonKey,
+                    -1,
+                  ),
+                  onNext: () => _jumpToAdjacentSeason(
+                    availableSeasons,
+                    currentSeasonKey,
+                    1,
+                  ),
                 ),
-                onPrevious: () =>
-                    _jumpToAdjacentMonth(availableMonths, currentMonthKey, -1),
-                onNext: () =>
-                    _jumpToAdjacentMonth(availableMonths, currentMonthKey, 1),
-              ),
-              Expanded(child: _RankingList(scope: currentMonthKey)),
-            ],
-          ),
-          Column(
-            children: [
-              _SeasonPicker(
-                startYear: _seasonStartYear,
-                hasPrevious: availableSeasons.any(
-                  (s) => s.compareTo(currentSeasonKey) < 0,
-                ),
-                hasNext: availableSeasons.any(
-                  (s) => s.compareTo(currentSeasonKey) > 0,
-                ),
-                onPrevious: () => _jumpToAdjacentSeason(
-                  availableSeasons,
-                  currentSeasonKey,
-                  -1,
-                ),
-                onNext: () => _jumpToAdjacentSeason(
-                  availableSeasons,
-                  currentSeasonKey,
-                  1,
-                ),
-              ),
-              Expanded(child: _RankingList(scope: currentSeasonKey)),
-            ],
-          ),
-          const _StatsRankingTab(),
-        ],
+                Expanded(child: _RankingList(scope: currentSeasonKey)),
+              ],
+            ),
+            const _StatsRankingTab(),
+          ],
+        ),
       ),
     );
   }
@@ -306,10 +313,7 @@ class _StatsRankingTabState extends ConsumerState<_StatsRankingTab> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SegmentedButton<_StatSort>(
             segments: const [
-              ButtonSegment(
-                value: _StatSort.goals,
-                label: Text('⚽ Buteurs'),
-              ),
+              ButtonSegment(value: _StatSort.goals, label: Text('⚽ Buteurs')),
               ButtonSegment(
                 value: _StatSort.assists,
                 label: Text('🅰️ Passeurs'),
@@ -367,8 +371,9 @@ class _StatsRankingTabState extends ConsumerState<_StatsRankingTab> {
                       child: Text(
                         '$rank',
                         style: TextStyle(
-                          fontWeight:
-                              rank <= 3 ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: rank <= 3
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                     ),
@@ -404,15 +409,18 @@ class _StatValue extends StatelessWidget {
           children: [
             Text(
               '${stats.goals}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 4),
             const Text('⚽'),
             if (stats.assists > 0) ...[
               const SizedBox(width: 8),
-              Text('${stats.assists}', style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                '${stats.assists}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
               const Text(' 🅰️'),
             ],
           ],
@@ -423,15 +431,18 @@ class _StatValue extends StatelessWidget {
           children: [
             Text(
               '${stats.assists}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 4),
             const Text('🅰️'),
             if (stats.goals > 0) ...[
               const SizedBox(width: 8),
-              Text('${stats.goals}', style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                '${stats.goals}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
               const Text(' ⚽'),
             ],
           ],
@@ -441,11 +452,20 @@ class _StatValue extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (stats.greenCards > 0)
-              Text('${stats.greenCards} 🟢 ', style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                '${stats.greenCards} 🟢 ',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             if (stats.yellowCards > 0)
-              Text('${stats.yellowCards} 🟡 ', style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                '${stats.yellowCards} 🟡 ',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             if (stats.redCards > 0)
-              Text('${stats.redCards} 🔴', style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                '${stats.redCards} 🔴',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             if (stats.totalCards == 0)
               Text('✅', style: Theme.of(context).textTheme.bodySmall),
           ],

@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/user_model.dart';
@@ -20,24 +21,27 @@ class MembersListScreen extends ConsumerWidget {
           context,
         ).push(MaterialPageRoute(builder: (_) => const MemberFormScreen())),
       ),
-      body: membersAsync.when(
-        data: (members) {
-          // Admins en premier, puis ordre alphabétique dans chaque groupe —
-          // tri côté app pour ne pas dépendre d'un index composite Firestore.
-          final sorted = [...members]
-            ..sort((a, b) {
-              if (a.isAdmin != b.isAdmin) return a.isAdmin ? -1 : 1;
-              return a.lastName.compareTo(b.lastName);
-            });
+      body: ResponsiveContent(
+        maxWidth: 1040,
+        child: membersAsync.when(
+          data: (members) {
+            // Admins en premier, puis ordre alphabétique dans chaque groupe —
+            // tri côté app pour ne pas dépendre d'un index composite Firestore.
+            final sorted = [...members]
+              ..sort((a, b) {
+                if (a.isAdmin != b.isAdmin) return a.isAdmin ? -1 : 1;
+                return a.lastName.compareTo(b.lastName);
+              });
 
-          return ListView.separated(
-            itemCount: sorted.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, i) => _MemberTile(member: sorted[i]),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erreur : $e')),
+            return ListView.separated(
+              itemCount: sorted.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, i) => _MemberTile(member: sorted[i]),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Erreur : $e')),
+        ),
       ),
     );
   }
@@ -79,6 +83,7 @@ class _MemberTile extends ConsumerWidget {
       subtitle: Text(
         '${member.team}'
         '${member.jerseyNumber != null ? " · #${member.jerseyNumber}" : ""}'
+        '${!member.hasAccount ? " · sans compte" : ""}'
         '${!member.isActive ? " · désactivé" : ""}',
       ),
       trailing: PopupMenuButton<String>(
@@ -110,14 +115,15 @@ class _MemberTile extends ConsumerWidget {
             value: 'toggle_active',
             child: Text(member.isActive ? 'Désactiver' : 'Réactiver'),
           ),
-          PopupMenuItem(
-            value: 'toggle_admin',
-            child: Text(
-              member.isAdmin
-                  ? "Retirer le rôle admin"
-                  : 'Promouvoir administrateur',
+          if (member.hasAccount)
+            PopupMenuItem(
+              value: 'toggle_admin',
+              child: Text(
+                member.isAdmin
+                    ? "Retirer le rôle admin"
+                    : 'Promouvoir administrateur',
+              ),
             ),
-          ),
           const PopupMenuItem(
             value: 'delete',
             child: Text('Supprimer', style: TextStyle(color: Colors.red)),
@@ -133,7 +139,7 @@ class _MemberTile extends ConsumerWidget {
       builder: (context) => AlertDialog(
         title: const Text('Supprimer ce membre ?'),
         content: Text(
-          '${member.fullName} perdra définitivement son compte et son historique de vote sera anonymisé. Cette action est irréversible.',
+          'La fiche de ${member.fullName} et son accès seront supprimés. Les résultats des matchs restent conservés. Pour garder son nom dans les classements, préfère désactiver sa fiche.',
         ),
         actions: [
           TextButton(

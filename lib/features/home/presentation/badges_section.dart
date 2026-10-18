@@ -25,8 +25,28 @@ class BadgesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final allBadges = Badge.allDefinitions.values.toList();
-    final earnedTypes = earnedBadges.map((b) => b.type).toSet();
+    final earnedTypes = {
+      ...earnedBadges.map((b) => b.type),
+      ...BadgeType.values.where((type) => earnedDates.containsKey(type.name)),
+    };
+    final definitions = Badge.allDefinitions.values.toList();
+    final earned =
+        definitions.where((b) => earnedTypes.contains(b.type)).toList()
+          ..sort((a, b) {
+            final aDate = earnedDates[a.type.name];
+            final bDate = earnedDates[b.type.name];
+            if (aDate != null && bDate != null) {
+              final order = bDate.compareTo(aDate);
+              if (order != 0) return order;
+            } else if (aDate != bDate) {
+              return aDate == null ? -1 : 1; // Just earned, before persistence.
+            }
+            return a.type.index.compareTo(b.type.index);
+          });
+    final allBadges = [
+      ...earned,
+      ...definitions.where((b) => !earnedTypes.contains(b.type)),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,7 +56,7 @@ class BadgesSection extends StatelessWidget {
             Text(title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(width: 8),
             Text(
-              '${earnedBadges.length}/${allBadges.length}',
+              '${earnedTypes.length}/${allBadges.length}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.outline,
               ),
@@ -44,23 +64,40 @@ class BadgesSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 110,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: allBadges.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              final badge = allBadges[index];
-              final earned = earnedTypes.contains(badge.type);
-              return _BadgeChip(
-                badge: badge,
-                earned: earned,
-                earnedDate: earnedDates[badge.type.name],
-              );
-            },
+        if (MediaQuery.sizeOf(context).width >= 1100)
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final badge in allBadges)
+                SizedBox(
+                  height: 110,
+                  child: _BadgeChip(
+                    badge: badge,
+                    earned: earnedTypes.contains(badge.type),
+                    earnedDate: earnedDates[badge.type.name],
+                  ),
+                ),
+            ],
+          )
+        else
+          SizedBox(
+            height: 110,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: allBadges.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final badge = allBadges[index];
+                final earned = earnedTypes.contains(badge.type);
+                return _BadgeChip(
+                  badge: badge,
+                  earned: earned,
+                  earnedDate: earnedDates[badge.type.name],
+                );
+              },
+            ),
           ),
-        ),
         const SizedBox(height: 16),
       ],
     );
@@ -191,8 +228,8 @@ class _BadgeChip extends StatelessWidget {
               child: Text(
                 earned
                     ? earnedDate != null
-                        ? '✅ Obtenu le ${DateFormat('dd/MM/yyyy', 'fr_FR').format(earnedDate)}'
-                        : '✅ Obtenu'
+                          ? '✅ Obtenu le ${DateFormat('dd/MM/yyyy', 'fr_FR').format(earnedDate)}'
+                          : '✅ Obtenu'
                     : '🔒 Non débloqué',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: earned ? Colors.green : theme.colorScheme.outline,

@@ -65,3 +65,10 @@ test('Auto-vote autorisé et ancien match sans dates', async () => {
   const result = await vote('self', 'voter', ['voter','b','c']);
   assert.equal(result.status, 200, await result.text());
 });
+
+test('Un joueur sans e-mail ni compte Auth peut recevoir un vote', async () => {
+  await seed('users/guest', { firstName:'Alex', lastName:'Martin', email:'', isActive:true, role:'member' });
+  await seed('matches/guest-candidate', { ...match, presentPlayerIds:['voter','guest','b','c'] });
+  const result = await vote('guest-candidate', 'voter', ['guest','b','c']);
+  assert.equal(result.status, 200, await result.text());
+});

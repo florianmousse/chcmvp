@@ -19,7 +19,7 @@ class SeasonRecordsSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         GridView.count(
-          crossAxisCount: 2,
+          crossAxisCount: MediaQuery.sizeOf(context).width >= 1100 ? 4 : 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 10,
@@ -105,4 +105,3 @@ class _RecordTile extends StatelessWidget {
     );
   }
 }
-

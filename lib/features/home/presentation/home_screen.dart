@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/config/club_config.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
@@ -69,6 +70,54 @@ class HomeScreen extends ConsumerWidget {
               final recentClosed = closed
                   .take(3)
                   .toList(); // du plus récent au plus ancien
+
+              if (MediaQuery.sizeOf(context).width >= 1100) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (profile != null)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _MyRankingCard(uid: profile.uid)),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: _VotingParticipationCard(
+                              uid: profile.uid,
+                              allMatches: matches,
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 8),
+                    _ActionCardsSection(
+                      votingOpen: votingOpen,
+                      upcoming: upcoming,
+                      closed: closed,
+                      profile: profile,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _HighlightCardsWrapper(
+                            recentMatches: recentClosed,
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+                        const Expanded(child: _FunStatWrapper()),
+                      ],
+                    ),
+                    _SeasonRecordsWrapper(closedMatches: closed),
+                    if (matches.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Text('Aucun match pour le moment.'),
+                      ),
+                  ],
+                );
+              }
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -185,17 +234,22 @@ class _SwipableSectionState extends State<_SwipableSection> {
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        SizedBox(
-          height: widget.pageHeight,
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: widget.pages.length,
-            itemBuilder: (_, i) => Padding(
-              padding: EdgeInsets.only(right: widget.pages.length > 1 ? 12 : 0),
-              child: widget.pages[i],
+        if (MediaQuery.sizeOf(context).width >= 1100)
+          DesktopCardGrid(children: widget.pages, height: widget.pageHeight)
+        else
+          SizedBox(
+            height: widget.pageHeight,
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: widget.pages.length,
+              itemBuilder: (_, i) => Padding(
+                padding: EdgeInsets.only(
+                  right: widget.pages.length > 1 ? 12 : 0,
+                ),
+                child: widget.pages[i],
+              ),
             ),
           ),
-        ),
         const SizedBox(height: 16),
       ],
     );
@@ -378,9 +432,7 @@ class _HighlightCardsWrapper extends ConsumerWidget {
     final aggAsync = ref.watch(aggregatedPlayerStatsProvider);
     final aggData = aggAsync.value;
     if (aggData != null && aggData.isNotEmpty) {
-      final scorers = aggData.entries
-          .where((e) => e.value.goals > 0)
-          .toList()
+      final scorers = aggData.entries.where((e) => e.value.goals > 0).toList()
         ..sort((a, b) => b.value.goals.compareTo(a.value.goals));
       if (scorers.isNotEmpty) {
         final top = scorers.first;
@@ -389,7 +441,8 @@ class _HighlightCardsWrapper extends ConsumerWidget {
             emoji: '⚽',
             title: 'Meilleur buteur',
             playerName: name(top.key),
-            value: '${top.value.goals} but${top.value.goals > 1 ? 's' : ''} en ${top.value.matchesPlayed} matchs',
+            value:
+                '${top.value.goals} but${top.value.goals > 1 ? 's' : ''} en ${top.value.matchesPlayed} matchs',
             subtitle: top.value.assists > 0
                 ? '+ ${top.value.assists} passe${top.value.assists > 1 ? 's' : ''} D.'
                 : null,
@@ -398,14 +451,19 @@ class _HighlightCardsWrapper extends ConsumerWidget {
       }
 
       // 😇 Joueur le plus fair-play (max matchs sans jaune/rouge)
-      final fairPlayers = aggData.entries
-          .where((e) =>
-              e.value.matchesPlayed >= 2 &&
-              e.value.greenCards == 0 &&
-              e.value.yellowCards == 0 &&
-              e.value.redCards == 0)
-          .toList()
-        ..sort((a, b) => b.value.matchesPlayed.compareTo(a.value.matchesPlayed));
+      final fairPlayers =
+          aggData.entries
+              .where(
+                (e) =>
+                    e.value.matchesPlayed >= 2 &&
+                    e.value.greenCards == 0 &&
+                    e.value.yellowCards == 0 &&
+                    e.value.redCards == 0,
+              )
+              .toList()
+            ..sort(
+              (a, b) => b.value.matchesPlayed.compareTo(a.value.matchesPlayed),
+            );
       if (fairPlayers.isNotEmpty) {
         final fp = fairPlayers.first;
         cards.add(
@@ -523,9 +581,7 @@ class _SeasonRecordsWrapper extends ConsumerWidget {
     final aggData = aggAsync.value;
     if (aggData != null && aggData.isNotEmpty) {
       // ⚽ Meilleur buteur
-      final scorers = aggData.entries
-          .where((e) => e.value.goals > 0)
-          .toList()
+      final scorers = aggData.entries.where((e) => e.value.goals > 0).toList()
         ..sort((a, b) => b.value.goals.compareTo(a.value.goals));
       if (scorers.isNotEmpty) {
         records.add(
@@ -539,10 +595,9 @@ class _SeasonRecordsWrapper extends ConsumerWidget {
       }
 
       // 🅰️ Meilleur passeur
-      final assisters = aggData.entries
-          .where((e) => e.value.assists > 0)
-          .toList()
-        ..sort((a, b) => b.value.assists.compareTo(a.value.assists));
+      final assisters =
+          aggData.entries.where((e) => e.value.assists > 0).toList()
+            ..sort((a, b) => b.value.assists.compareTo(a.value.assists));
       if (assisters.isNotEmpty) {
         records.add(
           SeasonRecord(
@@ -555,14 +610,19 @@ class _SeasonRecordsWrapper extends ConsumerWidget {
       }
 
       // 😇 Le plus fair-play
-      final fairPlay = aggData.entries
-          .where((e) =>
-              e.value.matchesPlayed >= 2 &&
-              e.value.greenCards == 0 &&
-              e.value.yellowCards == 0 &&
-              e.value.redCards == 0)
-          .toList()
-        ..sort((a, b) => b.value.matchesPlayed.compareTo(a.value.matchesPlayed));
+      final fairPlay =
+          aggData.entries
+              .where(
+                (e) =>
+                    e.value.matchesPlayed >= 2 &&
+                    e.value.greenCards == 0 &&
+                    e.value.yellowCards == 0 &&
+                    e.value.redCards == 0,
+              )
+              .toList()
+            ..sort(
+              (a, b) => b.value.matchesPlayed.compareTo(a.value.matchesPlayed),
+            );
       if (fairPlay.isNotEmpty) {
         records.add(
           SeasonRecord(
@@ -622,8 +682,9 @@ class _SeasonRecordsWrapper extends ConsumerWidget {
 
       final victim = favoriteVictim(oppMatches);
       if (victim != null && victim.wins >= 1) {
-        final victimOpp =
-            opponents.where((o) => o.id == victim.opponentId).firstOrNull;
+        final victimOpp = opponents
+            .where((o) => o.id == victim.opponentId)
+            .firstOrNull;
         records.add(
           SeasonRecord(
             emoji: '😈',
@@ -632,19 +693,19 @@ class _SeasonRecordsWrapper extends ConsumerWidget {
             detail: '${victim.wins} V / ${victim.draws} N / ${victim.losses} D',
             onTap: victimOpp != null
                 ? () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            OpponentDetailScreen(opponent: victimOpp),
-                      ),
-                    )
+                    MaterialPageRoute(
+                      builder: (_) => OpponentDetailScreen(opponent: victimOpp),
+                    ),
+                  )
                 : null,
           ),
         );
       }
       final bully = nemesis(oppMatches);
       if (bully != null && bully.losses >= 1) {
-        final bullyOpp =
-            opponents.where((o) => o.id == bully.opponentId).firstOrNull;
+        final bullyOpp = opponents
+            .where((o) => o.id == bully.opponentId)
+            .firstOrNull;
         records.add(
           SeasonRecord(
             emoji: '💀',
@@ -653,11 +714,10 @@ class _SeasonRecordsWrapper extends ConsumerWidget {
             detail: '${bully.wins} V / ${bully.draws} N / ${bully.losses} D',
             onTap: bullyOpp != null
                 ? () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            OpponentDetailScreen(opponent: bullyOpp),
-                      ),
-                    )
+                    MaterialPageRoute(
+                      builder: (_) => OpponentDetailScreen(opponent: bullyOpp),
+                    ),
+                  )
                 : null,
           ),
         );

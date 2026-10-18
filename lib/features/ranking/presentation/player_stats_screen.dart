@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/features/badges/presentation/badges_providers.dart';
@@ -23,103 +24,112 @@ class PlayerStatsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(playerName)),
-      body: statsAsync.when(
-        data: (stats) => ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // ── Badges du joueur (lus depuis Firestore) ──
-            _PublicBadgesSection(uid: uid, playerName: playerName),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _StatCard(
-                  label: 'Matchs joués',
-                  value: '${stats.matchesPlayed}',
-                ),
-                const SizedBox(width: 12),
-                _StatCard(
-                  label: 'Votes reçus',
-                  value: '${stats.votesReceived}',
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _StatCard(
-                  label: 'Moy. points/match',
-                  value: stats.averagePointsPerMatch.toStringAsFixed(1),
-                ),
-                const SizedBox(width: 12),
-                _StatCard(label: 'Total points', value: '${stats.totalPoints}'),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _StatCard(
-                  label: '🥇 1ères places',
-                  value: '${stats.firstCount}',
-                ),
-                const SizedBox(width: 12),
-                _StatCard(
-                  label: '🥈🥉 2e/3e places',
-                  value: '${stats.secondCount + stats.thirdCount}',
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // ─── Stats de jeu ───
-            Text(
-              'Stats de jeu',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            _GameStatsSection(uid: uid),
-            const SizedBox(height: 24),
-            Text(
-              'Évolution des performances',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            historyAsync.when(
-              data: (history) => history.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Text('Pas encore de match comptabilisé.'),
-                    )
-                  : _EvolutionChart(history: history),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('Erreur : $e'),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Historique des votes',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            historyAsync.when(
-              data: (history) => Column(
-                children: history.reversed.map((h) {
-                  final medal = switch (h.rank) {
-                    1 => '🥇',
-                    2 => '🥈',
-                    3 => '🥉',
-                    _ => '—',
-                  };
-                  return ListTile(
-                    leading: Text(medal, style: const TextStyle(fontSize: 20)),
-                    title: Text(DateFormat('dd/MM/yyyy').format(h.matchDate)),
-                    trailing: Text('${h.points} pts'),
-                  );
-                }).toList(),
+      body: ResponsiveContent(
+        maxWidth: 1000,
+        child: statsAsync.when(
+          data: (stats) => ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // ── Badges du joueur (lus depuis Firestore) ──
+              _PublicBadgesSection(uid: uid, playerName: playerName),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _StatCard(
+                    label: 'Matchs joués',
+                    value: '${stats.matchesPlayed}',
+                  ),
+                  const SizedBox(width: 12),
+                  _StatCard(
+                    label: 'Votes reçus',
+                    value: '${stats.votesReceived}',
+                  ),
+                ],
               ),
-              loading: () => const SizedBox.shrink(),
-              error: (e, _) => Text('Erreur : $e'),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _StatCard(
+                    label: 'Moy. points/match',
+                    value: stats.averagePointsPerMatch.toStringAsFixed(1),
+                  ),
+                  const SizedBox(width: 12),
+                  _StatCard(
+                    label: 'Total points',
+                    value: '${stats.totalPoints}',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _StatCard(
+                    label: '🥇 1ères places',
+                    value: '${stats.firstCount}',
+                  ),
+                  const SizedBox(width: 12),
+                  _StatCard(
+                    label: '🥈🥉 2e/3e places',
+                    value: '${stats.secondCount + stats.thirdCount}',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // ─── Stats de jeu ───
+              Text(
+                'Stats de jeu',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              _GameStatsSection(uid: uid),
+              const SizedBox(height: 24),
+              Text(
+                'Évolution des performances',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              historyAsync.when(
+                data: (history) => history.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Text('Pas encore de match comptabilisé.'),
+                      )
+                    : _EvolutionChart(history: history),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Text('Erreur : $e'),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Historique des votes',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              historyAsync.when(
+                data: (history) => Column(
+                  children: history.reversed.map((h) {
+                    final medal = switch (h.rank) {
+                      1 => '🥇',
+                      2 => '🥈',
+                      3 => '🥉',
+                      _ => '—',
+                    };
+                    return ListTile(
+                      leading: Text(
+                        medal,
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      title: Text(DateFormat('dd/MM/yyyy').format(h.matchDate)),
+                      trailing: Text('${h.points} pts'),
+                    );
+                  }).toList(),
+                ),
+                loading: () => const SizedBox.shrink(),
+                error: (e, _) => Text('Erreur : $e'),
+              ),
+            ],
+          ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Erreur : $e')),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erreur : $e')),
       ),
     );
   }

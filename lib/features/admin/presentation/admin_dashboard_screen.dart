@@ -26,47 +26,87 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _AdminTile(
-            icon: Icons.group_outlined,
-            title: 'Membres',
-            subtitle: 'Inviter, modifier, désactiver, promouvoir',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const MembersListScreen()),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _AdminTile(
-            icon: Icons.sports_hockey_outlined,
-            title: 'Matchs',
-            subtitle: 'Créer, modifier, ouvrir/fermer le vote',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const MatchesAdminScreen()),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _AdminTile(
-            icon: Icons.shield_outlined,
-            title: 'Équipes',
-            subtitle: 'Créer, renommer, supprimer',
-            onTap: () => Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const TeamsListScreen())),
-          ),
-          const SizedBox(height: 12),
-          _AdminTile(
-            icon: Icons.sports_outlined,
-            title: 'Adversaires',
-            subtitle: 'Gérer les équipes adverses',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const OpponentsAdminScreen()),
-            ),
-          ),
-          const SizedBox(height: 24),
-          _RankingsMaintenanceCard(
-            rebuilding: _rebuilding,
-            lastResultMessage: _lastResultMessage,
-            lastResultWasError: _lastResultWasError,
-            onRebuild: _rebuild,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final items = <Widget>[
+                _AdminTile(
+                  icon: Icons.group_outlined,
+                  title: 'Membres',
+                  subtitle:
+                      'Ajouter avec ou sans e-mail, inviter, gérer les accès',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const MembersListScreen(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _AdminTile(
+                  icon: Icons.sports_hockey_outlined,
+                  title: 'Matchs',
+                  subtitle: 'Créer, modifier, ouvrir/fermer le vote',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const MatchesAdminScreen(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _AdminTile(
+                  icon: Icons.shield_outlined,
+                  title: 'Équipes',
+                  subtitle: 'Créer, renommer, supprimer',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const TeamsListScreen()),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _AdminTile(
+                  icon: Icons.sports_outlined,
+                  title: 'Adversaires',
+                  subtitle: 'Gérer les équipes adverses',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const OpponentsAdminScreen(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _RankingsMaintenanceCard(
+                  rebuilding: _rebuilding,
+                  lastResultMessage: _lastResultMessage,
+                  lastResultWasError: _lastResultWasError,
+                  onRebuild: _rebuild,
+                ),
+              ];
+              if (MediaQuery.sizeOf(context).width < 1100) {
+                return Column(children: items);
+              }
+              final tiles = items.whereType<_AdminTile>().toList();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Gestion du club',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 20),
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      for (final tile in tiles)
+                        SizedBox(
+                          width: (constraints.maxWidth - 16) / 2,
+                          child: tile,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  ...items.whereType<_RankingsMaintenanceCard>(),
+                ],
+              );
+            },
           ),
         ],
       ),

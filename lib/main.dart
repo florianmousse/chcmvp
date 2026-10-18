@@ -74,7 +74,7 @@ class HockeyClubApp extends ConsumerWidget {
       builder: (context, child) => Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
+          constraints: const BoxConstraints(maxWidth: 1600),
           child: child!,
         ),
       ),
@@ -214,9 +214,13 @@ class _MainShellState extends ConsumerState<_MainShell> {
           child: Row(
             children: [
               NavigationRail(
+                extended: MediaQuery.sizeOf(context).width >= 1200,
+                minExtendedWidth: 200,
                 selectedIndex: safeIndex,
                 onDestinationSelected: (i) => setState(() => _index = i),
-                labelType: NavigationRailLabelType.all,
+                labelType: MediaQuery.sizeOf(context).width >= 1200
+                    ? NavigationRailLabelType.none
+                    : NavigationRailLabelType.all,
                 leading: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 20),
                   child: Text(

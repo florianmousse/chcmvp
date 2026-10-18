@@ -28,6 +28,7 @@ class UserModel with _$UserModel {
 
   String get fullName => '$firstName $lastName';
   bool get isAdmin => role == UserRole.admin;
+  bool get hasAccount => email.trim().isNotEmpty;
 }
 
 class TimestampConverter implements JsonConverter<DateTime?, Object?> {

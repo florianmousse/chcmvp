@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chc_mvp/core/widgets/responsive_content.dart';
 
 /// Cartes « temps forts » affichées dans un PageView horizontal sur l'écran
 /// d'accueil — chaque carte met en avant une stat-clé avec un design
@@ -23,19 +24,25 @@ class HighlightCardsSection extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
-        SizedBox(
-          height: 160,
-          child: PageView.builder(
-            controller: PageController(viewportFraction: 0.88),
-            itemCount: cards.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: _HighlightCard(data: cards[index]),
-              );
-            },
+        if (MediaQuery.sizeOf(context).width >= 1100)
+          DesktopCardGrid(
+            height: 180,
+            children: cards.map((card) => _HighlightCard(data: card)).toList(),
+          )
+        else
+          SizedBox(
+            height: 160,
+            child: PageView.builder(
+              controller: PageController(viewportFraction: 0.88),
+              itemCount: cards.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: _HighlightCard(data: cards[index]),
+                );
+              },
+            ),
           ),
-        ),
         const SizedBox(height: 16),
       ],
     );
@@ -71,7 +78,8 @@ class _HighlightCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final colors = data.gradientColors ??
+    final colors =
+        data.gradientColors ??
         [
           theme.colorScheme.primaryContainer,
           isDark
@@ -126,8 +134,9 @@ class _HighlightCard extends StatelessWidget {
                 Text(
                   data.value,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer
-                        .withValues(alpha: 0.8),
+                    color: theme.colorScheme.onPrimaryContainer.withValues(
+                      alpha: 0.8,
+                    ),
                   ),
                 ),
                 if (data.subtitle != null) ...[
@@ -135,8 +144,9 @@ class _HighlightCard extends StatelessWidget {
                   Text(
                     data.subtitle!,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer
-                          .withValues(alpha: 0.6),
+                      color: theme.colorScheme.onPrimaryContainer.withValues(
+                        alpha: 0.6,
+                      ),
                     ),
                   ),
                 ],

@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
@@ -32,37 +33,40 @@ class _VoteScreenState extends ConsumerState<VoteScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text('Vote — ${widget.match.label}')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            'Sélectionne tes 3 meilleurs joueurs du match',
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: 16),
-          _rankSelector('🥇 Meilleur joueur', _first, (uid) {
-            setState(() => _first = uid);
-          }),
-          const SizedBox(height: 12),
-          _rankSelector('🥈 Deuxième meilleur joueur', _second, (uid) {
-            setState(() => _second = uid);
-          }),
-          const SizedBox(height: 12),
-          _rankSelector('🥉 Troisième meilleur joueur', _third, (uid) {
-            setState(() => _third = uid);
-          }),
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: !_canSubmit || submitting ? null : _submit,
-            child: submitting
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Valider mon vote'),
-          ),
-        ],
+      body: ResponsiveContent(
+        maxWidth: 760,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              'Sélectionne tes 3 meilleurs joueurs du match',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 16),
+            _rankSelector('🥇 Meilleur joueur', _first, (uid) {
+              setState(() => _first = uid);
+            }),
+            const SizedBox(height: 12),
+            _rankSelector('🥈 Deuxième meilleur joueur', _second, (uid) {
+              setState(() => _second = uid);
+            }),
+            const SizedBox(height: 12),
+            _rankSelector('🥉 Troisième meilleur joueur', _third, (uid) {
+              setState(() => _third = uid);
+            }),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: !_canSubmit || submitting ? null : _submit,
+              child: submitting
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Valider mon vote'),
+            ),
+          ],
+        ),
       ),
     );
   }
