@@ -7,6 +7,7 @@ import 'package:chc_mvp/features/matches/presentation/match_stats_form_screen.da
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:intl/intl.dart';
 import 'test_match_screen.dart';
+import 'vote_participation.dart';
 
 class MatchesAdminScreen extends ConsumerWidget {
   const MatchesAdminScreen({super.key});
@@ -63,8 +64,14 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
             )
           : Icon(_statusIcon, color: _statusColor(context)),
       title: Text('${match.isTest ? '[TEST] ' : ''}${match.label}'),
-      subtitle: Text(
-        '${DateFormat('dd/MM/yyyy').format(match.date)} à ${match.time} · ${match.team} · $_statusLabel',
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${DateFormat('dd/MM/yyyy').format(match.date)} à ${match.time} · ${match.team} · $_statusLabel',
+          ),
+          VoteParticipation(matchId: match.id),
+        ],
       ),
       trailing: PopupMenuButton<String>(
         onSelected: (action) async {

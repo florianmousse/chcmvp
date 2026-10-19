@@ -5,6 +5,7 @@ const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 const { rebuildRankingsAndStats, deleteMatchAndRebuild, recomputeClosedMatch } = require('../dist/rebuildRankings');
 const { withRankingLock } = require('../dist/rankingLock');
 const { saveTestVote } = require('../dist/testVotes');
+const { voteParticipation } = require('../dist/voteParticipation');
 
 // Refuse to touch any remote or production database.
 if (!/^(127\.0\.0\.1|localhost):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST ?? '')) {
@@ -27,6 +28,38 @@ async function seedMatch(id, date = '2026-10-12T12:00:00Z', voters = ['d', 'e'])
   return ref;
 }
 async function data(path) { return (await db.doc(path).get()).data(); }
+
+test('admin turnout is live, deduplicates attendance and never exposes ballot choices', async () => {
+  await db.doc('users/admin').set({ role:'admin', isActive:true });
+  await db.doc('users/member').set({ role:'member', isActive:true });
+  await db.doc('users/inactiveAdmin').set({ role:'admin', isActive:false });
+  await db.doc('users/a').set({ firstName:'Alice', lastName:'Martin', email:'a@example.test', isActive:true });
+  await db.doc('users/b').set({ firstName:'Benoît', lastName:'Dupont', email:'', isActive:true });
+  await db.doc('users/c').set({ firstName:'Camille', lastName:'Petit', email:'c@example.test', isActive:false });
+  for (const path of ['matches/live','test_matches/test:live']) {
+    const ref = db.doc(path);
+    await ref.set({ status:'voting_open', presentPlayerIds:['a','b','c','missing','a'] });
+    await ref.collection('votes').doc('a').set({ firstPlaceUid:'SECRET', voterUid:'other' });
+    await ref.collection('votes').doc('absent').set({ firstPlaceUid:'SECRET' });
+    const result = await voteParticipation(ref.id, 'admin', db);
+    assert.equal(result.votedCount, 1); assert.equal(result.totalCount, 4);
+    assert.deepEqual(result.pending.map(p=>[p.name,p.accountStatus]), [
+      ['Benoît Dupont','no_account'], ['Camille Petit','inactive'], ['Joueur supprimé','missing'],
+    ]);
+    assert(!JSON.stringify(result).includes('SECRET'));
+    assert(!JSON.stringify(result).includes('@'));
+    await ref.collection('votes').doc('b').set({ firstPlaceUid:'SECRET' });
+    assert.equal((await voteParticipation(ref.id,'admin',db)).votedCount, 2);
+    await ref.update({ status:'voting_closed' });
+    assert.equal((await voteParticipation(ref.id,'admin',db)).votedCount, 2);
+    for (const uid of ['member','inactiveAdmin','unknown']) {
+      await assert.rejects(voteParticipation(ref.id,uid,db), {status:403});
+    }
+  }
+  await db.doc('matches/empty').set({status:'upcoming',presentPlayerIds:[]});
+  assert.deepEqual((await voteParticipation('empty','admin',db)).pending, []);
+  await assert.rejects(voteParticipation('removed','admin',db), {status:404});
+});
 
 test('rebuild removes deleted-match subcollections, old scopes and orphan histories', async () => {
   const deleted = await seedMatch('deleted', '2025-10-12T12:00:00Z');

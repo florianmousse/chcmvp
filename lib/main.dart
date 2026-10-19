@@ -201,7 +201,7 @@ class _MainShellState extends ConsumerState<_MainShell> {
     // plus dans la liste.
     final screens = [
       const HomeScreen(),
-      const MatchesScreen(),
+      TickerMode(enabled: _index == 1, child: const MatchesScreen()),
       const RankingScreen(),
       const ProfileScreen(),
       if (isAdmin) const AdminDashboardScreen(),

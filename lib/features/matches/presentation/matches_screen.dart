@@ -10,6 +10,7 @@ import 'package:chc_mvp/features/opponents/presentation/opponents_providers.dart
 import 'package:chc_mvp/features/voting/presentation/vote_screen.dart';
 import 'package:chc_mvp/features/voting/presentation/voting_providers.dart';
 import 'package:intl/intl.dart';
+import 'vote_participation.dart';
 
 /// Vue membre (lecture + vote) - distincte de MatchesAdminScreen qui gère la
 /// création/édition et n'a pas vocation à être utilisée pour voter.
@@ -222,6 +223,7 @@ class _MatchCard extends ConsumerWidget {
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
+            VoteParticipation(matchId: match.id),
             // Le logo se place à droite de ce qui suit - le classement des
             // joueurs pour un match terminé, le bouton de vote pour un vote
             // ouvert, ou rien pour un match à venir - jamais dans l'en-tête.

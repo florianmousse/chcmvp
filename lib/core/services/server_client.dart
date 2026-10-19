@@ -8,6 +8,13 @@ import 'package:chc_mvp/core/config/server_config.dart';
 /// de l'admin connecté en en-tête (vérifié côté serveur par requireAuth +
 /// requireAdmin, voir server/src/middleware/auth.ts).
 class ServerClient {
+  Future<Map<String, dynamic>> get(String path) async {
+    final response = await http
+        .get(Uri.parse('$serverBaseUrl$path'), headers: await _authHeaders())
+        .timeout(const Duration(seconds: 20));
+    return _handle(response);
+  }
+
   Future<Map<String, String>> _authHeaders() async {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
     return {

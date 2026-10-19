@@ -1,5 +1,7 @@
 # Mise à jour : web et joueurs sans e-mail
 
+Pour la version **1.1.0 (3)** (suivi des votes réservé aux admins, tutoriel et numéro de version dans Profil), suivre aussi [les instructions de mise à jour](MISE_A_JOUR_1_1_0.md). Le [guide d'utilisation Android/web](GUIDE_UTILISATION.md) peut être partagé aux membres.
+
 ## Changements
 
 - Connexion web : champs HTML visibles avec `autocomplete="username"` et `autocomplete="current-password"`. Les identifiants sont lus au moment de la soumission, même si le gestionnaire de mots de passe ne déclenche aucun événement de saisie. Le formulaire mobile natif reste en Flutter.

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/foundation.dart';
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:chc_mvp/core/widgets/legal_links.dart';
+import 'package:chc_mvp/core/widgets/app_version_tile.dart';
+import 'package:chc_mvp/features/help/presentation/help_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 import 'package:chc_mvp/features/badges/presentation/badges_providers.dart';
@@ -85,6 +87,7 @@ class ProfileScreen extends ConsumerWidget {
                           child: Column(
                             children: [
                               ...identity,
+                              const _HelpAndVersion(),
                               const SizedBox(height: 24),
                               OutlinedButton.icon(
                                 icon: const Icon(Icons.logout),
@@ -186,6 +189,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const Divider(height: 32),
+              const _HelpAndVersion(),
 
               // ── Thème ──
               _ThemeSelector(),
@@ -214,6 +218,25 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _HelpAndVersion extends StatelessWidget {
+  const _HelpAndVersion();
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      ListTile(
+        leading: const Icon(Icons.help_outline),
+        title: const Text('Tutoriel'),
+        subtitle: const Text('Bien utiliser l’application et le site web'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const HelpScreen())),
+      ),
+      const AppVersionTile(),
+    ],
+  );
 }
 
 /// Les badges sont recalculés par le serveur : le client ne peut pas rétablir
