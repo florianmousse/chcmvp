@@ -2,7 +2,8 @@ import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chc_mvp/core/config/team_logos_catalog.dart';
+import 'package:chc_mvp/core/models/opponent_model.dart';
+import 'package:chc_mvp/features/opponents/presentation/quick_add_opponent_dialog.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:chc_mvp/features/members/presentation/members_providers.dart';
@@ -25,6 +26,7 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
       _parseTime(widget.existing?.time) ?? const TimeOfDay(hour: 9, minute: 0);
   String? _selectedTeam;
   String? _selectedOpponentId;
+  OpponentModel? _newOpponent;
   late bool _isHome = widget.existing?.isHome ?? true;
   late bool _allowSelfVote = widget.existing?.allowSelfVote ?? false;
   final Set<String> _presentPlayerIds = {};
@@ -90,23 +92,25 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
               ref
                   .watch(opponentsListProvider)
                   .when(
-                    data: (opponents) {
+                    data: (loadedOpponents) {
+                      final opponents = [...loadedOpponents];
+                      final added = _newOpponent;
+                      if (added != null &&
+                          !opponents.any((o) => o.id == added.id)) {
+                        opponents.add(added);
+                      }
                       // Vérifie que l'id sélectionné existe toujours
                       final validId =
                           opponents.any((o) => o.id == _selectedOpponentId)
                           ? _selectedOpponentId
                           : null;
-                      if (validId != _selectedOpponentId) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted)
-                            setState(() => _selectedOpponentId = null);
-                        });
-                      }
                       return Row(
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<String>(
+                              key: ValueKey(validId),
                               initialValue: validId,
+                              isExpanded: true,
                               decoration: const InputDecoration(
                                 labelText: 'Adversaire',
                                 border: OutlineInputBorder(),
@@ -127,7 +131,12 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                           ],
-                                          Text(o.name),
+                                          Flexible(
+                                            child: Text(
+                                              o.name,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -152,11 +161,17 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
                             icon: const Icon(Icons.add),
                             tooltip: 'Ajouter un adversaire',
                             onPressed: () async {
-                              final id = await _showQuickAddOpponentDialog(
-                                context,
+                              final opponent = await showDialog<OpponentModel>(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (_) => const QuickAddOpponentDialog(),
                               );
-                              if (id != null && mounted) {
-                                setState(() => _selectedOpponentId = id);
+                              if (opponent != null && mounted) {
+                                setState(() {
+                                  _newOpponent = opponent;
+                                  _selectedOpponentId = opponent.id;
+                                  _selectedLogoAsset = opponent.logoAsset;
+                                });
                               }
                             },
                           ),
@@ -310,9 +325,9 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
 
     // Résoudre le nom de l'adversaire depuis l'ID
     final opponents = ref.read(opponentsListProvider).value ?? [];
-    final selectedOpp = opponents
-        .where((o) => o.id == _selectedOpponentId)
-        .firstOrNull;
+    final selectedOpp =
+        opponents.where((o) => o.id == _selectedOpponentId).firstOrNull ??
+        (_newOpponent?.id == _selectedOpponentId ? _newOpponent : null);
     final opponentName = selectedOpp?.name ?? '';
 
     try {
@@ -352,116 +367,5 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
-  }
-
-  /// Dialog rapide pour ajouter un adversaire sans quitter le formulaire.
-  Future<String?> _showQuickAddOpponentDialog(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    String? selectedLogo;
-
-    return showDialog<String>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Nouvel adversaire'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Nom'),
-                  textCapitalization: TextCapitalization.words,
-                  autofocus: true,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Logo (optionnel)',
-                  style: Theme.of(ctx).textTheme.titleSmall,
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 60,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      GestureDetector(
-                        onTap: () => setDialogState(() => selectedLogo = null),
-                        child: Container(
-                          width: 50,
-                          height: 50,
-                          margin: const EdgeInsets.only(right: 8),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: selectedLogo == null
-                                  ? Theme.of(ctx).colorScheme.primary
-                                  : Colors.grey,
-                              width: selectedLogo == null ? 2 : 1,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Center(
-                            child: Icon(Icons.block, color: Colors.grey),
-                          ),
-                        ),
-                      ),
-                      ...teamLogosCatalog
-                          .where((l) => l.name != 'CHC')
-                          .map(
-                            (logo) => GestureDetector(
-                              onTap: () => setDialogState(
-                                () => selectedLogo = logo.assetPath,
-                              ),
-                              child: Container(
-                                width: 50,
-                                height: 50,
-                                margin: const EdgeInsets.only(right: 8),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: selectedLogo == logo.assetPath
-                                        ? Theme.of(ctx).colorScheme.primary
-                                        : Colors.grey,
-                                    width: selectedLogo == logo.assetPath
-                                        ? 2
-                                        : 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(4),
-                                  child: Image.asset(
-                                    logo.assetPath,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annuler'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                final name = nameCtrl.text.trim();
-                if (name.isEmpty) return;
-                final id = await ref
-                    .read(opponentsRepositoryProvider)
-                    .addOpponent(name: name, logoAsset: selectedLogo);
-                if (ctx.mounted) Navigator.pop(ctx, id);
-              },
-              child: const Text('Ajouter'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

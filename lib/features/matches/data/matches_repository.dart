@@ -4,9 +4,9 @@ import 'package:chc_mvp/core/models/player_match_stats_model.dart';
 import 'package:chc_mvp/core/services/server_client.dart';
 import 'package:chc_mvp/core/utils/firestore_json.dart';
 
-/// Toutes ces opérations sont limitées aux admins par les règles Firestore
-/// (voir firestore/firestore.rules) - pas besoin de Cloud Function ici, ce
-/// sont de simples écritures de document.
+/// Les écritures directes sont réservées aux admins par les règles Firestore.
+/// La suppression et les recalculs passent par le serveur pour nettoyer aussi
+/// les sous-collections et les classements.
 class MatchesRepository {
   MatchesRepository(this._firestore, this._server);
   final FirebaseFirestore _firestore;
@@ -80,7 +80,7 @@ class MatchesRepository {
   }
 
   Future<void> deleteMatch(String matchId) {
-    return _matches.doc(matchId).delete();
+    return _server.delete('/matches/$matchId');
   }
 
   /// Recalcule results/summary + rankings_cache + player_stats pour un match
@@ -91,7 +91,7 @@ class MatchesRepository {
   }
 
   /// Reconstruit entièrement rankings_cache et player_stats à partir de tous
-  /// les results/summary existants - l'outil de récupération à utiliser
+  /// les votes des matchs clôturés existants, en nettoyant les matchs supprimés.
   /// après un pépin sur le cache.
   Future<Map<String, dynamic>> rebuildRankings() {
     return _server.post('/matches/rankings/rebuild', {});

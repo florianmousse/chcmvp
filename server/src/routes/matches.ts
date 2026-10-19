@@ -2,10 +2,19 @@ import { Router } from "express";
 import { getFirestore } from "firebase-admin/firestore";
 import { requireAuth, requireAdmin } from "../middleware/auth";
 import { handleVotingClosed } from "../matchListeners";
-import { rebuildRankingsAndStats } from "../rebuildRankings";
+import { deleteMatchAndRebuild, rebuildRankingsAndStats } from "../rebuildRankings";
 
 export const matchesRouter = Router();
 matchesRouter.use(requireAuth, requireAdmin);
+
+matchesRouter.delete("/:matchId", async (req, res) => {
+  try {
+    const result = await deleteMatchAndRebuild(req.params.matchId);
+    res.json({ success: true, ...result });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? "Erreur lors de la suppression." });
+  }
+});
 
 /**
  * Recalcule results/summary + rankings_cache + player_stats pour un match
@@ -24,6 +33,9 @@ matchesRouter.post("/:matchId/recompute", async (req, res) => {
   if (!matchDoc.exists) {
     return res.status(404).json({ error: "Match introuvable." });
   }
+  if (matchDoc.data()!.status !== "voting_closed") {
+    return res.status(409).json({ error: "Le vote de ce match n'est pas clôturé." });
+  }
 
   try {
     await handleVotingClosed(matchId, matchDoc.data()!);
@@ -34,12 +46,9 @@ matchesRouter.post("/:matchId/recompute", async (req, res) => {
 });
 
 /**
- * Reconstruit entièrement rankings_cache et player_stats à partir de tous
- * les results/summary existants (voir rebuildRankings.ts) - l'outil à
- * utiliser après un pépin sur le cache (suppression, bug corrigé après
- * coup, etc.), plutôt que de rejouer chaque match un par un : celui-ci ne
- * dépend d'aucun état préalable, contrairement au recalcul par match qui
- * n'applique qu'une différence par rapport au dernier calcul.
+ * Repart des votes des matchs clôturés, nettoie les matchs supprimés et
+ * remplace les totaux et historiques. Partage la file avec les clôtures
+ * et les suppressions pour éviter les écritures concurrentes du VPS.
  */
 matchesRouter.post("/rankings/rebuild", async (req, res) => {
   try {

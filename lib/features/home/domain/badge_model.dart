@@ -98,7 +98,8 @@ class Badge {
       type: BadgeType.fairPlay,
       label: 'Fair-play',
       emoji: '😇',
-      description: 'Aucun carton jaune ou rouge en au moins 5 matchs joués.',
+      description:
+          'Aucun carton (vert, jaune ou rouge) en au moins 5 matchs renseignés.',
     ),
     BadgeType.couteauSuisse: Badge(
       type: BadgeType.couteauSuisse,

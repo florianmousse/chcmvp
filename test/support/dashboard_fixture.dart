@@ -91,6 +91,9 @@ final demoOverrides = [
       },
     }),
   ),
+  seasonGameStatsProvider.overrideWith(
+    (ref) => const AsyncValue.data(<String, AggregatedPlayerStats>{}),
+  ),
   aggregatedPlayerStatsProvider.overrideWith(
     (ref) => const AsyncValue.data(<String, AggregatedPlayerStats>{}),
   ),

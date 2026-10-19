@@ -1,3 +1,6 @@
+import 'package:chc_mvp/core/utils/season.dart';
+import 'package:chc_mvp/features/home/domain/advanced_stats_calculator.dart';
+import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 import 'package:chc_mvp/features/ranking/data/ranking_repository.dart';
@@ -59,3 +62,30 @@ final allPlayerHistoriesProvider =
       ref.watch(authStateProvider);
       return ref.watch(rankingRepositoryProvider).watchAllPlayerHistories();
     });
+
+/// Accueil : ne pas mélanger les records de plusieurs saisons.
+final seasonPlayerHistoriesProvider =
+    Provider<AsyncValue<Map<String, List<PlayerHistoryPoint>>>>((ref) {
+      final season = ref.watch(currentSeasonProvider);
+      return ref
+          .watch(allPlayerHistoriesProvider)
+          .whenData(
+            (histories) => {
+              for (final e in histories.entries)
+                e.key: e.value
+                    .where((h) => seasonId(h.matchDate) == season)
+                    .toList(),
+            },
+          );
+    });
+final seasonPlayerStatsProvider =
+    Provider<AsyncValue<Map<String, PlayerStats>>>(
+      (ref) => ref
+          .watch(seasonPlayerHistoriesProvider)
+          .whenData(
+            (histories) => {
+              for (final e in histories.entries)
+                e.key: statsFromHistory(e.value),
+            },
+          ),
+    );

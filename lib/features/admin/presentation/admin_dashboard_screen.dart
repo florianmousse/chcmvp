@@ -126,7 +126,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         setState(() {
           _lastResultWasError = false;
           _lastResultMessage =
-              '${result['matchesProcessed']} match(s) clôturé(s) recalculé(s) avec succès, à l\'instant.';
+              '${result['matchesProcessed']} match(s) recalculé(s), ${result['orphanMatchesDeleted'] ?? 0} match(s) supprimé(s) nettoyé(s).';
         });
       }
     } catch (e) {
@@ -181,10 +181,11 @@ class _RankingsMaintenanceCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Recalcule entièrement les classements (général, mensuel, annuel) et les '
+              'Recalcule entièrement les classements (général, mensuel, par saison) et les '
               'statistiques de chaque joueur, directement à partir des votes de chaque '
               'match clôturé. À utiliser si des chiffres semblent incohérents, ou après '
-              'une mise à jour du calcul des résultats - sans risque, ça repart toujours '
+              'une suppression de match. Nettoie aussi les votes, résultats et statistiques '
+              'restants des matchs supprimés. Ça repart toujours '
               'des votes réels plutôt que d\'accumuler par-dessus les données existantes.',
               style: theme.textTheme.bodySmall,
             ),

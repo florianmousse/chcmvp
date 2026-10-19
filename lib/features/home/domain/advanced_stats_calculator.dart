@@ -16,6 +16,7 @@ class GameStats {
     this.yellowCards = 0,
     this.redCards = 0,
     this.matchesPlayed = 0,
+    this.hasCompleteStats = true,
   });
   final int goals;
   final int assists;
@@ -23,8 +24,42 @@ class GameStats {
   final int yellowCards;
   final int redCards;
   final int matchesPlayed;
+  final bool hasCompleteStats;
   int get totalCards => greenCards + yellowCards + redCards;
+
+  bool get isFairPlay => hasCompleteStats && totalCards == 0;
 }
+
+/// Un match sans feuille de stats ne prouve pas une absence de cartons.
+List<MapEntry<String, T>> fairPlayPlayers<T extends GameStats>(
+  Map<String, T> stats, {
+  int minimumMatches = 2,
+}) =>
+    stats.entries
+        .where(
+          (e) => e.value.matchesPlayed >= minimumMatches && e.value.isFairPlay,
+        )
+        .toList()
+      ..sort((a, b) {
+        final played = b.value.matchesPlayed.compareTo(a.value.matchesPlayed);
+        return played != 0 ? played : a.key.compareTo(b.key);
+      });
+
+PlayerStats statsFromHistory(List<PlayerHistoryPoint> history) => PlayerStats(
+  matchesPlayed: history.length,
+  totalPoints: history.fold(0, (sum, h) => sum + h.points),
+  votesReceived: history.fold(
+    0,
+    (sum, h) => sum + (h.distinctVotersThisMatch ?? 0),
+  ),
+  distinctVoters: history.fold(
+    0,
+    (sum, h) => sum + (h.distinctVotersThisMatch ?? 0),
+  ),
+  firstCount: history.where((h) => h.rank == 1).length,
+  secondCount: history.where((h) => h.rank == 2).length,
+  thirdCount: history.where((h) => h.rank == 3).length,
+);
 
 // ---------------------------------------------------------------------------
 // Joueur le plus plébiscité
@@ -201,7 +236,7 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
             emoji: '🧙‍♂️',
             title: 'Le saviez-vous ?',
             body:
-                '${nameOf(e.key)} a reçu des votes lors de ${e.value.votesReceived} matchs cette saison, mais n\'a jamais terminé 1er.',
+                '${nameOf(e.key)} a reçu ${e.value.votesReceived} votes cette saison, mais n\'a jamais terminé 1er.',
           );
         }
       }
@@ -265,7 +300,7 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
         final e = byAvg.first;
         return (
           emoji: '📈',
-          title: 'Le plus régulier',
+          title: 'Meilleure moyenne',
           body:
               '${nameOf(e.key)} affiche une moyenne de ${e.value.averagePointsPerMatch.toStringAsFixed(1)} pts/match sur ${e.value.matchesPlayed} matchs.',
         );
@@ -349,18 +384,10 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
         body: 'Aucune passe décisive enregistrée cette saison.',
       );
 
-    // Catégorie 7 : joueur le plus fair-play (0 carton jaune/rouge)
+    // Catégorie 7 : joueur le plus fair-play (aucun carton, verts inclus)
     case 7:
       if (gameStats != null && gameStats.isNotEmpty) {
-        final fairPlayers = gameStats.entries
-            .where(
-              (e) =>
-                  e.value.matchesPlayed >= 3 &&
-                  e.value.greenCards == 0 &&
-                  e.value.yellowCards == 0 &&
-                  e.value.redCards == 0,
-            )
-            .toList();
+        final fairPlayers = fairPlayPlayers(gameStats, minimumMatches: 3);
         if (fairPlayers.isNotEmpty) {
           final best = fairPlayers
             ..sort(
@@ -539,9 +566,10 @@ OpponentRecord? nemesis(List<MatchForOpponent> matches) {
 
 int _isoWeekNumber(DateTime date) {
   // Calcul ISO 8601 du numéro de semaine.
-  final thursday = date.add(Duration(days: 4 - (date.weekday)));
-  final jan1 = DateTime(thursday.year, 1, 1);
-  return ((thursday.difference(jan1).inDays) / 7).ceil() + 1;
+  final day = DateTime.utc(date.year, date.month, date.day);
+  final thursday = day.add(Duration(days: 4 - day.weekday));
+  final jan1 = DateTime.utc(thursday.year, 1, 1);
+  return thursday.difference(jan1).inDays ~/ 7 + 1;
 }
 
 /// Écart-type d'une liste de nombres (pour le badge Régularité).

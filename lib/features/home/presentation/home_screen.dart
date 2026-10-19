@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/utils/season.dart';
 import 'package:flutter/material.dart';
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,7 +68,12 @@ class HomeScreen extends ConsumerWidget {
                       .where((m) => m.status == MatchStatus.votingClosed)
                       .toList()
                     ..sort((a, b) => b.date.compareTo(a.date));
-              final recentClosed = closed
+              final seasonClosed = closed
+                  .where(
+                    (m) => seasonId(m.date) == ref.watch(currentSeasonProvider),
+                  )
+                  .toList();
+              final recentClosed = seasonClosed
                   .take(3)
                   .toList(); // du plus récent au plus ancien
 
@@ -109,7 +115,7 @@ class HomeScreen extends ConsumerWidget {
                         const Expanded(child: _FunStatWrapper()),
                       ],
                     ),
-                    _SeasonRecordsWrapper(closedMatches: closed),
+                    _SeasonRecordsWrapper(closedMatches: seasonClosed),
                     if (matches.isEmpty)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
@@ -140,7 +146,7 @@ class HomeScreen extends ConsumerWidget {
                   _HighlightCardsWrapper(recentMatches: recentClosed),
 
                   // ── Section 5 : Records de la saison ──
-                  _SeasonRecordsWrapper(closedMatches: closed),
+                  _SeasonRecordsWrapper(closedMatches: seasonClosed),
 
                   // ── Section 6 : Ma participation aux votes ──
                   if (profile != null)
@@ -317,7 +323,7 @@ class _HighlightCardsWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final membersAsync = ref.watch(membersListProvider(null));
-    final allHistoriesAsync = ref.watch(allPlayerHistoriesProvider);
+    final allHistoriesAsync = ref.watch(seasonPlayerHistoriesProvider);
 
     if (allHistoriesAsync.isLoading) {
       return const SizedBox.shrink();
@@ -330,8 +336,15 @@ class _HighlightCardsWrapper extends ConsumerWidget {
 
     final cards = <HighlightCardData>[];
 
+    final recentResults = [
+      for (final m in recentMatches) ref.watch(matchResultProvider(m.id)),
+    ];
+    final resultsReady = recentResults.every(
+      (r) => !r.isLoading && !r.hasError && r.value != null,
+    );
+
     // 🔥 Joueur en forme (meilleure somme sur les 3 derniers matchs)
-    if (recentMatches.isNotEmpty) {
+    if (recentMatches.isNotEmpty && resultsReady) {
       final pointsByPlayer = <String, int>{};
       for (final match in recentMatches) {
         final resultAsync = ref.watch(matchResultProvider(match.id));
@@ -342,7 +355,7 @@ class _HighlightCardsWrapper extends ConsumerWidget {
           pointsByPlayer[e.key] = (pointsByPlayer[e.key] ?? 0) + pts;
         }
       }
-      if (pointsByPlayer.isNotEmpty) {
+      if (pointsByPlayer.values.any((p) => p > 0)) {
         final sorted = pointsByPlayer.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value));
         cards.add(
@@ -359,7 +372,7 @@ class _HighlightCardsWrapper extends ConsumerWidget {
 
     // 🚀 Meilleure progression (existant - plus grand écart par rapport à
     //     la moyenne personnelle au dernier match)
-    if (recentMatches.isNotEmpty) {
+    if (recentMatches.isNotEmpty && resultsReady) {
       final latestMatch = recentMatches.first;
       final resultAsync = ref.watch(matchResultProvider(latestMatch.id));
       final entries =
@@ -367,9 +380,8 @@ class _HighlightCardsWrapper extends ConsumerWidget {
       String? bestUid;
       var bestDelta = 0.0;
       for (final uid in latestMatch.presentPlayerIds) {
-        final statsAsync = ref.watch(playerStatsProvider(uid));
-        final stats = statsAsync.value;
-        if (stats == null || stats.matchesPlayed == 0) continue;
+        final stats = ref.watch(seasonPlayerStatsProvider).value?[uid];
+        if (stats == null || stats.matchesPlayed < 2) continue;
         final latestPoints =
             ((entries[uid] as Map<String, dynamic>?)?['points'] ?? 0) as int;
         final priorPlayed = stats.matchesPlayed - 1;
@@ -420,16 +432,16 @@ class _HighlightCardsWrapper extends ConsumerWidget {
           playerName: name(streakData.uid),
           value: '${streakData.current} matchs consécutifs dans le top 3',
           subtitle: streakData.best > streakData.current
-              ? 'Record saison : ${streakData.best}'
+              ? 'Record personnel : ${streakData.best}'
               : streakData.current == streakData.best
-              ? '🏅 Égale le record de la saison !'
+              ? '🏅 Égale son record de la saison !'
               : null,
         ),
       );
     }
 
     // ⚽ Meilleur buteur de la saison
-    final aggAsync = ref.watch(aggregatedPlayerStatsProvider);
+    final aggAsync = ref.watch(seasonGameStatsProvider);
     final aggData = aggAsync.value;
     if (aggData != null && aggData.isNotEmpty) {
       final scorers = aggData.entries.where((e) => e.value.goals > 0).toList()
@@ -442,7 +454,7 @@ class _HighlightCardsWrapper extends ConsumerWidget {
             title: 'Meilleur buteur',
             playerName: name(top.key),
             value:
-                '${top.value.goals} but${top.value.goals > 1 ? 's' : ''} en ${top.value.matchesPlayed} matchs',
+                '${top.value.goals} but${top.value.goals > 1 ? 's' : ''} en ${top.value.matchesPlayed} matchs renseignés',
             subtitle: top.value.assists > 0
                 ? '+ ${top.value.assists} passe${top.value.assists > 1 ? 's' : ''} D.'
                 : null,
@@ -450,20 +462,8 @@ class _HighlightCardsWrapper extends ConsumerWidget {
         );
       }
 
-      // 😇 Joueur le plus fair-play (max matchs sans jaune/rouge)
-      final fairPlayers =
-          aggData.entries
-              .where(
-                (e) =>
-                    e.value.matchesPlayed >= 2 &&
-                    e.value.greenCards == 0 &&
-                    e.value.yellowCards == 0 &&
-                    e.value.redCards == 0,
-              )
-              .toList()
-            ..sort(
-              (a, b) => b.value.matchesPlayed.compareTo(a.value.matchesPlayed),
-            );
+      // 😇 Joueur le plus fair-play (max matchs sans aucun carton)
+      final fairPlayers = fairPlayPlayers(aggData);
       if (fairPlayers.isNotEmpty) {
         final fp = fairPlayers.first;
         cards.add(
@@ -491,8 +491,10 @@ class _SeasonRecordsWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rankingAsync = ref.watch(rankingProvider('general'));
-    final allHistoriesAsync = ref.watch(allPlayerHistoriesProvider);
+    final rankingAsync = ref.watch(
+      rankingProvider(ref.watch(currentSeasonProvider)),
+    );
+    final allHistoriesAsync = ref.watch(seasonPlayerHistoriesProvider);
     final membersAsync = ref.watch(membersListProvider(null));
 
     if (rankingAsync.isLoading || allHistoriesAsync.isLoading) {
@@ -565,7 +567,8 @@ class _SeasonRecordsWrapper extends ConsumerWidget {
         presentCount: match.presentPlayerIds.length,
       ));
     }
-    if (voteRateData.isNotEmpty) {
+    if (voteRateData.isNotEmpty &&
+        voteRateData.length == closedMatches.length) {
       final avgRate = averageVoteRate(voteRateData);
       records.add(
         SeasonRecord(
@@ -577,7 +580,7 @@ class _SeasonRecordsWrapper extends ConsumerWidget {
       );
     }
     // ─── Records de jeu ───
-    final aggAsync = ref.watch(aggregatedPlayerStatsProvider);
+    final aggAsync = ref.watch(seasonGameStatsProvider);
     final aggData = aggAsync.value;
     if (aggData != null && aggData.isNotEmpty) {
       // ⚽ Meilleur buteur
@@ -610,19 +613,7 @@ class _SeasonRecordsWrapper extends ConsumerWidget {
       }
 
       // 😇 Le plus fair-play
-      final fairPlay =
-          aggData.entries
-              .where(
-                (e) =>
-                    e.value.matchesPlayed >= 2 &&
-                    e.value.greenCards == 0 &&
-                    e.value.yellowCards == 0 &&
-                    e.value.redCards == 0,
-              )
-              .toList()
-            ..sort(
-              (a, b) => b.value.matchesPlayed.compareTo(a.value.matchesPlayed),
-            );
+      final fairPlay = fairPlayPlayers(aggData);
       if (fairPlay.isNotEmpty) {
         records.add(
           SeasonRecord(
@@ -737,15 +728,19 @@ class _FunStatWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allStatsAsync = ref.watch(allPlayerStatsProvider);
-    final allHistoriesAsync = ref.watch(allPlayerHistoriesProvider);
-    final rankingAsync = ref.watch(rankingProvider('general'));
+    final allStatsAsync = ref.watch(seasonPlayerStatsProvider);
+    final allHistoriesAsync = ref.watch(seasonPlayerHistoriesProvider);
+    final rankingAsync = ref.watch(
+      rankingProvider(ref.watch(currentSeasonProvider)),
+    );
     final membersAsync = ref.watch(membersListProvider(null));
-    final aggStatsAsync = ref.watch(aggregatedPlayerStatsProvider);
+    final aggStatsAsync = ref.watch(seasonGameStatsProvider);
 
     if (allStatsAsync.isLoading ||
         allHistoriesAsync.isLoading ||
-        rankingAsync.isLoading) {
+        rankingAsync.isLoading ||
+        aggStatsAsync.isLoading ||
+        aggStatsAsync.hasError) {
       return const SizedBox.shrink();
     }
 
@@ -762,6 +757,7 @@ class _FunStatWrapper extends ConsumerWidget {
     if (aggData != null) {
       for (final e in aggData.entries) {
         gameStatsMap[e.key] = GameStats(
+          hasCompleteStats: e.value.hasCompleteStats,
           goals: e.value.goals,
           assists: e.value.assists,
           greenCards: e.value.greenCards,
@@ -1007,6 +1003,11 @@ class _VotingParticipationCard extends ConsumerWidget {
       ..sort((a, b) => b.date.compareTo(a.date));
     for (final m in sortedEligible) {
       final hasVotedAsync = ref.watch(hasVotedProvider(m.id));
+      if (hasVotedAsync.hasError) {
+        return const Text(
+          'Participation aux votes indisponible pour le moment.',
+        );
+      }
       if (hasVotedAsync.isLoading) {
         return const Padding(
           padding: EdgeInsets.only(bottom: 12),
@@ -1139,10 +1140,15 @@ class _LastResultCard extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: resultAsync.when(
           data: (result) {
+            if (result == null) {
+              return const Center(
+                child: Text('Calcul des résultats en cours…'),
+              );
+            }
             final mvpUids =
-                (result?['mvpUids'] as List?)?.cast<String>() ?? const [];
+                (result['mvpUids'] as List?)?.cast<String>() ?? const [];
 
-            final totalVotes = (result?['totalVotes'] ?? 0) as int;
+            final totalVotes = (result['totalVotes'] ?? 0) as int;
 
             final members = membersAsync.value ?? [];
 

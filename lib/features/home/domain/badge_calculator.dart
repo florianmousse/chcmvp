@@ -125,10 +125,7 @@ class BadgeCalculator {
       }
 
       // 😇 Fair-play - 0 carton (vert/jaune/rouge) en 5+ matchs
-      if (gameStats.matchesPlayed >= 5 &&
-          gameStats.greenCards == 0 &&
-          gameStats.yellowCards == 0 &&
-          gameStats.redCards == 0) {
+      if (gameStats.matchesPlayed >= 5 && gameStats.isFairPlay) {
         badges.add(def[BadgeType.fairPlay]!);
       }
 

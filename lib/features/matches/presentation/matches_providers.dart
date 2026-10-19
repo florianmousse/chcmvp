@@ -1,3 +1,5 @@
+import 'package:chc_mvp/core/utils/season.dart';
+import 'package:chc_mvp/features/home/domain/advanced_stats_calculator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/core/models/player_match_stats_model.dart';
@@ -47,25 +49,53 @@ final playerMatchStatsProvider =
           .watchPlayerMatchStats(matchId);
     });
 
-/// Stats agrégées de tous les matchs de la saison courante.
+final currentSeasonProvider = Provider<String>(
+  (ref) => seasonId(DateTime.now()),
+);
+
+final aggregatedPlayerStatsProvider =
+    Provider<AsyncValue<Map<String, AggregatedPlayerStats>>>(
+      (ref) => ref.watch(gameStatsForScopeProvider(null)),
+    );
+final seasonGameStatsProvider =
+    Provider<AsyncValue<Map<String, AggregatedPlayerStats>>>(
+      (ref) => ref.watch(
+        gameStatsForScopeProvider(ref.watch(currentSeasonProvider)),
+      ),
+    );
+
+/// Stats agrégées des matchs clôturés, filtrées par saison si demandée.
 /// Recalculé automatiquement à chaque changement de la liste de matchs
 /// ou des stats d'un match.
-final aggregatedPlayerStatsProvider =
-    Provider<AsyncValue<Map<String, AggregatedPlayerStats>>>((ref) {
+final gameStatsForScopeProvider =
+    Provider.family<AsyncValue<Map<String, AggregatedPlayerStats>>, String?>((
+      ref,
+      scope,
+    ) {
       final matchesAsync = ref.watch(matchesListProvider(null));
 
       return matchesAsync.when(
         data: (matches) {
           final agg = <String, _MutableStats>{};
           var loadingCount = 0;
+          AsyncError<Map<String, AggregatedPlayerStats>>? error;
 
           for (final match in matches) {
-            if (match.status != MatchStatus.votingClosed) continue;
+            if (match.status != MatchStatus.votingClosed ||
+                (scope != null && seasonId(match.date) != scope)) {
+              continue;
+            }
 
             final statsAsync = ref.watch(playerMatchStatsProvider(match.id));
             statsAsync.whenData((statsList) {
-              for (final s in statsList) {
-                final ms = agg.putIfAbsent(s.playerId, _MutableStats.new);
+              final byPlayer = {for (final s in statsList) s.playerId: s};
+              for (final uid in match.presentPlayerIds.toSet()) {
+                final ms = agg.putIfAbsent(uid, _MutableStats.new);
+                final s = byPlayer[uid];
+                if (s == null) {
+                  ms.hasCompleteStats = false;
+                  continue;
+                }
                 ms.goals += s.goals;
                 ms.assists += s.assists;
                 ms.greenCards += s.greenCards;
@@ -75,22 +105,28 @@ final aggregatedPlayerStatsProvider =
               }
             });
             if (statsAsync.isLoading) loadingCount++;
+            if (statsAsync.hasError) {
+              error = AsyncError(statsAsync.error!, statsAsync.stackTrace!);
+            }
           }
 
-          if (loadingCount > 0 && agg.isEmpty) {
+          if (error != null) return error;
+          if (loadingCount > 0) {
             return const AsyncValue.loading();
           }
 
           return AsyncValue.data({
             for (final e in agg.entries)
-              e.key: AggregatedPlayerStats(
-                goals: e.value.goals,
-                assists: e.value.assists,
-                greenCards: e.value.greenCards,
-                yellowCards: e.value.yellowCards,
-                redCards: e.value.redCards,
-                matchesPlayed: e.value.matchesPlayed,
-              ),
+              if (e.value.matchesPlayed > 0)
+                e.key: AggregatedPlayerStats(
+                  hasCompleteStats: e.value.hasCompleteStats,
+                  goals: e.value.goals,
+                  assists: e.value.assists,
+                  greenCards: e.value.greenCards,
+                  yellowCards: e.value.yellowCards,
+                  redCards: e.value.redCards,
+                  matchesPlayed: e.value.matchesPlayed,
+                ),
           });
         },
         loading: () => const AsyncValue.loading(),
@@ -100,6 +136,7 @@ final aggregatedPlayerStatsProvider =
 
 /// Helper mutable pour l'agrégation interne.
 class _MutableStats {
+  bool hasCompleteStats = true;
   int goals = 0;
   int assists = 0;
   int greenCards = 0;
@@ -109,22 +146,14 @@ class _MutableStats {
 }
 
 /// Stats agrégées d'un joueur sur tous les matchs clôturés.
-class AggregatedPlayerStats {
-  final int goals;
-  final int assists;
-  final int greenCards;
-  final int yellowCards;
-  final int redCards;
-  final int matchesPlayed;
-
+class AggregatedPlayerStats extends GameStats {
   const AggregatedPlayerStats({
-    this.goals = 0,
-    this.assists = 0,
-    this.greenCards = 0,
-    this.yellowCards = 0,
-    this.redCards = 0,
-    this.matchesPlayed = 0,
+    super.goals,
+    super.assists,
+    super.greenCards,
+    super.yellowCards,
+    super.redCards,
+    super.matchesPlayed,
+    super.hasCompleteStats,
   });
-
-  int get totalCards => greenCards + yellowCards + redCards;
 }

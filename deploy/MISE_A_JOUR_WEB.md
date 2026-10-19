@@ -22,7 +22,7 @@ Si le serveur n'a pas encore été mis à jour, il refusera l'ajout sans e-mail.
 ```bash
 flutter test test/web_compatibility_test.dart test/product_updates_test.dart test/member_form_test.dart
 node server/node_modules/typescript/bin/tsc -p server/tsconfig.json
-node --test server/test/*.test.cjs
+npm --prefix server test
 flutter build web --release --no-web-resources-cdn --dart-define=SERVER_BASE_URL=https://chc-mvp.duckdns.org
 ```
 
@@ -36,3 +36,7 @@ node scripts/test-web-login.mjs
 Chrome est cherché à son emplacement Windows standard. Pour un autre emplacement ou système, définis `CHROME_EXECUTABLE` avec son chemin. Les ports locaux 8086 et 9227 doivent être libres. Les aperçus et le profil Chrome de test sont dans `build/`, ignoré par Git. Cette compilation de test est séparée de `build/web`, qui reste la sortie destinée à Vercel.
 
 L'extension Bitwarden elle-même n'est pas incluse dans ce test. Sur le site déployé, vérifie que l'entrée du coffre correspond au domaine du site, puis teste le remplissage et la connexion. Les champs natifs suivent le fonctionnement décrit par [Bitwarden](https://contributing.bitwarden.com/architecture/deep-dives/autofill/) et sont intégrés grâce à [HtmlElementView de Flutter](https://docs.flutter.dev/platform-integration/web/web-content-in-flutter).
+
+## Audit des statistiques et des classements
+
+Voir [les correctifs et la procédure de reconstruction](AUDIT_STATS_CLASSEMENTS.md) pour la mise à jour du serveur, le nettoyage des anciens matchs supprimés et les tests supplémentaires.

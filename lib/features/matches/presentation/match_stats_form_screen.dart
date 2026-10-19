@@ -67,7 +67,13 @@ class _MatchStatsFormScreenState extends ConsumerState<MatchStatsFormScreen> {
         title: const Text('Stats du match'),
         actions: [
           TextButton.icon(
-            onPressed: _saving ? null : _save,
+            onPressed:
+                _saving ||
+                    !_initialized ||
+                    existingStatsAsync.isLoading ||
+                    existingStatsAsync.hasError
+                ? null
+                : _save,
             icon: const Icon(Icons.save),
             label: const Text('Enregistrer'),
           ),
@@ -75,83 +81,92 @@ class _MatchStatsFormScreenState extends ConsumerState<MatchStatsFormScreen> {
       ),
       body: ResponsiveContent(
         maxWidth: 1000,
-        child: membersAsync.when(
-          data: (members) {
-            final nameOf = <String, String>{
-              for (final m in members) m.uid: m.fullName,
-            };
+        child: existingStatsAsync.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : existingStatsAsync.hasError
+            ? Center(
+                child: Text(
+                  'Erreur chargement des statistiques : ${existingStatsAsync.error}',
+                ),
+              )
+            : membersAsync.when(
+                data: (members) {
+                  final nameOf = <String, String>{
+                    for (final m in members) m.uid: m.fullName,
+                  };
 
-            // Assurer une entrée pour chaque joueur présent
-            for (final uid in widget.match.presentPlayerIds) {
-              _stats.putIfAbsent(uid, _PlayerStatsData.new);
-            }
+                  // Assurer une entrée pour chaque joueur présent
+                  for (final uid in widget.match.presentPlayerIds) {
+                    _stats.putIfAbsent(uid, _PlayerStatsData.new);
+                  }
 
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // ─── Score du match ───
-                Text(
-                  'Score du match',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _scoreHomeCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'CHC',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
+                  return ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      // ─── Score du match ───
+                      Text(
+                        'Score du match',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('-', style: TextStyle(fontSize: 24)),
-                    ),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _scoreAwayCtrl,
-                        decoration: InputDecoration(
-                          labelText: widget.match.opponent,
-                          border: const OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _scoreHomeCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'CHC',
+                                border: OutlineInputBorder(),
+                              ),
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Text('-', style: TextStyle(fontSize: 24)),
+                          ),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _scoreAwayCtrl,
+                              decoration: InputDecoration(
+                                labelText: widget.match.opponent,
+                                border: const OutlineInputBorder(),
+                              ),
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                const Divider(),
-                const SizedBox(height: 8),
-                // ─── Stats par joueur ───
-                Text(
-                  'Stats individuelles',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...widget.match.presentPlayerIds.map((uid) {
-                  final data = _stats.putIfAbsent(uid, _PlayerStatsData.new);
-                  return _PlayerStatsRow(
-                    playerName: nameOf[uid] ?? 'Joueur inconnu',
-                    data: data,
-                    onChanged: () => setState(() {}),
+                      const SizedBox(height: 24),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      // ─── Stats par joueur ───
+                      Text(
+                        'Stats individuelles',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+                      ...widget.match.presentPlayerIds.map((uid) {
+                        final data = _stats.putIfAbsent(
+                          uid,
+                          _PlayerStatsData.new,
+                        );
+                        return _PlayerStatsRow(
+                          playerName: nameOf[uid] ?? 'Joueur inconnu',
+                          data: data,
+                          onChanged: () => setState(() {}),
+                        );
+                      }),
+                    ],
                   );
-                }),
-              ],
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Erreur : $e')),
-        ),
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('Erreur : $e')),
+              ),
       ),
     );
   }

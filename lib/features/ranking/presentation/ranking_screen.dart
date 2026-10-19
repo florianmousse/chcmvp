@@ -342,7 +342,12 @@ class _StatsRankingTabState extends ConsumerState<_StatsRankingTab> {
               };
 
               // Trier selon le mode sélectionné
-              final entries = statsMap.entries.toList();
+              final entries = statsMap.entries
+                  .where(
+                    (e) =>
+                        _sort != _StatSort.fairPlay || e.value.hasCompleteStats,
+                  )
+                  .toList();
               entries.sort((a, b) {
                 switch (_sort) {
                   case _StatSort.goals:
@@ -351,7 +356,14 @@ class _StatsRankingTabState extends ConsumerState<_StatsRankingTab> {
                     return b.value.assists.compareTo(a.value.assists);
                   case _StatSort.fairPlay:
                     // Moins de cartons = mieux → tri ascendant
-                    return a.value.totalCards.compareTo(b.value.totalCards);
+                    final cards = a.value.totalCards.compareTo(
+                      b.value.totalCards,
+                    );
+                    return cards != 0
+                        ? cards
+                        : b.value.matchesPlayed.compareTo(
+                            a.value.matchesPlayed,
+                          );
                 }
               });
 
@@ -361,7 +373,22 @@ class _StatsRankingTabState extends ConsumerState<_StatsRankingTab> {
                   final uid = entries[i].key;
                   final stats = entries[i].value;
                   final name = nameOf[uid] ?? 'Joueur inconnu';
-                  final rank = i + 1;
+                  final rank =
+                      1 +
+                      entries
+                          .where(
+                            (e) => switch (_sort) {
+                              _StatSort.goals => e.value.goals > stats.goals,
+                              _StatSort.assists =>
+                                e.value.assists > stats.assists,
+                              _StatSort.fairPlay =>
+                                e.value.totalCards < stats.totalCards ||
+                                    (e.value.totalCards == stats.totalCards &&
+                                        e.value.matchesPlayed >
+                                            stats.matchesPlayed),
+                            },
+                          )
+                          .length;
 
                   return ListTile(
                     leading: CircleAvatar(
@@ -379,7 +406,7 @@ class _StatsRankingTabState extends ConsumerState<_StatsRankingTab> {
                     ),
                     title: Text(name),
                     subtitle: Text(
-                      '${stats.matchesPlayed} match${stats.matchesPlayed > 1 ? 's' : ''}',
+                      '${stats.matchesPlayed} match${stats.matchesPlayed > 1 ? 's' : ''} renseigné${stats.matchesPlayed > 1 ? 's' : ''}',
                     ),
                     trailing: _StatValue(stats: stats, sort: _sort),
                   );

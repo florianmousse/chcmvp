@@ -311,12 +311,13 @@ class _BadgesWrapper extends ConsumerWidget {
 
   /// Récupère les GameStats agrégées pour un joueur depuis le provider.
   GameStats? _lookupGameStats(WidgetRef ref, String uid) {
-    final aggAsync = ref.watch(aggregatedPlayerStatsProvider);
+    final aggAsync = ref.watch(seasonGameStatsProvider);
     final aggData = aggAsync.value;
     if (aggData == null) return null;
     final data = aggData[uid];
     if (data == null) return null;
     return GameStats(
+      hasCompleteStats: data.hasCompleteStats,
       goals: data.goals,
       assists: data.assists,
       greenCards: data.greenCards,
