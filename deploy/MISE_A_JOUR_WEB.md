@@ -4,7 +4,7 @@
 
 - Connexion web : champs HTML visibles avec `autocomplete="username"` et `autocomplete="current-password"`. Les identifiants sont lus au moment de la soumission, même si le gestionnaire de mots de passe ne déclenche aucun événement de saisie. Le formulaire mobile natif reste en Flutter.
 - Ordinateur : navigation latérale étendue, résumé personnel et cartes de matchs en grille, statistiques en colonnes, badges tous visibles, profil en deux colonnes et formulaires de largeur limitée. Les petits écrans conservent leurs carrousels et leur navigation mobile.
-- Badges : obtenus en premier, plus récents en tête. Les badges déjà enregistrés restent affichés comme obtenus.
+- Badges : obtenus en premier, plus récents en tête. Leur validité est désormais recalculée par le serveur après suppression d'un match ; voir la procédure ci-dessous.
 - Administration → Membres → Ajouter : l'e-mail est facultatif. Sans e-mail, une fiche joueur est créée sans compte Firebase Authentication ni invitation. Ajoute ce joueur aux présents du match pour pouvoir voter pour lui.
 - Pour inviter ce joueur plus tard : ouvre **Modifier**, renseigne son e-mail et clique sur **Enregistrer et inviter**. Son identifiant reste le même, donc ses résultats, statistiques et badges restent associés à sa fiche. Un joueur sans compte ne peut pas se connecter ni déposer de vote.
 - Les comptes existants restent compatibles ; aucune migration de données n'est nécessaire. Une adresse déjà utilisée par un autre compte est refusée sans fusionner les fiches.
@@ -39,4 +39,4 @@ L'extension Bitwarden elle-même n'est pas incluse dans ce test. Sur le site dé
 
 ## Audit des statistiques et des classements
 
-Voir [les correctifs et la procédure de reconstruction](AUDIT_STATS_CLASSEMENTS.md) pour la mise à jour du serveur, le nettoyage des anciens matchs supprimés et les tests supplémentaires.
+Voir [les correctifs et la procédure de reconstruction](AUDIT_STATS_CLASSEMENTS.md) pour la mise à jour du serveur **et des règles Firestore**, le nettoyage des anciens matchs supprimés, le recalcul des badges et l'utilisation des matchs de test réservés aux admins. Cette procédure est celle à suivre pour la version actuelle.

@@ -1,11 +1,21 @@
 import { Router } from "express";
-import { getFirestore } from "firebase-admin/firestore";
-import { requireAuth, requireAdmin } from "../middleware/auth";
+import { requireAuth, requireAdmin, AuthedRequest } from "../middleware/auth";
+import { matchReference } from "../matchReference";
+import { saveTestVote } from "../testVotes";
 import { handleVotingClosed } from "../matchListeners";
 import { deleteMatchAndRebuild, rebuildRankingsAndStats } from "../rebuildRankings";
 
 export const matchesRouter = Router();
 matchesRouter.use(requireAuth, requireAdmin);
+
+matchesRouter.post("/:matchId/test-vote", async (req: AuthedRequest, res) => {
+  try {
+    await saveTestVote(req.params.matchId, req.uid!, req.body);
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(e.status ?? 500).json({ error: e.message ?? "Erreur de simulation." });
+  }
+});
 
 matchesRouter.delete("/:matchId", async (req, res) => {
   try {
@@ -25,10 +35,7 @@ matchesRouter.delete("/:matchId", async (req, res) => {
  */
 matchesRouter.post("/:matchId/recompute", async (req, res) => {
   const { matchId } = req.params;
-  const matchDoc = await getFirestore()
-    .collection("matches")
-    .doc(matchId)
-    .get();
+  const matchDoc = await matchReference(matchId).get();
 
   if (!matchDoc.exists) {
     return res.status(404).json({ error: "Match introuvable." });

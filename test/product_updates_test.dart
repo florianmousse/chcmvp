@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
@@ -14,9 +15,46 @@ import 'package:chc_mvp/features/home/domain/badge_model.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_screen.dart';
 import 'package:chc_mvp/features/profile/presentation/profile_screen.dart';
 import 'package:chc_mvp/features/admin/presentation/admin_dashboard_screen.dart';
+import 'package:chc_mvp/features/badges/presentation/badges_providers.dart';
+import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
+import 'package:chc_mvp/core/theme/theme_provider.dart';
 import 'support/dashboard_fixture.dart';
 
 void main() {
+  testWidgets(
+    'profile removes revoked badges and celebrates server additions',
+    (tester) async {
+      final badges = StreamController<Map<String, DateTime>>();
+      addTearDown(badges.close);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentUserProfileProvider.overrideWith(
+              (ref) => Stream.value(demoMember),
+            ),
+            themeModeProvider.overrideWith(() => DemoTheme()),
+            userBadgesProvider.overrideWith((ref, uid) => badges.stream),
+          ],
+          child: const MaterialApp(home: ProfileScreen()),
+        ),
+      );
+      badges.add({'fairPlay': DateTime(2026, 9, 1)});
+      await tester.pumpAndSettle();
+      expect(find.text('1/12'), findsOneWidget);
+      badges.add({});
+      await tester.pumpAndSettle();
+      expect(find.text('0/12'), findsOneWidget);
+      expect(find.text('Nouveau badge débloqué !'), findsNothing);
+      badges.add({'buteur': DateTime(2026, 10, 19)});
+      await tester.pumpAndSettle();
+      expect(find.text('1/12'), findsOneWidget);
+      expect(find.text('Nouveau badge débloqué !'), findsOneWidget);
+      await tester.tap(find.text('Super ! 🙌'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
   setUpAll(() async {
     await initializeDateFormatting('fr_FR');
     final config = File('.dart_tool/package_config.json');

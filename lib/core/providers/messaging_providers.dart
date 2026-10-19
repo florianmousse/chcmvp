@@ -1,6 +1,7 @@
+import 'package:chc_mvp/core/models/match_reference.dart';
+import 'package:chc_mvp/features/matches/presentation/test_match_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/core/navigation/navigator_key.dart';
@@ -70,14 +71,28 @@ Future<void> _openVoteFromNotification(Ref ref, String? matchId) async {
 
   try {
     final firestore = ref.read(firestoreProvider);
-    final matchDoc = await firestore.collection('matches').doc(matchId).get();
+    if (isTestMatchId(matchId) &&
+        (await ref.read(currentUserProfileProvider.future))?.isAdmin != true) {
+      return;
+    }
+    final matchDoc = await firestore
+        .collection(matchCollection(matchId))
+        .doc(matchId)
+        .get();
     if (!matchDoc.exists) return;
 
     final match = MatchModel.fromJson(
       sanitizeFirestoreJson({...matchDoc.data()!, 'id': matchDoc.id}),
     );
-    if (match.status != MatchStatus.votingOpen)
+    if (match.isTest) {
+      navigator.push(
+        MaterialPageRoute(builder: (_) => TestMatchScreen(match: match)),
+      );
+      return;
+    }
+    if (match.status != MatchStatus.votingOpen) {
       return; // vote déjà clôturé entre-temps
+    }
 
     final uid = ref.read(firebaseAuthProvider).currentUser?.uid;
     if (uid != null) {

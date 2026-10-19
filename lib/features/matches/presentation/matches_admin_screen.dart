@@ -6,13 +6,14 @@ import 'package:chc_mvp/features/matches/presentation/match_form_screen.dart';
 import 'package:chc_mvp/features/matches/presentation/match_stats_form_screen.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:intl/intl.dart';
+import 'test_match_screen.dart';
 
 class MatchesAdminScreen extends ConsumerWidget {
   const MatchesAdminScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final matchesAsync = ref.watch(matchesListProvider(null));
+    final matchesAsync = ref.watch(adminMatchesListProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Matchs')),
@@ -61,7 +62,7 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : Icon(_statusIcon, color: _statusColor(context)),
-      title: Text(match.label),
+      title: Text('${match.isTest ? '[TEST] ' : ''}${match.label}'),
       subtitle: Text(
         '${DateFormat('dd/MM/yyyy').format(match.date)} à ${match.time} · ${match.team} · $_statusLabel',
       ),
@@ -69,6 +70,12 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
         onSelected: (action) async {
           try {
             switch (action) {
+              case 'simulate':
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => TestMatchScreen(match: match),
+                  ),
+                );
               case 'edit':
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -108,11 +115,13 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
           }
         },
         itemBuilder: (context) => [
+          if (match.isTest)
+            const PopupMenuItem(
+              value: 'simulate',
+              child: Text('Simuler les votes / résultats'),
+            ),
           const PopupMenuItem(value: 'edit', child: Text('Modifier')),
-          const PopupMenuItem(
-            value: 'stats',
-            child: Text('Stats du match'),
-          ),
+          const PopupMenuItem(value: 'stats', child: Text('Stats du match')),
           if (match.status == MatchStatus.upcoming)
             const PopupMenuItem(
               value: 'open_voting',

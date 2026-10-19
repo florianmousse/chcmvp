@@ -59,6 +59,9 @@ class MatchModel with _$MatchModel {
 
   const MatchModel._();
 
+  /// Les matchs de test ont un identifiant réservé et une collection séparée.
+  bool get isTest => id.startsWith('test:');
+
   String get label => 'CHC vs $opponent';
 
   /// Ex: "3 - 2" - null si le score n'a pas été saisi.

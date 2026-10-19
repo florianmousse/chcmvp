@@ -60,7 +60,8 @@ service cloud.firestore {
     // ---------- matches ----------
     match /matches/{matchId} {
       allow read: if isActiveMember();
-      allow create, update, delete: if isAdmin();
+      allow create: if isAdmin() && !matchId.matches('test:.*');
+      allow update, delete: if isAdmin();
 
       // ---------- votes (sous-collection) ----------
       // Un vote ne peut être créé que par son auteur, une seule fois, et uniquement
@@ -108,6 +109,25 @@ service cloud.firestore {
     }
 
     // ---------- rankings_cache ----------
+    // Collections séparées : aucun filtre client n'est nécessaire pour protéger
+    // les tests, y compris avec une ancienne application mobile.
+    match /test_matches/{matchId} {
+      allow read: if isActiveMember() && isAdmin();
+      allow create: if isActiveMember() && isAdmin() && matchId.matches('test:.*');
+      allow update, delete: if isActiveMember() && isAdmin();
+      match /votes/{voterUid} {
+        allow read: if isActiveMember() && isAdmin();
+        allow write: if false; // simulation validée par le serveur
+      }
+      match /results/{doc} {
+        allow read: if isActiveMember() && isAdmin();
+        allow write: if false;
+      }
+      match /playerStats/{uid} {
+        allow read, write: if isActiveMember() && isAdmin();
+      }
+    }
+
     match /rankings_cache/{scope} {
       allow read: if isActiveMember();
       allow write: if false; // recalculé par Cloud Function
@@ -127,7 +147,7 @@ service cloud.firestore {
     // ---------- userBadges ----------
     match /userBadges/{userId} {
       allow read: if isActiveMember();
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false; // calcul serveur ; empêche de rétablir un badge révoqué
     }
   }
 }

@@ -2,9 +2,9 @@ import 'package:chc_mvp/features/home/domain/advanced_stats_calculator.dart';
 import 'package:chc_mvp/features/home/domain/badge_model.dart';
 import 'package:chc_mvp/features/ranking/data/ranking_repository.dart';
 
-/// Détermine les badges gagnés par un joueur à partir de ses stats, de son
-/// historique et du contexte de la saison. Le résultat est ensuite synchronisé
-/// dans Firestore par le `_BadgesWrapper` du profil.
+/// Ancien calcul local, conservé comme référence pour les tests historiques.
+/// La source officielle est désormais server/src/rebuildBadges.ts ; le profil
+/// lit exclusivement les badges persistés par le serveur.
 class BadgeCalculator {
   /// Calcule la liste de badges d'un joueur donné.
   ///

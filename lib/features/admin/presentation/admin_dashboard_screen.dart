@@ -126,7 +126,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         setState(() {
           _lastResultWasError = false;
           _lastResultMessage =
-              '${result['matchesProcessed']} match(s) recalculé(s), ${result['orphanMatchesDeleted'] ?? 0} match(s) supprimé(s) nettoyé(s).';
+              '${result['matchesProcessed']} match(s) recalculé(s), ${result['orphanMatchesDeleted'] ?? 0} match(s) supprimé(s) nettoyé(s), ${result['badgesUpdated'] ?? 0} collection(s) de badges mise(s) à jour.';
         });
       }
     } catch (e) {

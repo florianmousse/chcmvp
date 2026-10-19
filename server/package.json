@@ -9,7 +9,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "test": "node --test test/cors.test.cjs test/members.test.cjs test/tally.test.cjs",
+    "test": "node --test test/cors.test.cjs test/members.test.cjs test/tally.test.cjs test/badges.test.cjs",
     "test:emulator": "node --test test/rankings.emulator.test.cjs"
   },
   "dependencies": {

@@ -31,6 +31,7 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
   late bool _allowSelfVote = widget.existing?.allowSelfVote ?? false;
   final Set<String> _presentPlayerIds = {};
   String? _selectedLogoAsset;
+  late bool _isTest = widget.existing?.isTest ?? false;
   bool _saving = false;
 
   bool get _isEditing => widget.existing != null;
@@ -73,6 +74,17 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Match de test'),
+                subtitle: const Text(
+                  'Visible et notifié uniquement aux admins. Sans effet sur les classements et badges du club.',
+                ),
+                value: _isTest,
+                onChanged: _isEditing
+                    ? null
+                    : (value) => setState(() => _isTest = value),
+              ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Date'),
@@ -345,6 +357,7 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
         });
       } else {
         await repo.createMatch(
+          isTest: _isTest,
           date: _date,
           time: _formattedTime,
           opponent: opponentName,

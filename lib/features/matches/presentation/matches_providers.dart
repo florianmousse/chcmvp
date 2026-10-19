@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/models/match_reference.dart';
 import 'package:chc_mvp/core/utils/season.dart';
 import 'package:chc_mvp/features/home/domain/advanced_stats_calculator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,7 +31,7 @@ final matchResultProvider =
       ref.watch(authStateProvider);
       return ref
           .watch(firestoreProvider)
-          .collection('matches')
+          .collection(matchCollection(matchId))
           .doc(matchId)
           .collection('results')
           .doc('summary')
@@ -157,3 +158,38 @@ class AggregatedPlayerStats extends GameStats {
     super.hasCompleteStats,
   });
 }
+
+/// Tests remain outside all normal match and statistics providers.
+final testMatchesListProvider = StreamProvider<List<MatchModel>>((ref) {
+  if (!ref.watch(isAdminProvider)) return Stream.value([]);
+  return ref.watch(matchesRepositoryProvider).watchTestMatches();
+});
+final adminMatchesListProvider = Provider<AsyncValue<List<MatchModel>>>((ref) {
+  final real = ref.watch(matchesListProvider(null));
+  final tests = ref.watch(testMatchesListProvider);
+  return real.when(
+    data: (matches) => tests.whenData(
+      (testMatches) =>
+          [...matches, ...testMatches]
+            ..sort((a, b) => b.date.compareTo(a.date)),
+    ),
+    loading: () => const AsyncLoading(),
+    error: (e, st) => AsyncError(e, st),
+  );
+});
+final testVotesProvider =
+    StreamProvider.family<List<Map<String, dynamic>>, String>((ref, id) {
+      if (!ref.watch(isAdminProvider) || !isTestMatchId(id)) {
+        return Stream.value([]);
+      }
+      return ref
+          .watch(firestoreProvider)
+          .collection('test_matches')
+          .doc(id)
+          .collection('votes')
+          .snapshots()
+          .map(
+            (snap) =>
+                snap.docs.map((d) => {...d.data(), 'voterUid': d.id}).toList(),
+          );
+    });

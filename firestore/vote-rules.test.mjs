@@ -11,6 +11,8 @@ const value = v => v === null ? { nullValue:null }
   : v instanceof Date ? { timestampValue:v.toISOString() }
   : Array.isArray(v) ? { arrayValue:{ values:v.map(value) } }
   : typeof v === 'boolean' ? { booleanValue:v }
+  : typeof v === 'number' ? { integerValue:String(v) }
+  : typeof v === 'object' ? { mapValue:{ fields:fields(v) } }
   : { stringValue:String(v) };
 const fields = obj => Object.fromEntries(Object.entries(obj).map(([key, v]) => [key, value(v)]));
 function token(uid) {
@@ -30,6 +32,8 @@ async function vote(match, uid = 'voter', choices = ['a','b','c'], extras = {}) 
 }
 const match = { status:'voting_open', presentPlayerIds:['voter','a','b','c'], allowSelfVote:false, votingOpensAt:new Date(Date.now() - 3600000), votingClosesAt:new Date(Date.now() + 3600000) };
 before(async () => {
+  await seed('users/admin', { isActive:true, role:'admin' });
+  await seed('users/inactive-admin', { isActive:false, role:'admin' });
   for (const uid of ['voter','a','b','c','absent']) await seed(`users/${uid}`, { isActive:true, role:'member' });
   await seed('users/inactive', { isActive:false, role:'member' });
 });
@@ -71,4 +75,45 @@ test('Un joueur sans e-mail ni compte Auth peut recevoir un vote', async () => {
   await seed('matches/guest-candidate', { ...match, presentPlayerIds:['voter','guest','b','c'] });
   const result = await vote('guest-candidate', 'voter', ['guest','b','c']);
   assert.equal(result.status, 200, await result.text());
+});
+
+async function access(path, uid, body) {
+  return fetch(`${base}/${path}`, {
+    method:body ? 'PATCH' : 'GET',
+    headers:{ Authorization:`Bearer ${token(uid)}`, 'Content-Type':'application/json' },
+    ...(body ? { body:JSON.stringify({ fields:fields(body) }) } : {}),
+  });
+}
+
+test('Les tests et leurs sous-collections sont lisibles uniquement par les admins actifs', async () => {
+  await seed('test_matches/test:private', match);
+  await seed('test_matches/test:private/votes/voter', { voterUid:'voter' });
+  await seed('test_matches/test:private/results/summary', { totalVotes:1 });
+  await seed('test_matches/test:private/playerStats/a', { goals:1 });
+  for (const path of ['test_matches', 'test_matches/test:private',
+    'test_matches/test:private/votes/voter', 'test_matches/test:private/results/summary',
+    'test_matches/test:private/playerStats/a']) {
+    assert.equal((await access(path, 'admin')).status, 200, path);
+    for (const uid of ['voter','inactive-admin']) assert.equal((await access(path, uid)).status, 403, `${uid}: ${path}`);
+  }
+  assert.equal((await access('matches', 'voter')).status, 200);
+});
+
+test('Création des tests protégée et bulletins simulés réservés au serveur', async () => {
+  assert.equal((await access('test_matches/test:created', 'admin', match)).status, 200);
+  assert.equal((await access('test_matches/test:denied', 'voter', match)).status, 403);
+  assert.equal((await access('test_matches/test:inactive', 'inactive-admin', match)).status, 403);
+  assert.equal((await access('test_matches/unprefixed', 'admin', match)).status, 403);
+  assert.equal((await access('matches/test:public', 'admin', match)).status, 403);
+  for (const uid of ['admin','voter']) {
+    assert.equal((await access('test_matches/test:created/votes/voter', uid, { voterUid:'voter' })).status, 403);
+  }
+});
+
+test('Un client ne peut pas réattribuer un badge révoqué, même admin', async () => {
+  await seed('userBadges/voter', { earned:{} });
+  for (const uid of ['voter','admin']) {
+    assert.equal((await access('userBadges/voter', uid, { earned:{ fairPlay:new Date() } })).status, 403);
+    assert.equal((await access('userBadges/voter', uid)).status, 200);
+  }
 });

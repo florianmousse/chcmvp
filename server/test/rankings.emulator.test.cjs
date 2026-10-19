@@ -4,6 +4,7 @@ const { initializeApp, deleteApp } = require('firebase-admin/app');
 const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 const { rebuildRankingsAndStats, deleteMatchAndRebuild, recomputeClosedMatch } = require('../dist/rebuildRankings');
 const { withRankingLock } = require('../dist/rankingLock');
+const { saveTestVote } = require('../dist/testVotes');
 
 // Refuse to touch any remote or production database.
 if (!/^(127\.0\.0\.1|localhost):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST ?? '')) {
@@ -113,4 +114,64 @@ test('closure recomputation after a rebuild stays idempotent and ignores deleted
   await deleteMatchAndRebuild('match', db);
   assert.equal(await recomputeClosedMatch('match', db), null);
   assert.equal((await db.collection('matches').listDocuments()).length, 0);
+});
+
+test('deleting a source match revokes badges and preserves dates of valid badges', async () => {
+  for (let i = 0; i < 5; i++) {
+    const ref = await seedMatch(`badge${i}`);
+    await ref.collection('playerStats').doc('a').set({ goals: 2, assists: 1, greenCards: 0 });
+  }
+  await rebuildRankingsAndStats(db);
+  const earned = (await data('userBadges/a')).earned;
+  assert.ok(earned.fairPlay && earned.buteur && earned.passeurDor && earned.serieTop3);
+  await rebuildRankingsAndStats(db);
+  assert.deepEqual((await data('userBadges/a')).earned, earned);
+  await deleteMatchAndRebuild('badge4', db);
+  const remaining = (await data('userBadges/a')).earned;
+  assert.deepEqual(Object.keys(remaining), ['buteur']);
+  assert.ok(remaining.buteur.isEqual(earned.buteur));
+  for (let i = 0; i < 4; i++) await deleteMatchAndRebuild(`badge${i}`, db);
+  assert.deepEqual((await data('userBadges/a')).earned, {});
+});
+
+test('test ballots validate the voter and candidates and never change real totals or badges', async () => {
+  await seedMatch('real');
+  await rebuildRankingsAndStats(db);
+  const ranking = await data('rankings_cache/general');
+  const stats = await data('player_stats/a');
+  const badges = await db.collection('userBadges').get();
+  await db.doc('users/admin').set({ role: 'admin', isActive: true });
+  await db.doc('users/member').set({ role: 'member', isActive: true });
+  await db.doc('users/inactive').set({ role: 'admin', isActive: false });
+  const ref = db.doc('test_matches/test:simulation');
+  await ref.set({ status: 'voting_open', date: Timestamp.now(), presentPlayerIds: ['a','b','c','d'], allowSelfVote: false });
+  const ballot = { voterUid:'d', firstPlaceUid:'a', secondPlaceUid:'b', thirdPlaceUid:'c' };
+  for (const [id, uid, input, status] of [
+    ['real','admin',ballot,400],
+    [ref.id,'member',ballot,403],
+    [ref.id,'inactive',ballot,403],
+    [ref.id,'admin',{...ballot, voterUid:'absent'},400],
+    [ref.id,'admin',{...ballot, firstPlaceUid:'absent'},400],
+    [ref.id,'admin',{...ballot, firstPlaceUid:'d'},400],
+    [ref.id,'admin',{...ballot, firstPlaceUid:'b'},400],
+  ]) await assert.rejects(saveTestVote(id, uid, input, db), { status });
+  await saveTestVote(ref.id, 'admin', ballot, db);
+  await saveTestVote(ref.id, 'admin', {...ballot, firstPlaceUid:'b', secondPlaceUid:'a'}, db);
+  assert.equal((await ref.collection('votes').get()).size, 1);
+  assert.equal((await data(`${ref.path}/votes/d`)).simulatedByAdminUid, 'admin');
+  await ref.update({ status:'voting_closed' });
+  await assert.rejects(saveTestVote(ref.id, 'admin', ballot, db), { status:409 });
+  const result = await recomputeClosedMatch(ref.id, db);
+  assert.equal(result.summary.entries.b.points, 5);
+  assert.equal(result.summary.totalVotes, 1);
+  assert.deepEqual(await data('rankings_cache/general'), ranking);
+  assert.deepEqual(await data('player_stats/a'), stats);
+  assert.deepEqual((await db.collection('userBadges').get()).docs.map(d=>d.data()), badges.docs.map(d=>d.data()));
+  await rebuildRankingsAndStats(db);
+  assert.deepEqual(await data('rankings_cache/general'), ranking);
+  await deleteMatchAndRebuild(ref.id, db);
+  assert.equal((await ref.get()).exists, false);
+  assert.equal((await ref.collection('votes').get()).size, 0);
+  assert.equal((await ref.collection('results').get()).size, 0);
+  assert.deepEqual(await data('rankings_cache/general'), ranking);
 });

@@ -1,3 +1,4 @@
+import { matchReference } from "./matchReference";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { getClubSettings, notifyMembers, notifyAdmins } from "./notify";
 
@@ -32,96 +33,98 @@ export async function processScheduledVoting(): Promise<void> {
   const now = Timestamp.now();
   const nowMs = now.toMillis();
 
-  // ────────────────────────────────────────────────────────────────────────
-  // Phase 1 & 2 : matchs « upcoming » → rappel admin + auto-ouverture
-  // ────────────────────────────────────────────────────────────────────────
-  const upcomingSnap = await firestore
-    .collection("matches")
-    .where("status", "==", "upcoming")
-    .get();
+  for (const collection of ["matches", "test_matches"]) {
+    // ────────────────────────────────────────────────────────────────────────
+    // Phase 1 & 2 : matchs « upcoming » → rappel admin + auto-ouverture
+    // ────────────────────────────────────────────────────────────────────────
+    const upcomingSnap = await firestore
+      .collection(collection)
+      .where("status", "==", "upcoming")
+      .get();
 
-  for (const doc of upcomingSnap.docs) {
-    const match = doc.data();
-    const dateTs: Timestamp | undefined = match.date;
-    const time: string | undefined = match.time;
-    if (!dateTs || !time) continue;
+    for (const doc of upcomingSnap.docs) {
+      const match = doc.data();
+      const dateTs: Timestamp | undefined = match.date;
+      const time: string | undefined = match.time;
+      if (!dateTs || !time) continue;
 
-    const matchMs = matchDateTime(dateTs, time);
-    const presentIds: string[] = match.presentPlayerIds ?? [];
+      const matchMs = matchDateTime(dateTs, time);
+      const presentIds: string[] = match.presentPlayerIds ?? [];
 
-    // ── Phase 1 : Rappel admin si feuille de présence vide ──
-    // Envoyé quand on est à moins de adminReminderBeforeHours du match
-    // ET que les joueurs présents n'ont pas encore été saisis.
-    const reminderThresholdMs =
-      matchMs - settings.adminReminderBeforeHours * 3600 * 1000;
-    if (
-      presentIds.length === 0 &&
-      nowMs >= reminderThresholdMs &&
-      nowMs < matchMs + settings.voteOpenDelayHours * 3600 * 1000 &&
-      !match.adminReminderSentAt
-    ) {
-      await notifyAdmins({
-        title: "📋 Feuille de présence à remplir !",
-        body: `Le match contre ${match.opponent ?? "l'adversaire"} approche. Remplis la feuille de présence pour que le vote puisse s'ouvrir automatiquement.`,
-        data: { type: "admin_presence_reminder", matchId: doc.id },
-      });
-      await doc.ref.update({ adminReminderSentAt: now });
-      console.log(
-        `Rappel admin envoyé pour le match ${doc.id} (feuille de présence vide)`,
-      );
-      continue; // pas d'ouverture de vote si pas de présence
+      // ── Phase 1 : Rappel admin si feuille de présence vide ──
+      // Envoyé quand on est à moins de adminReminderBeforeHours du match
+      // ET que les joueurs présents n'ont pas encore été saisis.
+      const reminderThresholdMs =
+        matchMs - settings.adminReminderBeforeHours * 3600 * 1000;
+      if (
+        presentIds.length === 0 &&
+        nowMs >= reminderThresholdMs &&
+        nowMs < matchMs + settings.voteOpenDelayHours * 3600 * 1000 &&
+        !match.adminReminderSentAt
+      ) {
+        await notifyAdmins({
+          title: `${collection === "test_matches" ? "[TEST] " : ""}📋 Feuille de présence à remplir !`,
+          body: `Le match contre ${match.opponent ?? "l'adversaire"} approche. Remplis la feuille de présence pour que le vote puisse s'ouvrir automatiquement.`,
+          data: { type: "admin_presence_reminder", matchId: doc.id },
+        });
+        await doc.ref.update({ adminReminderSentAt: now });
+        console.log(
+          `Rappel admin envoyé pour le match ${doc.id} (feuille de présence vide)`,
+        );
+        continue; // pas d'ouverture de vote si pas de présence
+      }
+
+      // ── Phase 2 : Auto-ouverture du vote ──
+      // Le match a commencé depuis au moins voteOpenDelayHours ET la feuille
+      // de présence est renseignée → on passe le statut à voting_open.
+      // Le listener matchListeners.ts détecte la transition et envoie la notif.
+      const voteOpenThresholdMs =
+        matchMs + settings.voteOpenDelayHours * 3600 * 1000;
+      if (presentIds.length > 0 && nowMs >= voteOpenThresholdMs) {
+        const closesAt = Timestamp.fromMillis(
+          voteOpenThresholdMs + settings.voteDurationHours * 3600 * 1000,
+        );
+        await doc.ref.update({
+          status: "voting_open",
+          votingOpensAt: Timestamp.fromMillis(voteOpenThresholdMs),
+          votingClosesAt: closesAt,
+          reminderSentAt: null,
+        });
+        console.log(`Vote ouvert automatiquement pour le match ${doc.id}`);
+      }
     }
 
-    // ── Phase 2 : Auto-ouverture du vote ──
-    // Le match a commencé depuis au moins voteOpenDelayHours ET la feuille
-    // de présence est renseignée → on passe le statut à voting_open.
-    // Le listener matchListeners.ts détecte la transition et envoie la notif.
-    const voteOpenThresholdMs =
-      matchMs + settings.voteOpenDelayHours * 3600 * 1000;
-    if (presentIds.length > 0 && nowMs >= voteOpenThresholdMs) {
-      const closesAt = Timestamp.fromMillis(
-        voteOpenThresholdMs + settings.voteDurationHours * 3600 * 1000,
-      );
-      await doc.ref.update({
-        status: "voting_open",
-        votingOpensAt: Timestamp.fromMillis(voteOpenThresholdMs),
-        votingClosesAt: closesAt,
-        reminderSentAt: null,
-      });
-      console.log(`Vote ouvert automatiquement pour le match ${doc.id}`);
-    }
-  }
+    // ────────────────────────────────────────────────────────────────────────
+    // Phase 3 & 4 : matchs « voting_open » → rappel joueurs + auto-clôture
+    // ────────────────────────────────────────────────────────────────────────
+    const openMatchesSnap = await firestore
+      .collection(collection)
+      .where("status", "==", "voting_open")
+      .get();
 
-  // ────────────────────────────────────────────────────────────────────────
-  // Phase 3 & 4 : matchs « voting_open » → rappel joueurs + auto-clôture
-  // ────────────────────────────────────────────────────────────────────────
-  const openMatchesSnap = await firestore
-    .collection("matches")
-    .where("status", "==", "voting_open")
-    .get();
+    for (const doc of openMatchesSnap.docs) {
+      const match = doc.data();
+      const closesAt: Timestamp | undefined = match.votingClosesAt;
+      if (!closesAt) continue;
 
-  for (const doc of openMatchesSnap.docs) {
-    const match = doc.data();
-    const closesAt: Timestamp | undefined = match.votingClosesAt;
-    if (!closesAt) continue;
+      // ── Phase 4 : Auto-clôture ──
+      if (closesAt.toMillis() <= nowMs) {
+        // Ce write déclenche le listener de matchListeners.ts (transition vers
+        // "voting_closed"), qui calcule les résultats et envoie la notification
+        // de clôture - pas besoin de dupliquer cette logique ici.
+        await doc.ref.update({ status: "voting_closed" });
+        console.log(`Vote clôturé automatiquement pour le match ${doc.id}`);
+        continue;
+      }
 
-    // ── Phase 4 : Auto-clôture ──
-    if (closesAt.toMillis() <= nowMs) {
-      // Ce write déclenche le listener de matchListeners.ts (transition vers
-      // "voting_closed"), qui calcule les résultats et envoie la notification
-      // de clôture - pas besoin de dupliquer cette logique ici.
-      await doc.ref.update({ status: "voting_closed" });
-      console.log(`Vote clôturé automatiquement pour le match ${doc.id}`);
-      continue;
-    }
-
-    // ── Phase 3 : Rappel aux non-votants ──
-    const reminderThreshold =
-      closesAt.toMillis() - settings.reminderBeforeHours * 3600 * 1000;
-    const reminderAlreadySent = !!match.reminderSentAt;
-    if (!reminderAlreadySent && nowMs >= reminderThreshold) {
-      await sendReminderToNonVoters(doc.id, match);
-      await doc.ref.update({ reminderSentAt: now });
+      // ── Phase 3 : Rappel aux non-votants ──
+      const reminderThreshold =
+        closesAt.toMillis() - settings.reminderBeforeHours * 3600 * 1000;
+      const reminderAlreadySent = !!match.reminderSentAt;
+      if (!reminderAlreadySent && nowMs >= reminderThreshold) {
+        await sendReminderToNonVoters(doc.id, match);
+        await doc.ref.update({ reminderSentAt: now });
+      }
     }
   }
 }
@@ -131,13 +134,12 @@ async function sendReminderToNonVoters(
   match: FirebaseFirestore.DocumentData,
 ): Promise<void> {
   const firestore = getFirestore();
-  const votesSnap = await firestore
-    .collection(`matches/${matchId}/votes`)
-    .get();
+  const votesSnap = await matchReference(matchId, firestore).collection("votes").get();
   const votedUids = votesSnap.docs.map((d) => d.id);
   const presentPlayerIds: string[] = match.presentPlayerIds ?? [];
 
   await notifyMembers({
+    adminsOnly: matchId.startsWith("test:"),
     title: "N'oublie pas de voter ! ⏰",
     body: `Il te reste moins de 24h pour voter pour les 3 meilleurs joueurs contre ${match.opponent ?? "l'adversaire"}.`,
     team: match.team,

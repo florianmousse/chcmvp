@@ -3,19 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:chc_mvp/core/widgets/legal_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chc_mvp/core/models/match_model.dart';
-import 'package:chc_mvp/core/utils/season.dart';
 import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 import 'package:chc_mvp/features/badges/presentation/badges_providers.dart';
 import 'package:chc_mvp/core/theme/theme_provider.dart';
-import 'package:chc_mvp/features/home/domain/advanced_stats_calculator.dart';
-import 'package:chc_mvp/features/home/domain/badge_calculator.dart';
-import 'package:chc_mvp/features/home/domain/badge_model.dart';
 import 'package:chc_mvp/features/home/presentation/badges_section.dart';
-import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
+import 'package:chc_mvp/features/home/domain/badge_model.dart';
 import 'package:chc_mvp/features/ranking/presentation/player_stats_screen.dart';
-import 'package:chc_mvp/features/ranking/presentation/ranking_providers.dart';
-import 'package:chc_mvp/features/voting/presentation/voting_providers.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -223,178 +216,68 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-/// Charge les données nécessaires au calcul des badges, synchronise avec
-/// Firestore et affiche les badges avec les dates d'obtention.
+/// Les badges sont recalculés par le serveur : le client ne peut pas rétablir
+/// un badge retiré après la suppression d'un match.
 class _BadgesWrapper extends ConsumerWidget {
   const _BadgesWrapper({required this.uid});
   final String uid;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final statsAsync = ref.watch(playerStatsProvider(uid));
-    final historyAsync = ref.watch(playerHistoryProvider(uid));
-    final rankingAsync = ref.watch(rankingProvider('general'));
-    final allHistoriesAsync = ref.watch(allPlayerHistoriesProvider);
-    final matchesAsync = ref.watch(matchesListProvider(null));
-    final storedBadgesAsync = ref.watch(userBadgesProvider(uid));
-
-    if (statsAsync.isLoading ||
-        historyAsync.isLoading ||
-        rankingAsync.isLoading ||
-        allHistoriesAsync.isLoading ||
-        matchesAsync.isLoading ||
-        storedBadgesAsync.isLoading) {
-      return const SizedBox.shrink();
-    }
-
-    final stats = statsAsync.value;
-    final history = historyAsync.value ?? [];
-    final ranking = rankingAsync.value ?? [];
-    final allHistories = allHistoriesAsync.value ?? {};
-    final allMatches = matchesAsync.value ?? [];
-    final storedDates = storedBadgesAsync.value ?? {};
-
-    if (stats == null) return const SizedBox.shrink();
-
-    // Compter les matchs clôturés de la saison et la participation au vote
-    final closedMatches = allMatches
-        .where((m) => m.status == MatchStatus.votingClosed)
-        .toList();
-    final eligible = closedMatches
-        .where((m) => m.presentPlayerIds.contains(uid))
-        .toList();
-
-    var votedCount = 0;
-    for (final m in eligible) {
-      final hasVotedAsync = ref.watch(hasVotedProvider(m.id));
-      if (hasVotedAsync.value == true) votedCount++;
-    }
-
-    final now = DateTime.now();
-    final currentSeason = seasonId(now);
-    final matchSeasons = closedMatches.map((m) => seasonId(m.date)).toSet();
-    final isSeasonFinished =
-        matchSeasons.isNotEmpty && !matchSeasons.contains(currentSeason);
-
-    final badges = BadgeCalculator.compute(
-      uid: uid,
-      stats: stats,
-      history: history,
-      ranking: ranking,
-      allHistories: allHistories,
-      seasonMatchCount: closedMatches.length,
-      playerMatchesEligibleCount: eligible.length,
-      playerVotedCount: votedCount,
-      isSeasonFinished: isSeasonFinished,
-      gameStats: _lookupGameStats(ref, uid),
-    );
-
-    // Synchroniser avec Firestore (n'écrit que les nouveaux badges)
-    final computedTypes = badges.map((b) => b.type.name).toList();
-    final newTypes = computedTypes
-        .where((t) => !storedDates.containsKey(t))
-        .toList();
-    if (newTypes.isNotEmpty) {
-      // Déclencher la sync en post-frame pour ne pas écrire pendant le build
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final written = await ref
-            .read(badgesRepositoryProvider)
-            .syncBadges(userId: uid, computedBadgeTypes: computedTypes);
-        if (written.isNotEmpty && context.mounted) {
-          _showBadgeCelebration(context, written);
-        }
-      });
-    }
-
-    return BadgesSection(earnedBadges: badges, earnedDates: storedDates);
-  }
-
-  /// Récupère les GameStats agrégées pour un joueur depuis le provider.
-  GameStats? _lookupGameStats(WidgetRef ref, String uid) {
-    final aggAsync = ref.watch(seasonGameStatsProvider);
-    final aggData = aggAsync.value;
-    if (aggData == null) return null;
-    final data = aggData[uid];
-    if (data == null) return null;
-    return GameStats(
-      hasCompleteStats: data.hasCompleteStats,
-      goals: data.goals,
-      assists: data.assists,
-      greenCards: data.greenCards,
-      yellowCards: data.yellowCards,
-      redCards: data.redCards,
-      matchesPlayed: data.matchesPlayed,
-    );
-  }
-
-  void _showBadgeCelebration(BuildContext context, List<String> newBadgeTypes) {
-    final theme = Theme.of(context);
-    final badgeInfos = <Badge>[];
-    for (final typeName in newBadgeTypes) {
-      try {
-        final type = BadgeType.values.byName(typeName);
-        final badge = Badge.allDefinitions[type];
-        if (badge != null) badgeInfos.add(badge);
-      } catch (_) {}
-    }
-    if (badgeInfos.isEmpty) return;
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('🎉', style: TextStyle(fontSize: 48)),
-            const SizedBox(height: 8),
-            Text(
-              badgeInfos.length == 1
-                  ? 'Nouveau badge débloqué !'
-                  : '${badgeInfos.length} nouveaux badges !',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...badgeInfos.map(
-              (b) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Text(b.emoji, style: const TextStyle(fontSize: 28)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            b.label,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(b.description, style: theme.textTheme.bodySmall),
-                        ],
+    // Celebrate server additions only; never write or restore local badges.
+    ref.listen(userBadgesProvider(uid), (previous, next) {
+      if (previous?.hasValue != true || !next.hasValue) return;
+      final added = Badge.allDefinitions.values
+          .where(
+            (badge) =>
+                next.value!.containsKey(badge.type.name) &&
+                !previous!.value!.containsKey(badge.type.name),
+          )
+          .toList();
+      if (added.isEmpty) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        showModalBottomSheet<void>(
+          context: context,
+          builder: (context) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    added.length == 1
+                        ? 'Nouveau badge débloqué !'
+                        : '${added.length} nouveaux badges !',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  for (final badge in added)
+                    ListTile(
+                      leading: Text(
+                        badge.emoji,
+                        style: const TextStyle(fontSize: 28),
                       ),
+                      title: Text(badge.label),
+                      subtitle: Text(badge.description),
                     ),
-                  ],
-                ),
+                  FilledButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Super ! 🙌'),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Super ! 🙌'),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
+      });
+    });
+    return ref
+        .watch(userBadgesProvider(uid))
+        .when(
+          data: (dates) =>
+              BadgesSection(earnedBadges: const [], earnedDates: dates),
+          loading: () => const SizedBox.shrink(),
+          error: (e, _) => const Text('Badges indisponibles pour le moment.'),
+        );
   }
 }
 

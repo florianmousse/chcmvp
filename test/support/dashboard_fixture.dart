@@ -50,6 +50,7 @@ final demoMatches = [
   ),
 ];
 final demoOverrides = [
+  testMatchesListProvider.overrideWith((ref) => Stream.value([])),
   currentUserProfileProvider.overrideWith((ref) => Stream.value(demoMember)),
   matchesListProvider.overrideWith((ref, team) => Stream.value(demoMatches)),
   membersListProvider.overrideWith(

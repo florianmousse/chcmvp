@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/models/match_reference.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/core/models/player_match_stats_model.dart';
@@ -14,6 +15,36 @@ class MatchesRepository {
 
   CollectionReference<Map<String, dynamic>> get _matches =>
       _firestore.collection('matches');
+
+  DocumentReference<Map<String, dynamic>> _match(String id) =>
+      _firestore.collection(matchCollection(id)).doc(id);
+
+  Stream<List<MatchModel>> watchTestMatches() => _firestore
+      .collection('test_matches')
+      .orderBy('date', descending: true)
+      .snapshots()
+      .map(
+        (snap) => snap.docs
+            .map(
+              (d) => MatchModel.fromJson(
+                sanitizeFirestoreJson({...d.data(), 'id': d.id}),
+              ),
+            )
+            .toList(),
+      );
+
+  Future<void> saveTestVote(
+    String matchId, {
+    required String voterUid,
+    required String firstPlaceUid,
+    required String secondPlaceUid,
+    required String thirdPlaceUid,
+  }) => _server.post('/matches/$matchId/test-vote', {
+    'voterUid': voterUid,
+    'firstPlaceUid': firstPlaceUid,
+    'secondPlaceUid': secondPlaceUid,
+    'thirdPlaceUid': thirdPlaceUid,
+  });
 
   Stream<List<MatchModel>> watchMatches({String? team}) {
     Query<Map<String, dynamic>> query = _matches.orderBy(
@@ -43,8 +74,12 @@ class MatchesRepository {
     required bool allowSelfVote,
     String? opponentLogoAsset,
     String? opponentId,
+    bool isTest = false,
   }) async {
-    await _matches.add({
+    final target = isTest
+        ? _firestore.collection('test_matches').doc('test:${_matches.doc().id}')
+        : _matches.doc();
+    await target.set({
       'date': Timestamp.fromDate(date),
       'time': time,
       'opponent': opponent,
@@ -63,20 +98,25 @@ class MatchesRepository {
   }
 
   Future<void> updateMatch(String matchId, Map<String, dynamic> fields) {
-    return _matches.doc(matchId).update(fields);
+    return _match(matchId).update(fields);
   }
 
   /// Ouvre le vote : le serveur prend le relais pour calculer
   /// `votingClosesAt` et notifier les membres - ce repository ne fait que
   /// déclencher la transition d'état.
   Future<void> openVoting(String matchId) {
-    return _matches.doc(matchId).update({'status': 'voting_open'});
+    return _match(matchId).update({
+      'status': 'voting_open',
+      'votingOpensAt': null,
+      'votingClosesAt': null,
+      'reminderSentAt': null,
+    });
   }
 
   /// Fermeture manuelle anticipée par l'admin (en plus de la clôture auto
   /// après le délai configuré, gérée côté serveur).
   Future<void> closeVoting(String matchId) {
-    return _matches.doc(matchId).update({'status': 'voting_closed'});
+    return _match(matchId).update({'status': 'voting_closed'});
   }
 
   Future<void> deleteMatch(String matchId) {
@@ -105,16 +145,14 @@ class MatchesRepository {
     required int scoreHome,
     required int scoreAway,
   }) {
-    return _matches.doc(matchId).update({
-      'scoreHome': scoreHome,
-      'scoreAway': scoreAway,
-    });
+    return _match(
+      matchId,
+    ).update({'scoreHome': scoreHome, 'scoreAway': scoreAway});
   }
 
   /// Stream des stats individuelles d'un match.
   Stream<List<PlayerMatchStats>> watchPlayerMatchStats(String matchId) {
-    return _matches
-        .doc(matchId)
+    return _match(matchId)
         .collection('playerStats')
         .snapshots()
         .map(
@@ -134,8 +172,7 @@ class MatchesRepository {
     PlayerMatchStats stats,
   ) {
     final data = stats.toJson()..remove('playerId');
-    return _matches
-        .doc(matchId)
+    return _match(matchId)
         .collection('playerStats')
         .doc(playerId)
         .set(data, SetOptions(merge: true));
@@ -147,11 +184,15 @@ class MatchesRepository {
     List<PlayerMatchStats> statsList,
   ) async {
     final batch = _firestore.batch();
-    final col = _matches.doc(matchId).collection('playerStats');
+    final col = _match(matchId).collection('playerStats');
     for (final stats in statsList) {
       final data = stats.toJson()..remove('playerId');
       batch.set(col.doc(stats.playerId), data, SetOptions(merge: true));
     }
-    return batch.commit();
+    await batch.commit();
+    final match = await _match(matchId).get();
+    if (match.data()?['status'] == 'voting_closed') {
+      await recomputeResults(matchId);
+    }
   }
 }

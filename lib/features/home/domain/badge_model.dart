@@ -1,5 +1,5 @@
 /// Modèle de badge - représente un accomplissement qu'un joueur peut
-/// débloquer au fil de la saison. Calculé côté client puis synchronisé
+/// débloquer au fil de la saison. Calculé côté serveur puis enregistré
 /// dans Firestore (`userBadges/{userId}`) avec la date d'obtention.
 enum BadgeType {
   mvpSaison,

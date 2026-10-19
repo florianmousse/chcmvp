@@ -2,6 +2,8 @@ import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { computeMatchTally, Tally } from "./matchTally";
 import { monthId, seasonId } from "./season";
 import { withRankingLock } from "./rankingLock";
+import { BadgeMatch, rebuildBadges } from "./rebuildBadges";
+import { isTestMatchId, matchReference } from "./matchReference";
 
 const zero: Tally = { points: 0, firstCount: 0, secondCount: 0, thirdCount: 0 };
 
@@ -29,6 +31,7 @@ export function rebuildRankingsAndStats(firestore = getFirestore()) {
 export async function rebuildRankingsUnlocked(firestore = getFirestore()): Promise<{
   matchesProcessed: number;
   orphanMatchesDeleted: number;
+  badgesUpdated: number;
 }> {
   // listDocuments includes missing parents with remaining subcollections.
   let orphanMatchesDeleted = 0;
@@ -67,6 +70,7 @@ export async function rebuildRankingsUnlocked(firestore = getFirestore()): Promi
   }[] = [];
 
   let matchesProcessed = 0;
+  const badgeMatches: BadgeMatch[] = [];
 
   for (const matchDoc of matchesSnap.docs) {
     const match = matchDoc.data();
@@ -114,6 +118,13 @@ export async function rebuildRankingsUnlocked(firestore = getFirestore()): Promi
     });
 
     const matchDate: Timestamp = match.date;
+    const gameStats = await matchDoc.ref.collection("playerStats").get();
+    badgeMatches.push({
+      id: matchDoc.id, date: matchDate.toDate(), team: match.team ?? "",
+      present: presentPlayerIds, entries, distinctVoters: distinctVotersMap,
+      voters: new Set(votesSnap.docs.map((v) => v.id)),
+      gameStats: Object.fromEntries(gameStats.docs.map((s) => [s.id, s.data()])),
+    });
     const monthKey = monthId(matchDate.toDate());
     const season = seasonId(matchDate.toDate());
 
@@ -254,22 +265,31 @@ export async function rebuildRankingsUnlocked(firestore = getFirestore()): Promi
   }
   await flush(true);
 
-  return { matchesProcessed, orphanMatchesDeleted };
+  const badgesUpdated = await rebuildBadges(badgeMatches, firestore);
+  return { matchesProcessed, orphanMatchesDeleted, badgesUpdated };
 }
 
 export function deleteMatchAndRebuild(matchId: string, firestore = getFirestore()) {
   return withRankingLock(async () => {
-    await firestore.recursiveDelete(firestore.collection("matches").doc(matchId));
+    await firestore.recursiveDelete(matchReference(matchId, firestore));
+    if (isTestMatchId(matchId)) return { matchesProcessed: 0, orphanMatchesDeleted: 0, badgesUpdated: 0 };
     return rebuildRankingsUnlocked(firestore);
   });
 }
 
 export function recomputeClosedMatch(matchId: string, firestore = getFirestore()) {
   return withRankingLock(async () => {
-    const ref = firestore.collection("matches").doc(matchId);
+    const ref = matchReference(matchId, firestore);
     const current = await ref.get();
     if (!current.exists || current.data()!.status !== "voting_closed") return null;
-    await rebuildRankingsUnlocked(firestore);
+    if (isTestMatchId(matchId)) {
+      const votes = await ref.collection("votes").get();
+      const match = current.data()!;
+      const result = computeMatchTally(votes.docs.map((v) => v.data() as any), match.pointsScale ?? { first: 5, second: 3, third: 1 });
+      await ref.collection("results").doc("summary").set({ ...result, computedAt: Timestamp.now() });
+    } else {
+      await rebuildRankingsUnlocked(firestore);
+    }
     return {
       match: current.data()!,
       summary: (await ref.collection("results").doc("summary").get()).data()!,

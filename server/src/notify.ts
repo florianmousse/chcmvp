@@ -1,3 +1,4 @@
+import { notificationTokens } from "./notificationAudience";
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import {
@@ -30,6 +31,7 @@ export async function getClubSettings(): Promise<ClubSettings> {
 export async function notifyMembers({
   title,
   body,
+  adminsOnly = false,
   team,
   excludeUids = [],
   onlyUids,
@@ -38,6 +40,7 @@ export async function notifyMembers({
   title: string;
   body: string;
   team?: string;
+  adminsOnly?: boolean;
   excludeUids?: string[];
   /** Si fourni, seuls les users dont l'uid est dans cette liste reçoivent la notification. */
   onlyUids?: string[];
@@ -45,18 +48,12 @@ export async function notifyMembers({
 }): Promise<void> {
   const firestore = getFirestore();
   let query = firestore.collection("users").where("isActive", "==", true) as FirebaseFirestore.Query;
-  if (team) query = query.where("team", "==", team);
+  if (team && !adminsOnly) query = query.where("team", "==", team);
 
   const usersSnap = await query.get();
-  const exclude = new Set(excludeUids);
-  const only = onlyUids ? new Set(onlyUids) : null;
 
-  const tokens: string[] = [];
-  usersSnap.forEach((doc) => {
-    if (exclude.has(doc.id)) return;
-    if (only && !only.has(doc.id)) return;
-    const fcmTokens: string[] = doc.data().fcmTokens ?? [];
-    tokens.push(...fcmTokens);
+  const tokens = notificationTokens(usersSnap.docs.map((doc) => ({ ...doc.data(), uid: doc.id })), {
+    adminsOnly, excludeUids, onlyUids,
   });
 
   if (tokens.length === 0) {
@@ -64,7 +61,7 @@ export async function notifyMembers({
     return;
   }
 
-  await sendToTokens(tokens, { title, body }, data);
+  await sendToTokens(tokens, { title: adminsOnly ? `[TEST] ${title}` : title, body }, data);
 }
 
 /**

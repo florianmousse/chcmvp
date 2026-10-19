@@ -1,3 +1,4 @@
+import { isTestMatchId, matchReference } from "./matchReference";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { getClubSettings, notifyMembers } from "./notify";
 import { rebuildRankingsAndStats, recomputeClosedMatch } from "./rebuildRankings";
@@ -14,63 +15,65 @@ import { rebuildRankingsAndStats, recomputeClosedMatch } from "./rebuildRankings
  */
 export function startMatchListeners(): void {
   const firestore = getFirestore();
-  const lastKnownStatus = new Map<string, string>();
-  let isFirstSnapshot = true;
+  for (const collection of ["matches", "test_matches"]) {
+    const lastKnownStatus = new Map<string, string>();
+    let isFirstSnapshot = true;
 
-  firestore.collection("matches").onSnapshot(
-    (snapshot) => {
-      if (isFirstSnapshot) {
-        snapshot.forEach((doc) =>
-          lastKnownStatus.set(doc.id, doc.data().status),
-        );
-        isFirstSnapshot = false;
-        console.log(
-          `Listener matchs initialisé (${snapshot.size} matchs en cache).`,
-        );
-        return;
-      }
-
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === "removed") {
-          lastKnownStatus.delete(change.doc.id);
-          rebuildRankingsAndStats().catch((e) =>
-            console.error("Erreur nettoyage après suppression:", e),
+    firestore.collection(collection).onSnapshot(
+      (snapshot) => {
+        if (isFirstSnapshot) {
+          snapshot.forEach((doc) =>
+            lastKnownStatus.set(doc.id, doc.data().status),
+          );
+          isFirstSnapshot = false;
+          console.log(
+            `Listener matchs initialisé (${snapshot.size} matchs en cache).`,
           );
           return;
         }
 
-        const matchId = change.doc.id;
-        const after = change.doc.data();
-        const before = lastKnownStatus.get(matchId);
-        lastKnownStatus.set(matchId, after.status);
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "removed") {
+            lastKnownStatus.delete(change.doc.id);
+            if (collection === "matches") rebuildRankingsAndStats().catch((e) =>
+              console.error("Erreur nettoyage après suppression:", e),
+            );
+            return;
+          }
 
-        if (before === after.status) return; // pas un changement de statut, on ignore
+          const matchId = change.doc.id;
+          const after = change.doc.data();
+          const before = lastKnownStatus.get(matchId);
+          lastKnownStatus.set(matchId, after.status);
 
-        if (before !== "voting_open" && after.status === "voting_open") {
-          handleVotingOpened(matchId, after).catch((e) =>
-            console.error(`Erreur handleVotingOpened(${matchId}):`, e),
-          );
-        }
-        if (before !== "voting_closed" && after.status === "voting_closed") {
-          handleVotingClosed(matchId, after, true).catch((e) =>
-            console.error(`Erreur handleVotingClosed(${matchId}):`, e),
-          );
-        }
-      });
-    },
-    (error) => {
-      // firebase-admin réessaie automatiquement la connexion en cas de coupure
-      // réseau ; on journalise simplement pour visibilité (voir `pm2 logs` / `journalctl`).
-      console.error("Erreur du listener matches :", error);
-    },
-  );
+          if (before === after.status) return; // pas un changement de statut, on ignore
+
+          if (before !== "voting_open" && after.status === "voting_open") {
+            handleVotingOpened(matchId, after).catch((e) =>
+              console.error(`Erreur handleVotingOpened(${matchId}):`, e),
+            );
+          }
+          if (before !== "voting_closed" && after.status === "voting_closed") {
+            handleVotingClosed(matchId, after, true).catch((e) =>
+              console.error(`Erreur handleVotingClosed(${matchId}):`, e),
+            );
+          }
+        });
+      },
+      (error) => {
+        // firebase-admin réessaie automatiquement la connexion en cas de coupure
+        // réseau ; on journalise simplement pour visibilité (voir `pm2 logs` / `journalctl`).
+        console.error("Erreur du listener matches :", error);
+      },
+    );
+  }
 }
 
 async function handleVotingOpened(
   matchId: string,
   match: FirebaseFirestore.DocumentData,
 ): Promise<void> {
-  const matchRef = getFirestore().collection("matches").doc(matchId);
+  const matchRef = matchReference(matchId);
   const settings = await getClubSettings();
 
   if (!match.votingClosesAt) {
@@ -88,6 +91,7 @@ async function handleVotingOpened(
   const presentPlayerIds: string[] = match.presentPlayerIds ?? [];
 
   await notifyMembers({
+    adminsOnly: isTestMatchId(matchId),
     title: "Vote ouvert !",
     body: `Le match contre ${match.opponent ?? "l'adversaire"} est terminé. Vote dès maintenant pour les 3 meilleurs joueurs !`,
     team: match.team,
@@ -125,12 +129,14 @@ export async function handleVotingClosed(
   const mvpNames = mvpUids
     .map((uid: string) => nameOf[uid] ?? "Joueur inconnu")
     .join(", ");
+  const resultLabel = isTestMatchId(matchId) ? "Résultats du test calculés." : "Le classement a été mis à jour.";
   const notifBody =
     mvpUids.length > 0
-      ? `Le classement a été mis à jour. MVP : ${mvpNames} 🏆`
-      : "Le classement a été mis à jour.";
+      ? `${resultLabel} MVP : ${mvpNames} 🏆`
+      : resultLabel;
 
   await notifyMembers({
+    adminsOnly: isTestMatchId(matchId),
     title: "Vote clôturé ✅",
     body: notifBody,
     team: match.team,

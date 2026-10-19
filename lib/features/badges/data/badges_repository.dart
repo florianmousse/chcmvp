@@ -32,39 +32,4 @@ class BadgesRepository {
       (key, value) => MapEntry(key, (value as Timestamp).toDate()),
     );
   }
-
-  /// Synchronise les badges calculés avec Firestore.
-  /// N'écrase jamais les dates d'obtention existantes - ne fait qu'ajouter
-  /// les nouveaux badges avec la date courante.
-  /// Retourne la liste des badges nouvellement ajoutés.
-  Future<List<String>> syncBadges({
-    required String userId,
-    required List<String> computedBadgeTypes,
-  }) async {
-    final existing = await getBadges(userId);
-    final newBadges = <String>[];
-    final updates = <String, Timestamp>{};
-
-    for (final type in computedBadgeTypes) {
-      if (!existing.containsKey(type)) {
-        updates[type] = Timestamp.now();
-        newBadges.add(type);
-      }
-    }
-
-    if (updates.isNotEmpty) {
-      await _doc(userId).set({
-        'earned': {
-          // Préserver les badges existants
-          for (final entry in existing.entries)
-            entry.key: Timestamp.fromDate(entry.value),
-          // Ajouter les nouveaux
-          ...updates,
-        },
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    }
-
-    return newBadges;
-  }
 }
