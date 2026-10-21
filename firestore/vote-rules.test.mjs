@@ -85,6 +85,30 @@ async function access(path, uid, body) {
   });
 }
 
+test('Reopening is server-only; manual deadlines cannot be restored by a client', async () => {
+  for (const path of ['matches/reopened','test_matches/test:reopened']) {
+    await seed(path,{...match,status:'voting_closed'});
+    assert.equal((await access(path,'admin',{...match,status:'voting_open'})).status,403);
+    assert.equal((await access(path,'admin',{...match,status:'upcoming'})).status,403);
+    const manual={...match,status:'voting_open',manualCloseRequired:true,votingClosesAt:null};
+    await seed(path,manual);
+    assert.equal((await access(path,'admin',{...manual,status:'voting_closed'})).status,200);
+    await seed(path,manual);
+    assert.equal((await access(path,'admin',{...manual,manualCloseRequired:false})).status,403);
+    assert.equal((await access(path,'admin',{...manual,votingClosesAt:new Date()})).status,403);
+    assert.equal((await access(path,'admin',{...manual,status:'upcoming'})).status,403);
+  }
+});
+
+test('Reopened real match accepts a missing ballot, never a second ballot', async () => {
+  await seed('matches/reopen-ballot',{...match,manualCloseRequired:true,votingClosesAt:null});
+  assert.equal((await vote('reopen-ballot')).status,200);
+  await seed('matches/reopen-ballot',{...match,status:'voting_closed'});
+  await seed('matches/reopen-ballot',{...match,manualCloseRequired:true,votingClosesAt:null});
+  assert.equal((await vote('reopen-ballot')).status,403);
+  assert.equal((await vote('reopen-ballot','a',['voter','b','c'])).status,200);
+});
+
 test('Les tests et leurs sous-collections sont lisibles uniquement par les admins actifs', async () => {
   await seed('test_matches/test:private', match);
   await seed('test_matches/test:private/votes/voter', { voterUid:'voter' });

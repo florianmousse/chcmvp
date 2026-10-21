@@ -1,4 +1,4 @@
-# Bien utiliser CHC MVP — Android et site web
+# Bien utiliser CHC MVP - Android et site web
 
 Ce tutoriel est aussi disponible dans **Profil → Tutoriel**. Les mêmes identifiants, votes, résultats et badges fonctionnent sur Android et sur le [site du club](https://chc-mvp.vercel.app/). Une connexion Internet est nécessaire.
 
@@ -46,5 +46,15 @@ Les administrateurs peuvent voir la participation et les noms des personnes qui 
 4. Sur chaque carte de match et dans la liste d'administration, **X / Y ont voté → Voir le suivi** affiche les personnes qui n'ont pas encore voté, même pendant le vote. Le total correspond aux joueurs présents : les fiches sans compte et les comptes désactivés sont signalés. Le suivi se recharge toutes les 30 secondes ; **Actualiser** permet une vérification immédiate.
 5. Pour essayer la procédure, crée un **Match de test**, puis utilise son menu **Simuler les votes / résultats**. Choisis le votant et son top 3. Tu peux remplacer ses bulletins simulés, clôturer et rouvrir le test. Les tests et leurs notifications sont réservés aux admins et n'affectent pas les performances du club.
 6. Supprimer un match supprime ses votes et ses points puis recalcule les badges. Pour corriger des données anciennes, utilise **Reconstruire les classements maintenant**.
+
+### Rouvrir un vote terminé
+
+Dans **Administration → Matchs**, ouvre le menu du match et choisis **Rouvrir le vote**. Les bulletins existants restent enregistrés : sur un vrai match, seuls les joueurs n'ayant pas encore voté peuvent ajouter un bulletin. Le match est retiré du classement, des statistiques agrégées et du calcul des badges jusqu'à sa nouvelle clôture.
+
+Le libellé **Vote rouvert · clôture manuelle** indique qu'aucune clôture automatique n'aura lieu, même après un redémarrage du serveur. Utilise **Clôturer le vote** pour finaliser les résultats. Le serveur rappelle cette action aux admins dès son prochain passage (au plus 10 minutes), puis toutes les 24 heures. Les notifications push nécessitent un appareil Android enregistré et l'autorisation de notification ; le site web affiche l'état du match sans notification push. Les rappels s'arrêtent à la clôture ou à la suppression.
+
+Les matchs de test suivent la même clôture manuelle après réouverture ; leurs bulletins simulés restent modifiables et leurs rappels sont préfixés **[TEST]**. Ils n'affectent jamais le classement du club.
+
+Les classements n'affichent que les joueurs ayant gagné des points. Un joueur hors podium peut avoir reçu des votes sans gagner de point : ses votes restent comptés dans ses statistiques.
 
 Contact du club : chcmvp.chateaubourghockeyclub@gmail.com.

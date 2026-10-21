@@ -119,6 +119,10 @@ class MatchesRepository {
     return _match(matchId).update({'status': 'voting_closed'});
   }
 
+  /// Conserve les bulletins et retire les anciens totaux jusqu'à la clôture manuelle.
+  Future<void> reopenVoting(String matchId) =>
+      _server.post('/matches/$matchId/reopen', {});
+
   Future<void> deleteMatch(String matchId) {
     return _server.delete('/matches/$matchId');
   }

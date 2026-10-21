@@ -43,6 +43,11 @@ class RecordingMatches extends Fake implements MatchesRepository {
   List<String>? present;
   final calls = <String>[];
   @override
+  Future<void> reopenVoting(String id) async {
+    calls.add('reopen:$id');
+  }
+
+  @override
   Future<void> saveTestVote(
     String id, {
     required String voterUid,
@@ -92,6 +97,57 @@ Future<void> choose(WidgetTester tester, String label, String name) async {
 }
 
 void main() {
+  testWidgets(
+    'closed test uses server reopening and hides zero-point results',
+    (tester) async {
+      final repo = RecordingMatches();
+      final closed = match.copyWith(status: MatchStatus.votingClosed);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            isAdminProvider.overrideWithValue(true),
+            matchesRepositoryProvider.overrideWithValue(repo),
+            testMatchesListProvider.overrideWith(
+              (ref) => Stream.value([closed]),
+            ),
+            membersListProvider.overrideWith(
+              (ref, team) => Stream.value(members),
+            ),
+            testVotesProvider.overrideWith((ref, id) => Stream.value([])),
+            matchResultProvider.overrideWith(
+              (ref, id) => Stream.value({
+                'totalVotes': 1,
+                'entries': {
+                  'a': {'points': 5},
+                  'd': {'points': 0},
+                },
+              }),
+            ),
+          ],
+          child: MaterialApp(home: TestMatchScreen(match: closed)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('5 pts'), 300);
+      await tester.pumpAndSettle();
+      expect(find.text('0 pts'), findsNothing);
+      expect(find.text('5 pts'), findsOneWidget);
+      final reopen = find.text('Rouvrir le vote de test');
+      await tester.scrollUntilVisible(reopen, -300);
+      await tester.ensureVisible(reopen);
+      await tester.tap(reopen);
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Les bulletins simulés seront conservés'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Rouvrir'));
+      await tester.pumpAndSettle();
+      expect(repo.calls, ['reopen:test:demo']);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   for (final width in [390.0, 1440.0]) {
     testWidgets('admin selects voter and top 3 then closes the test ($width)', (
       tester,

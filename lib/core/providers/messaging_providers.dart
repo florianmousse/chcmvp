@@ -1,5 +1,6 @@
 import 'package:chc_mvp/core/models/match_reference.dart';
 import 'package:chc_mvp/features/matches/presentation/test_match_screen.dart';
+import 'package:chc_mvp/features/matches/presentation/matches_admin_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -92,6 +93,13 @@ Future<void> _openVoteFromNotification(Ref ref, String? matchId) async {
     }
     if (match.status != MatchStatus.votingOpen) {
       return; // vote déjà clôturé entre-temps
+    }
+    if (match.manualCloseRequired &&
+        (await ref.read(currentUserProfileProvider.future))?.isAdmin == true) {
+      navigator.push(
+        MaterialPageRoute(builder: (_) => const MatchesAdminScreen()),
+      );
+      return;
     }
 
     final uid = ref.read(firebaseAuthProvider).currentUser?.uid;

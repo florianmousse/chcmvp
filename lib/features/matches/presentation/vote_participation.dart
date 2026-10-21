@@ -90,7 +90,7 @@ class _ParticipationDialog extends ConsumerWidget {
           child: value.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => const Text(
-              'Impossible de charger le suivi. Réessaie dans un instant.',
+              "Impossible de charger le suivi. Réessaie dans un instant.",
             ),
             data: (data) {
               final pending = (data['pending'] as List)
@@ -105,13 +105,13 @@ class _ParticipationDialog extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Total : joueurs inscrits comme présents, y compris ceux sans compte. Actualisation toutes les 30 secondes.',
+                    "Total : joueurs inscrits comme présents, y compris ceux sans compte. Actualisation toutes les 30 secondes.",
                   ),
                   const SizedBox(height: 16),
                   Text(
                     data['status'] == 'voting_closed'
-                        ? 'N’ont pas voté'
-                        : 'N’ont pas encore voté',
+                        ? "N'ont pas voté"
+                        : "N'ont pas encore voté",
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   if (data['totalCount'] == 0)
@@ -124,10 +124,10 @@ class _ParticipationDialog extends ConsumerWidget {
                       title: Text(player['name'] as String),
                       subtitle: switch (player['accountStatus']) {
                         'no_account' => const Text(
-                          'Sans compte · ne peut pas voter dans un match réel',
+                          "Sans compte · ne peut pas voter dans un match réel",
                         ),
-                        'inactive' => const Text('Compte désactivé'),
-                        'missing' => const Text('Fiche joueur supprimée'),
+                        'inactive' => const Text("Compte désactivé"),
+                        'missing' => const Text("Fiche joueur supprimée"),
                         _ => null,
                       },
                     ),

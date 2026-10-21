@@ -228,7 +228,7 @@ class _HelpAndVersion extends StatelessWidget {
       ListTile(
         leading: const Icon(Icons.help_outline),
         title: const Text('Tutoriel'),
-        subtitle: const Text('Bien utiliser l’application et le site web'),
+        subtitle: const Text("Bien utiliser l'application et le site web"),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.of(
           context,

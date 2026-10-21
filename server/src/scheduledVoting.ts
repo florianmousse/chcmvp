@@ -1,6 +1,7 @@
 import { matchReference } from "./matchReference";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { getClubSettings, notifyMembers, notifyAdmins } from "./notify";
+import { closeExpiredVoting, remindReopenedVoting } from "./votingLifecycle";
 
 /**
  * Combine un Timestamp Firestore (date du match, ex: 2026-09-15 00:00:00) et
@@ -84,11 +85,15 @@ export async function processScheduledVoting(): Promise<void> {
         const closesAt = Timestamp.fromMillis(
           voteOpenThresholdMs + settings.voteDurationHours * 3600 * 1000,
         );
-        await doc.ref.update({
-          status: "voting_open",
-          votingOpensAt: Timestamp.fromMillis(voteOpenThresholdMs),
-          votingClosesAt: closesAt,
-          reminderSentAt: null,
+        await firestore.runTransaction(async (tx) => {
+          const current = (await tx.get(doc.ref)).data();
+          if (!current || current.status !== "upcoming" || current.manualCloseRequired) return;
+          tx.update(doc.ref, {
+            status: "voting_open",
+            votingOpensAt: Timestamp.fromMillis(voteOpenThresholdMs),
+            votingClosesAt: closesAt,
+            reminderSentAt: null,
+          });
         });
         console.log(`Vote ouvert automatiquement pour le match ${doc.id}`);
       }
@@ -104,6 +109,10 @@ export async function processScheduledVoting(): Promise<void> {
 
     for (const doc of openMatchesSnap.docs) {
       const match = doc.data();
+      if (match.manualCloseRequired === true) {
+        await remindReopenedVoting(doc.id, now, notifyAdmins, firestore);
+        continue;
+      }
       const closesAt: Timestamp | undefined = match.votingClosesAt;
       if (!closesAt) continue;
 
@@ -112,8 +121,9 @@ export async function processScheduledVoting(): Promise<void> {
         // Ce write déclenche le listener de matchListeners.ts (transition vers
         // "voting_closed"), qui calcule les résultats et envoie la notification
         // de clôture - pas besoin de dupliquer cette logique ici.
-        await doc.ref.update({ status: "voting_closed" });
-        console.log(`Vote clôturé automatiquement pour le match ${doc.id}`);
+        if (await closeExpiredVoting(doc.id, now, firestore)) {
+          console.log(`Vote clôturé automatiquement pour le match ${doc.id}`);
+        }
         continue;
       }
 

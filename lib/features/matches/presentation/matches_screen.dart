@@ -224,6 +224,14 @@ class _MatchCard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             VoteParticipation(matchId: match.id),
+            if (match.status == MatchStatus.votingOpen &&
+                match.manualCloseRequired)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'Vote rouvert · clôture manuelle par un admin. Les votes déjà déposés sont conservés.',
+                ),
+              ),
             // Le logo se place à droite de ce qui suit - le classement des
             // joueurs pour un match terminé, le bouton de vote pour un vote
             // ouvert, ou rien pour un match à venir - jamais dans l'en-tête.

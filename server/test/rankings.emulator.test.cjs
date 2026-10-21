@@ -6,6 +6,7 @@ const { rebuildRankingsAndStats, deleteMatchAndRebuild, recomputeClosedMatch } =
 const { withRankingLock } = require('../dist/rankingLock');
 const { saveTestVote } = require('../dist/testVotes');
 const { voteParticipation } = require('../dist/voteParticipation');
+const { reopenVoting, initializeVotingWindow, closeExpiredVoting, remindReopenedVoting, REOPEN_REMINDER_INTERVAL_MS } = require('../dist/votingLifecycle');
 
 // Refuse to touch any remote or production database.
 if (!/^(127\.0\.0\.1|localhost):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST ?? '')) {
@@ -28,6 +29,119 @@ async function seedMatch(id, date = '2026-10-12T12:00:00Z', voters = ['d', 'e'])
   return ref;
 }
 async function data(path) { return (await db.doc(path).get()).data(); }
+
+test('reopening preserves ballots, revokes totals and badges, and recomputes once on closure', async () => {
+  await db.doc('users/admin').set({ role:'admin', isActive:true });
+  const ref = await seedMatch('reopen');
+  await rebuildRankingsAndStats(db);
+  assert.equal((await data('rankings_cache/general')).entries.a.points, 5);
+  await reopenVoting('reopen', 'admin', db);
+  const opened = await data('matches/reopen');
+  assert.equal(opened.status, 'voting_open');
+  assert.equal(opened.manualCloseRequired, true);
+  assert.equal(opened.votingClosesAt, null);
+  assert.equal(opened.reopenedBy, 'admin');
+  assert.equal((await ref.collection('votes').get()).size, 2);
+  assert.equal(await data('matches/reopen/results/summary'), undefined);
+  assert.equal(await data('rankings_cache/general'), undefined);
+  assert.equal(await data('player_stats/a'), undefined);
+  for (const badge of (await db.collection('userBadges').get()).docs) {
+    assert.deepEqual(badge.data().earned, {});
+  }
+  await reopenVoting('reopen', 'admin', db); // retry after a disconnected client
+  assert((await data('matches/reopen')).reopenedAt.isEqual(opened.reopenedAt));
+  await initializeVotingWindow('reopen', 48, db);
+  assert.equal((await data('matches/reopen')).votingClosesAt, null);
+  await ref.collection('votes').doc('a').set({ voterUid:'a', firstPlaceUid:'b', secondPlaceUid:'c', thirdPlaceUid:'d' });
+  await ref.update({status:'voting_closed'});
+  await recomputeClosedMatch('reopen', db);
+  assert.equal((await data('matches/reopen/results/summary')).totalVotes, 3);
+  assert.equal((await data('rankings_cache/general')).entries.b.points, 5);
+  await recomputeClosedMatch('reopen', db);
+  assert.equal((await data('rankings_cache/general')).entries.b.points, 5);
+});
+
+test('only active admins can reopen closed votes; tests remain isolated', async () => {
+  await db.doc('users/admin').set({ role:'admin', isActive:true });
+  await db.doc('users/inactive').set({ role:'admin', isActive:false });
+  await db.doc('users/member').set({ role:'member', isActive:true });
+  await seedMatch('real');
+  await rebuildRankingsAndStats(db);
+  const before = await data('rankings_cache/general');
+  const ref = db.doc('test_matches/test:reopen');
+  await ref.set({ status:'voting_closed', presentPlayerIds:['a','b','c','d'], allowSelfVote:false });
+  await ref.collection('votes').doc('d').set({voterUid:'d',firstPlaceUid:'a',secondPlaceUid:'b',thirdPlaceUid:'c'});
+  await ref.collection('results').doc('summary').set({totalVotes:1});
+  for (const uid of ['inactive','member','unknown']) {
+    await assert.rejects(reopenVoting('real', uid, db), {status:403});
+  }
+  await assert.rejects(reopenVoting('missing','admin',db), {status:404});
+  await db.doc('matches/upcoming').set({status:'upcoming'});
+  await assert.rejects(reopenVoting('upcoming','admin',db), {status:409});
+  await db.doc('matches/upcoming').update({status:'voting_open'});
+  await assert.rejects(reopenVoting('upcoming','admin',db), {status:409});
+  await reopenVoting(ref.id,'admin',db);
+  assert.equal(await data('test_matches/test:reopen/results/summary'), undefined);
+  assert.equal((await ref.collection('votes').get()).size, 1);
+  await saveTestVote(ref.id,'admin',{voterUid:'d',firstPlaceUid:'c',secondPlaceUid:'b',thirdPlaceUid:'a'},db);
+  assert.deepEqual(await data('rankings_cache/general'), before);
+});
+
+test('automatic closing re-reads state and can never close a manually reopened vote', async () => {
+  const now = Timestamp.now();
+  for (const collection of ['matches','test_matches']) {
+    const id = collection === 'matches' ? 'expired' : 'test:expired';
+    const ref = db.doc(`${collection}/${id}`);
+    await ref.set({status:'voting_open',votingClosesAt:Timestamp.fromMillis(now.toMillis()-1000)});
+    assert.equal(await closeExpiredVoting(id,now,db),true);
+    // Simulates a stale cron snapshot whose deadline was already read before reopening.
+    await ref.update({status:'voting_open',manualCloseRequired:true});
+    assert.equal(await closeExpiredVoting(id,now,db),false);
+    assert.equal((await ref.get()).data().status,'voting_open');
+    await initializeVotingWindow(id,48,db);
+    assert.equal(await closeExpiredVoting(id,Timestamp.fromMillis(now.toMillis()+10*REOPEN_REMINDER_INTERVAL_MS),db),false);
+  }
+  await db.doc('matches/future').set({status:'voting_open',votingClosesAt:Timestamp.fromMillis(now.toMillis()+1000)});
+  assert.equal(await closeExpiredVoting('future',now,db),false);
+  assert.equal(await closeExpiredVoting('missing',now,db),false);
+});
+
+test('admin reminders are persistent, limited to once a day, retry failures and stop on close/delete', async () => {
+  const sent=[];
+  const send = async payload => {sent.push(payload);};
+  const now = Timestamp.now();
+  const ref=db.doc('test_matches/test:reminder');
+  await ref.set({status:'voting_open',manualCloseRequired:true,opponent:'Rennes'});
+  const concurrent=await Promise.all(Array.from({length:3},()=>remindReopenedVoting(ref.id,now,send,db)));
+  assert.equal(concurrent.filter(Boolean).length,1);
+  assert.equal(sent[0].title,'[TEST] Vote rouvert à clôturer');
+  assert.equal(sent[0].data.type,'admin_reopened_vote_reminder');
+  assert.equal(await remindReopenedVoting(ref.id,Timestamp.fromMillis(now.toMillis()+REOPEN_REMINDER_INTERVAL_MS-1),send,db),false);
+  const tomorrow=Timestamp.fromMillis(now.toMillis()+REOPEN_REMINDER_INTERVAL_MS);
+  await assert.rejects(remindReopenedVoting(ref.id,tomorrow,async()=>{throw new Error('FCM unavailable');},db));
+  assert.equal(await remindReopenedVoting(ref.id,tomorrow,send,db),true);
+  assert.equal(sent.length,2);
+  const later=Timestamp.fromMillis(tomorrow.toMillis()+REOPEN_REMINDER_INTERVAL_MS);
+  await ref.update({status:'voting_closed'});
+  assert.equal(await remindReopenedVoting(ref.id,later,send,db),false);
+  await ref.delete();
+  assert.equal(await remindReopenedVoting(ref.id,later,send,db),false);
+  await db.doc('matches/ordinary').set({status:'voting_open'});
+  assert.equal(await remindReopenedVoting('ordinary',later,send,db),false);
+});
+
+test('fourth-place votes stay in stats but zero points never create a ranking entry', async () => {
+  const ref=await seedMatch('fourth',undefined,['d']);
+  await ref.collection('votes').doc('e').set({voterUid:'e',firstPlaceUid:'a',secondPlaceUid:'b',thirdPlaceUid:'c'});
+  await ref.collection('votes').doc('c').set({voterUid:'c',firstPlaceUid:'a',secondPlaceUid:'b',thirdPlaceUid:'d'});
+  await rebuildRankingsAndStats(db);
+  for (const scope of ['general','2026-2027','2026-10']) {
+    assert.deepEqual(Object.keys((await data(`rankings_cache/${scope}`)).entries).sort(),['a','b','c']);
+  }
+  assert.equal((await data('matches/fourth/results/summary')).entries.d.points,0);
+  assert.equal((await data('player_stats/d')).votesReceived,1);
+  assert.equal((await data('player_stats/d/history/fourth')).points,0);
+});
 
 test('admin turnout is live, deduplicates attendance and never exposes ballot choices', async () => {
   await db.doc('users/admin').set({ role:'admin', isActive:true });

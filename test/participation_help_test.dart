@@ -187,7 +187,7 @@ void main() {
       await tester.ensureVisible(find.text('Tutoriel'));
       await tester.tap(find.text('Tutoriel'));
       await tester.pumpAndSettle();
-      expect(find.text('Utiliser l’application Android'), findsOneWidget);
+      expect(find.text("Utiliser l'application Android"), findsOneWidget);
       await tester.tap(find.text('Site web'));
       await tester.pumpAndSettle();
       expect(find.text('Utiliser le site web'), findsOneWidget);
@@ -223,10 +223,12 @@ void main() {
     expect(find.textContaining('Sur chaque carte de match'), findsOneWidget);
     final tests = find.text('Admin · Essayer sans toucher aux classements');
     await tester.scrollUntilVisible(tests, 300);
+    await tester.ensureVisible(tests);
+    await tester.pumpAndSettle();
     await tester.tap(tests);
     await tester.pumpAndSettle();
     expect(
-      find.textContaining('La simulation n’est jamais disponible'),
+      find.textContaining("La simulation n'est jamais disponible"),
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);

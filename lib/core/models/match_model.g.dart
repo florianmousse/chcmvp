@@ -41,6 +41,7 @@ _$MatchModelImpl _$$MatchModelImplFromJson(Map<String, dynamic> json) =>
       votingClosesAt: const TimestampConverter().fromJson(
         json['votingClosesAt'],
       ),
+      manualCloseRequired: json['manualCloseRequired'] as bool? ?? false,
       pointsScale: json['pointsScale'] == null
           ? const PointsScale()
           : PointsScale.fromJson(json['pointsScale'] as Map<String, dynamic>),
@@ -64,6 +65,7 @@ Map<String, dynamic> _$$MatchModelImplToJson(
   'presentPlayerIds': instance.presentPlayerIds,
   'votingOpensAt': const TimestampConverter().toJson(instance.votingOpensAt),
   'votingClosesAt': const TimestampConverter().toJson(instance.votingClosesAt),
+  'manualCloseRequired': instance.manualCloseRequired,
   'pointsScale': instance.pointsScale,
   'allowSelfVote': instance.allowSelfVote,
   'opponentLogoAsset': instance.opponentLogoAsset,

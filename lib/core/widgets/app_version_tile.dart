@@ -14,7 +14,7 @@ class AppVersionTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => ListTile(
     leading: const Icon(Icons.info_outline),
-    title: const Text('Version de l’application'),
+    title: const Text("Version de l'application"),
     subtitle: ref
         .watch(appVersionProvider)
         .when(

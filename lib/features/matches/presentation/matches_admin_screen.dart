@@ -8,6 +8,7 @@ import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:intl/intl.dart';
 import 'test_match_screen.dart';
 import 'vote_participation.dart';
+import 'reopen_voting_dialog.dart';
 
 class MatchesAdminScreen extends ConsumerWidget {
   const MatchesAdminScreen({super.key});
@@ -74,6 +75,7 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
         ],
       ),
       trailing: PopupMenuButton<String>(
+        enabled: !_recomputing,
         onSelected: (action) async {
           try {
             switch (action) {
@@ -93,6 +95,20 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
                 await repo.openVoting(match.id);
               case 'close_voting':
                 await repo.closeVoting(match.id);
+              case 'reopen_voting':
+                if (!await confirmReopenVoting(context, isTest: match.isTest)) {
+                  return;
+                }
+                if (!mounted) return;
+                setState(() => _recomputing = true);
+                await repo.reopenVoting(match.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Vote rouvert. Clôture manuelle requise.'),
+                    ),
+                  );
+                }
               case 'stats':
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -141,6 +157,11 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
             ),
           if (match.status == MatchStatus.votingClosed)
             const PopupMenuItem(
+              value: 'reopen_voting',
+              child: Text('Rouvrir le vote'),
+            ),
+          if (match.status == MatchStatus.votingClosed)
+            const PopupMenuItem(
               value: 'recompute',
               child: Text('Recalculer les résultats'),
             ),
@@ -167,7 +188,10 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
 
   String get _statusLabel => switch (match.status) {
     MatchStatus.upcoming => 'À venir',
-    MatchStatus.votingOpen => 'Vote ouvert',
+    MatchStatus.votingOpen =>
+      match.manualCloseRequired
+          ? 'Vote rouvert · clôture manuelle'
+          : 'Vote ouvert',
     MatchStatus.votingClosed => 'Vote terminé',
   };
 }

@@ -41,6 +41,7 @@ class MatchModel with _$MatchModel {
     @Default(<String>[]) List<String> presentPlayerIds,
     @TimestampConverter() DateTime? votingOpensAt,
     @TimestampConverter() DateTime? votingClosesAt,
+    @Default(false) bool manualCloseRequired,
     @Default(PointsScale()) PointsScale pointsScale,
     @Default(false) bool allowSelfVote,
 

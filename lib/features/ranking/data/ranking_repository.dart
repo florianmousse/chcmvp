@@ -66,24 +66,35 @@ class RankingRepository {
       doc,
     ) {
       final entries = (doc.data()?['entries'] as Map<String, dynamic>?) ?? {};
-      final list = entries.entries.map((e) {
-        final v = e.value as Map<String, dynamic>;
-        return RankingEntry(
-          uid: e.key,
-          points: (v['points'] ?? 0) as int,
-          firstCount: (v['firstCount'] ?? 0) as int,
-          secondCount: (v['secondCount'] ?? 0) as int,
-          thirdCount: (v['thirdCount'] ?? 0) as int,
-        );
-      }).toList();
-      list.sort((a, b) {
-        if (b.points != a.points) return b.points.compareTo(a.points);
-        if (b.firstCount != a.firstCount)
-          return b.firstCount.compareTo(a.firstCount);
-        return b.secondCount.compareTo(a.secondCount);
-      });
-      return list;
+      return rankingEntriesWithPoints(entries);
     });
+  }
+
+  /// Also filters caches written by older server versions, before their next rebuild.
+  static List<RankingEntry> rankingEntriesWithPoints(
+    Map<String, dynamic> entries,
+  ) {
+    final list = entries.entries
+        .map((e) {
+          final v = e.value as Map<String, dynamic>;
+          return RankingEntry(
+            uid: e.key,
+            points: (v['points'] ?? 0) as int,
+            firstCount: (v['firstCount'] ?? 0) as int,
+            secondCount: (v['secondCount'] ?? 0) as int,
+            thirdCount: (v['thirdCount'] ?? 0) as int,
+          );
+        })
+        .where((entry) => entry.points > 0)
+        .toList();
+    list.sort((a, b) {
+      if (b.points != a.points) return b.points.compareTo(a.points);
+      if (b.firstCount != a.firstCount) {
+        return b.firstCount.compareTo(a.firstCount);
+      }
+      return b.secondCount.compareTo(a.secondCount);
+    });
+    return list;
   }
 
   Stream<PlayerStats> watchPlayerStats(String uid) {
@@ -182,7 +193,8 @@ class RankingRepository {
       return snap.docs
           .where((d) {
             final entries = d.data()['entries'] as Map<String, dynamic>?;
-            return entries != null && entries.isNotEmpty;
+            return entries != null &&
+                rankingEntriesWithPoints(entries).isNotEmpty;
           })
           .map((d) => d.id)
           .toList();

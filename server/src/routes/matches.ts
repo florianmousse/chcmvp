@@ -3,11 +3,21 @@ import { requireAuth, requireAdmin, AuthedRequest } from "../middleware/auth";
 import { matchReference } from "../matchReference";
 import { saveTestVote } from "../testVotes";
 import { voteParticipation } from "../voteParticipation";
+import { reopenVoting } from "../votingLifecycle";
 import { handleVotingClosed } from "../matchListeners";
 import { deleteMatchAndRebuild, rebuildRankingsAndStats } from "../rebuildRankings";
 
 export const matchesRouter = Router();
 matchesRouter.use(requireAuth, requireAdmin);
+
+matchesRouter.post("/:matchId/reopen", async (req: AuthedRequest, res) => {
+  try {
+    await reopenVoting(req.params.matchId, req.uid!);
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(e.status ?? 500).json({ error: e.message ?? "Erreur lors de la réouverture." });
+  }
+});
 
 matchesRouter.get("/:matchId/participation", async (req: AuthedRequest, res) => {
   res.setHeader("Cache-Control", "no-store");

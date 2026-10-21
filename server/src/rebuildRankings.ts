@@ -131,6 +131,8 @@ export async function rebuildRankingsUnlocked(firestore = getFirestore()): Promi
     for (const scopeId of ["general", season, monthKey]) {
       rankingTotals[scopeId] ??= {};
       for (const [uid, t] of Object.entries(entries)) {
+        // Keep raw votes/history, but only points earned belong in the standings.
+        if (t.points <= 0) continue;
         const c = rankingTotals[scopeId][uid] ?? zero;
         rankingTotals[scopeId][uid] = {
           points: c.points + t.points,

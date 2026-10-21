@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'reopen_voting_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
@@ -139,15 +140,32 @@ class _TestMatchScreenState extends ConsumerState<TestMatchScreen> {
               FilledButton.icon(
                 onPressed: _busy
                     ? null
-                    : () => _run(
-                        () => repo.openVoting(match.id),
-                        'Vote de test ouvert.',
-                      ),
+                    : () async {
+                        if (closed &&
+                            !await confirmReopenVoting(context, isTest: true)) {
+                          return;
+                        }
+                        if (!mounted) return;
+                        await _run(
+                          () => closed
+                              ? repo.reopenVoting(match.id)
+                              : repo.openVoting(match.id),
+                          'Vote de test ouvert.',
+                        );
+                      },
                 icon: const Icon(Icons.play_arrow),
                 label: Text(
                   closed ? 'Rouvrir le vote de test' : 'Ouvrir le vote de test',
                 ),
               ),
+            if (open)
+              if (match.manualCloseRequired)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'Vote rouvert · clôture manuelle requise. Rappel aux admins toutes les 24 heures.',
+                  ),
+                ),
             if (open)
               OutlinedButton.icon(
                 onPressed: _busy
@@ -161,7 +179,7 @@ class _TestMatchScreenState extends ConsumerState<TestMatchScreen> {
               ),
             const SizedBox(height: 24),
             Text(
-              'Choisir le vote d’un joueur',
+              "Choisir le vote d'un joueur",
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 16),
@@ -263,6 +281,7 @@ class _TestMatchScreenState extends ConsumerState<TestMatchScreen> {
                   final entries =
                       (summary['entries'] as Map<String, dynamic>? ?? {})
                           .entries
+                          .where((e) => (e.value['points'] as num? ?? 0) > 0)
                           .toList()
                         ..sort(
                           (a, b) => (b.value['points'] as num).compareTo(
