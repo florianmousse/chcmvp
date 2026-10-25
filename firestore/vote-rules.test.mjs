@@ -45,6 +45,23 @@ test("Vote valide, double vote et lecture du bulletin d'un autre membre", async 
   const otherRead = await fetch(`${base}/matches/valid/votes/voter`, { headers:{ Authorization:`Bearer ${token('a')}` } });
   assert.equal(otherRead.status, 403);
 });
+
+test('Seul le serveur peut supprimer un bulletin ; son auteur peut ensuite voter à nouveau', async () => {
+  await seed('matches/reset', match);
+  assert.equal((await vote('reset')).status,200);
+  for (const uid of ['voter','admin']) {
+    const denied = await fetch(`${base}/matches/reset/votes/voter`, {
+      method:'DELETE', headers:{Authorization:`Bearer ${token(uid)}`},
+    });
+    assert.equal(denied.status,403);
+  }
+  const removed = await fetch(`${base}/matches/reset/votes/voter`, {
+    method:'DELETE',headers:{Authorization:'Bearer owner'},
+  });
+  assert.equal(removed.status,200);
+  assert.equal((await vote('reset','voter',['c','b','a'])).status,200);
+  assert.equal((await vote('reset')).status,403);
+});
 for (const scenario of [
   { name:'joueur absent', uid:'absent' },
   { name:'joueur inactif', uid:'inactive', override:{ presentPlayerIds:['inactive','a','b','c'] } },

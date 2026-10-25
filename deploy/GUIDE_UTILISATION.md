@@ -26,7 +26,7 @@ Ce tutoriel est aussi disponible dans **Profil → Tutoriel**. Les mêmes identi
 
 1. Dans **Matchs → Vote ouvert**, choisis **Voter pour les 3 meilleurs joueurs**. Ta présence au match doit avoir été renseignée.
 2. Sélectionne trois joueurs différents, dans l'ordre : meilleur joueur, deuxième, troisième. L'auto-vote dépend du réglage choisi par l'admin.
-3. Vérifie tes choix avant **Valider mon vote** : un vote réel est définitif et ne peut être envoyé qu'une fois, avant la clôture.
+3. Vérifie tes choix avant **Valider mon vote** : tu ne peux pas modifier toi-même un bulletin enregistré. En cas d'erreur, demande à un admin de le réinitialiser pendant que le vote est ouvert, puis vote à nouveau.
 4. Attends **Vote enregistré, merci !**, puis l'indication **Déjà voté**. En cas de problème, vérifie Internet et l'ouverture du vote ; demande à l'admin de vérifier ta présence.
 
 Les administrateurs peuvent voir la participation et les noms des personnes qui n'ont pas voté. Le suivi de l'application ne révèle pas les choix des bulletins réels.
@@ -56,5 +56,13 @@ Le libellé **Vote rouvert · clôture manuelle** indique qu'aucune clôture aut
 Les matchs de test suivent la même clôture manuelle après réouverture ; leurs bulletins simulés restent modifiables et leurs rappels sont préfixés **[TEST]**. Ils n'affectent jamais le classement du club.
 
 Les classements n'affichent que les joueurs ayant gagné des points. Un joueur hors podium peut avoir reçu des votes sans gagner de point : ses votes restent comptés dans ses statistiques.
+
+### Corriger le vote d'un joueur
+
+Avec un compte admin, ouvre **Voir le suivi → Ont voté** sur le match, puis **Réinitialiser le vote** sous le nom du joueur. Une confirmation rappelle le joueur concerné. Seul son bulletin est supprimé : les autres votes et la fiche du match restent intacts. Le joueur réapparaît dans **En attente** et son bouton **Voter** redevient disponible.
+
+La période de vote doit être ouverte. Un match terminé doit d'abord être rouvert ; il faudra alors le clôturer manuellement comme expliqué ci-dessus. La réinitialisation ne prolonge pas le délai d'un vote ordinaire. Elle ne révèle jamais les choix du joueur.
+
+Le suivi présente les noms en gras dans des cartes distinctes. Dans **En attente**, les joueurs sans compte sont regroupés à la fin de la liste ; ils restent inclus dans le total des présents. **Ont voté** affiche les auteurs des bulletins enregistrés, sans leur contenu.
 
 Contact du club : chcmvp.chateaubourghockeyclub@gmail.com.

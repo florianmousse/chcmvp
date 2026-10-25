@@ -6,6 +6,7 @@ const { rebuildRankingsAndStats, deleteMatchAndRebuild, recomputeClosedMatch } =
 const { withRankingLock } = require('../dist/rankingLock');
 const { saveTestVote } = require('../dist/testVotes');
 const { voteParticipation } = require('../dist/voteParticipation');
+const { resetVote, ballotVersion } = require('../dist/resetVote');
 const { reopenVoting, initializeVotingWindow, closeExpiredVoting, remindReopenedVoting, REOPEN_REMINDER_INTERVAL_MS } = require('../dist/votingLifecycle');
 
 // Refuse to touch any remote or production database.
@@ -29,6 +30,67 @@ async function seedMatch(id, date = '2026-10-12T12:00:00Z', voters = ['d', 'e'])
   return ref;
 }
 async function data(path) { return (await db.doc(path).get()).data(); }
+
+test('reset only removes the selected ballot on an open match, then accepts a fresh vote', async () => {
+  await db.doc('users/admin').set({role:'admin',isActive:true});
+  await db.doc('users/d').set({firstName:'Didier',email:'d@example.test',isActive:true});
+  await db.doc('users/e').set({firstName:'Eric',email:'e@example.test',isActive:true});
+  for (const id of ['reset','test:reset']) {
+    const ref = id.startsWith('test:') ? db.doc(`test_matches/${id}`) : await seedMatch(id);
+    if (id.startsWith('test:')) {
+      await ref.set({presentPlayerIds:['d','e'],status:'voting_open'});
+      for (const uid of ['d','e']) await ref.collection('votes').doc(uid).set({voterUid:uid,firstPlaceUid:'SECRET'});
+    } else await ref.update({status:'voting_open'});
+    const originalMatch = (await ref.get()).data();
+    const other = (await ref.collection('votes').doc('e').get()).data();
+    const before = await voteParticipation(id,'admin',db);
+    assert.equal(before.canReset,true);
+    assert.equal(before.votedCount,2);
+    assert(!JSON.stringify(before).includes('SECRET'));
+    assert(!JSON.stringify(before).includes('firstPlaceUid'));
+    const version=before.voted.find(p=>p.uid==='d').voteVersion;
+    await resetVote(id,'d','admin',version,db);
+    assert.equal((await ref.collection('votes').doc('d').get()).exists,false);
+    assert.deepEqual((await ref.get()).data(),originalMatch);
+    assert.deepEqual((await ref.collection('votes').doc('e').get()).data(),other);
+    const after=await voteParticipation(id,'admin',db);
+    assert.equal(after.votedCount,1);
+    assert(after.pending.some(p=>p.uid==='d'));
+    await assert.rejects(resetVote(id,'d','admin',version,db),{status:409});
+    // Simulate the newly submitted ballot; a stale confirmation must not delete it.
+    await ref.collection('votes').doc('d').set({voterUid:'d',firstPlaceUid:'NEW_SECRET'});
+    await assert.rejects(resetVote(id,'d','admin',version,db),{status:409});
+    assert.equal((await ref.collection('votes').doc('d').get()).data().firstPlaceUid,'NEW_SECRET');
+  }
+});
+
+test('reset enforces active admin and current voting window; simultaneous resets delete once', async () => {
+  await db.doc('users/admin').set({role:'admin',isActive:true});
+  await db.doc('users/member').set({role:'member',isActive:true});
+  await db.doc('users/inactive').set({role:'admin',isActive:false});
+  const ref=await seedMatch('protected');
+  const version=ballotVersion((await ref.collection('votes').doc('d').get()).updateTime);
+  for (const uid of ['member','inactive','unknown']) {
+    await assert.rejects(resetVote(ref.id,'d',uid,version,db),{status:403});
+  }
+  for (const status of ['voting_closed','upcoming']) {
+    await ref.update({status});
+    await assert.rejects(resetVote(ref.id,'d','admin',version,db),{status:409});
+  }
+  await ref.update({status:'voting_open',votingClosesAt:Timestamp.fromMillis(Date.now()-10000)});
+  assert.equal((await voteParticipation(ref.id,'admin',db)).canReset,false);
+  await assert.rejects(resetVote(ref.id,'d','admin',version,db),{status:409});
+  await ref.update({votingClosesAt:null,votingOpensAt:Timestamp.fromMillis(Date.now()+60000)});
+  await assert.rejects(resetVote(ref.id,'d','admin',version,db),{status:409});
+  await ref.update({votingOpensAt:null,manualCloseRequired:true});
+  await assert.rejects(resetVote('missing','d','admin',version,db),{status:404});
+  await assert.rejects(resetVote(ref.id,'d','admin',undefined,db),{status:400});
+  await assert.rejects(resetVote(ref.id,'bad/id','admin',version,db),{status:400});
+  const results=await Promise.allSettled([resetVote(ref.id,'d','admin',version,db), resetVote(ref.id,'d','admin',version,db)]);
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+  assert.equal(results.find(r=>r.status==='rejected').reason.status,409);
+  assert.equal((await ref.collection('votes').get()).size,1);
+});
 
 test('reopening preserves ballots, revokes totals and badges, and recomputes once on closure', async () => {
   await db.doc('users/admin').set({ role:'admin', isActive:true });
@@ -158,7 +220,7 @@ test('admin turnout is live, deduplicates attendance and never exposes ballot ch
     const result = await voteParticipation(ref.id, 'admin', db);
     assert.equal(result.votedCount, 1); assert.equal(result.totalCount, 4);
     assert.deepEqual(result.pending.map(p=>[p.name,p.accountStatus]), [
-      ['Benoît Dupont','no_account'], ['Camille Petit','inactive'], ['Joueur supprimé','missing'],
+      ['Camille Petit','inactive'], ['Joueur supprimé','missing'], ['Benoît Dupont','no_account'],
     ]);
     assert(!JSON.stringify(result).includes('SECRET'));
     assert(!JSON.stringify(result).includes('@'));

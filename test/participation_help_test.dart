@@ -16,10 +16,21 @@ import 'support/dashboard_fixture.dart';
 class ParticipationServer extends Fake implements ServerClient {
   int calls = 0;
   bool fail = false;
+  bool failReset = false;
+  final resets = <String>[];
   Map<String, dynamic> data = {
     'votedCount': 1,
     'totalCount': 3,
     'status': 'voting_open',
+    'canReset': true,
+    'voted': [
+      {
+        'uid': 'a',
+        'name': 'Alice Martin',
+        'accountStatus': 'active',
+        'voteVersion': '1:2',
+      },
+    ],
     'pending': [
       {'uid': 'b', 'name': 'Benoît Dupont', 'accountStatus': 'no_account'},
       {'uid': 'c', 'name': 'Camille Petit', 'accountStatus': 'active'},
@@ -32,9 +43,83 @@ class ParticipationServer extends Fake implements ServerClient {
     if (fail) throw ServerException('Indisponible');
     return data;
   }
+
+  @override
+  Future<Map<String, dynamic>> post(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    expect(path, '/matches/live/votes/a/reset');
+    expect(body, {'voteVersion': '1:2'});
+    resets.add(path);
+    if (failReset) throw ServerException('Le vote vient de se terminer.');
+    data = {
+      ...data,
+      'votedCount': 0,
+      'voted': [],
+      'pending': [
+        ...(data['pending'] as List),
+        {'uid': 'a', 'name': 'Alice Martin', 'accountStatus': 'active'},
+      ],
+    };
+    return {'success': true};
+  }
 }
 
 void main() {
+  testWidgets(
+    'long names remain readable with enlarged text on a small phone',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(320, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final server = ParticipationServer();
+      const longName = 'Alexandre Jean-Baptiste de La Roche-Saint-André';
+      server.data = {
+        ...server.data,
+        'pending': [
+          {
+            'uid': 'guest',
+            'name': 'Anne Sanscompte',
+            'accountStatus': 'no_account',
+          },
+          {'uid': 'long', 'name': longName, 'accountStatus': 'active'},
+        ],
+      };
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            isAdminProvider.overrideWithValue(true),
+            serverClientProvider.overrideWithValue(server),
+          ],
+          child: MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(1.6)),
+              child: child!,
+            ),
+            home: const Scaffold(body: VoteParticipation(matchId: 'live')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Voir le suivi'));
+      await tester.pumpAndSettle();
+      final name = tester.widget<Text>(find.text(longName));
+      expect(name.maxLines, isNull);
+      expect(name.style?.fontWeight, FontWeight.w700);
+      expect(
+        tester.getTopLeft(find.text(longName)).dy,
+        lessThan(tester.getTopLeft(find.text('Anne Sanscompte')).dy),
+      );
+      await tester.ensureVisible(find.text(longName));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    },
+  );
+
   testWidgets('hidden match tab does not poll and resumes on return', (
     tester,
   ) async {
@@ -101,6 +186,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Benoît Dupont'), findsOneWidget);
       expect(find.textContaining('Sans compte'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Camille Petit')).dy,
+        lessThan(tester.getTopLeft(find.text('Benoît Dupont')).dy),
+      );
       server.data = {
         ...server.data,
         'votedCount': 2,
@@ -123,6 +212,97 @@ void main() {
       expect(server.calls, 3); // polling stops when leaving the screen
     });
   }
+  for (final width in [320.0, 390.0, 1440.0]) {
+    testWidgets('admin resets a selected ballot after confirmation at $width', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(Size(width, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final server = ParticipationServer();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            isAdminProvider.overrideWithValue(true),
+            serverClientProvider.overrideWithValue(server),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(body: VoteParticipation(matchId: 'live')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Voir le suivi'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ont voté (1)'));
+      await tester.pumpAndSettle();
+      expect(find.text('Alice Martin'), findsOneWidget);
+      await tester.ensureVisible(find.text('Réinitialiser le vote'));
+      await tester.tap(find.text('Réinitialiser le vote'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+      expect(server.resets, isEmpty);
+      await tester.tap(find.text('Réinitialiser le vote'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Réinitialiser'));
+      await tester.pumpAndSettle();
+      expect(server.resets, hasLength(1));
+      expect(find.text('0 / 3 ont voté'), findsOneWidget);
+      expect(
+        find.textContaining('Vote de Alice Martin réinitialisé.'),
+        findsOneWidget,
+      );
+      expect(find.text('Alice Martin'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    });
+  }
+
+  testWidgets(
+    'reset is hidden outside voting window and server refusal keeps the ballot',
+    (tester) async {
+      final server = ParticipationServer();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            isAdminProvider.overrideWithValue(true),
+            serverClientProvider.overrideWithValue(server),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(body: VoteParticipation(matchId: 'live')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Voir le suivi'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ont voté (1)'));
+      await tester.pumpAndSettle();
+      server.failReset = true;
+      await tester.ensureVisible(find.text('Réinitialiser le vote'));
+      await tester.tap(find.text('Réinitialiser le vote'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Réinitialiser'));
+      await tester.pumpAndSettle();
+      expect(find.text('Le vote vient de se terminer.'), findsOneWidget);
+      expect(find.text('1 / 3 ont voté'), findsOneWidget);
+      for (final state in [
+        {'status': 'voting_closed', 'canReset': true},
+        {'status': 'upcoming', 'canReset': true},
+        {'status': 'voting_open', 'canReset': false},
+      ]) {
+        server.data = {...server.data, ...state};
+        await tester.tap(find.text('Actualiser'));
+        await tester.pumpAndSettle();
+        expect(find.text('Réinitialiser le vote'), findsNothing);
+        expect(find.text('Alice Martin'), findsOneWidget);
+      }
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    },
+  );
   testWidgets(
     'member cannot load participation and failures do not display zero',
     (tester) async {

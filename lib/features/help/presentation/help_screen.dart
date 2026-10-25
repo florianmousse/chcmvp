@@ -90,7 +90,7 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
           section('2 · Voter après un match', Icons.how_to_vote_outlined, [
             "Ouvre Matchs, puis le filtre « Vote ouvert ». Sur le match concerné, touche « Voter pour les 3 meilleurs joueurs ». Tu dois être inscrit parmi les joueurs présents.",
             "Choisis trois joueurs différents, dans l'ordre : meilleur joueur, deuxième, troisième. Tu ne peux voter pour toi-même que si l'administrateur a activé cette option.",
-            "Vérifie tes choix avant « Valider mon vote ». Un vote réel est définitif : il ne peut être envoyé qu'une fois, avant la clôture. Le message « Vote enregistré, merci ! » confirme l'enregistrement, puis le match indique « Déjà voté ».",
+            "Vérifie tes choix avant « Valider mon vote ». Tu ne peux pas modifier toi-même un bulletin enregistré. En cas d'erreur, demande à un admin de le réinitialiser pendant que le vote est ouvert. Tu pourras alors voter à nouveau. Le message « Vote enregistré, merci ! » confirme l'enregistrement, puis le match indique « Déjà voté ».",
             "Si tu ne peux pas voter, vérifie ta connexion, que le vote est encore ouvert et que ta présence a été renseignée. Contacte un administrateur si nécessaire. Le suivi admin indique qui n'a pas voté, jamais le top 3 choisi dans un bulletin réel.",
           ]),
           section(
@@ -112,7 +112,8 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
                 "Dans Administration → Matchs → Créer un match, renseigne la date, l'heure, l'équipe et l'adversaire. Le bouton + permet d'ajouter un adversaire. Coche les joueurs présents et vérifie l'option d'auto-vote. Sans auto-vote, il faut au moins quatre présents pour choisir trois autres joueurs.",
                 "Le menu du match permet de modifier sa fiche, saisir les statistiques, ouvrir ou clôturer le vote. Les réglages du club pilotent également les ouvertures, rappels et clôtures automatiques.",
                 "Pour un vote terminé, choisis « Rouvrir le vote ». Les bulletins existants sont conservés et seuls les joueurs n'ayant pas encore voté peuvent participer. Le match cesse de compter dans les totaux et les badges jusqu'à sa nouvelle clôture. Une réouverture exige toujours une clôture manuelle ; les admins reçoivent un rappel toutes les 24 heures sur leur appareil autorisant les notifications.",
-                "Sur chaque carte de match, « Voir le suivi » affiche le nombre de votants sur les présents et les noms des personnes n'ayant pas voté, même pendant le vote. Les fiches sans compte sont identifiées. Le suivi s'actualise toutes les 30 secondes ; « Actualiser » permet de vérifier immédiatement.",
+                "Sur chaque carte de match, « Voir le suivi » affiche le nombre de votants sur les présents. « En attente » liste les noms des non-votants, avec les joueurs sans compte regroupés en bas. Le suivi s'actualise toutes les 30 secondes ; « Actualiser » permet de vérifier immédiatement.",
+                "Pour corriger une erreur, ouvre « Voir le suivi → Ont voté », puis « Réinitialiser le vote » sous le nom du joueur. Confirme son nom : seul son bulletin sera supprimé et il pourra voter à nouveau. Cette action est réservée aux admins pendant la période de vote ouverte. Les choix du bulletin restent confidentiels. Si le match est terminé, il faut d'abord rouvrir son vote.",
                 "Supprimer un match supprime aussi ses votes et ses points, puis recalcule les badges. Pour corriger des données anciennes, utilise « Reconstruire les classements maintenant » dans Administration.",
               ],
             ),

@@ -3,12 +3,22 @@ import { requireAuth, requireAdmin, AuthedRequest } from "../middleware/auth";
 import { matchReference } from "../matchReference";
 import { saveTestVote } from "../testVotes";
 import { voteParticipation } from "../voteParticipation";
+import { resetVote } from "../resetVote";
 import { reopenVoting } from "../votingLifecycle";
 import { handleVotingClosed } from "../matchListeners";
 import { deleteMatchAndRebuild, rebuildRankingsAndStats } from "../rebuildRankings";
 
 export const matchesRouter = Router();
 matchesRouter.use(requireAuth, requireAdmin);
+
+matchesRouter.post("/:matchId/votes/:voterUid/reset", async (req: AuthedRequest, res) => {
+  try {
+    await resetVote(req.params.matchId, req.params.voterUid, req.uid!, req.body?.voteVersion);
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(e.status ?? 500).json({ error: e.message ?? "Impossible de réinitialiser ce vote." });
+  }
+});
 
 matchesRouter.post("/:matchId/reopen", async (req: AuthedRequest, res) => {
   try {
