@@ -1,4 +1,4 @@
-import { isTestMatchId } from "./matchReference";
+import { votingOpenedNotification, votingClosedNotification } from "./matchNotifications";
 import { getFirestore } from "firebase-admin/firestore";
 import { initializeVotingWindow } from "./votingLifecycle";
 import { getClubSettings, notifyMembers } from "./notify";
@@ -79,18 +79,7 @@ async function handleVotingOpened(
   if (!current) return;
   match = current;
 
-  const presentPlayerIds: string[] = match.presentPlayerIds ?? [];
-
-  await notifyMembers({
-    adminsOnly: isTestMatchId(matchId),
-    title: match.manualCloseRequired ? "Vote rouvert !" : "Vote ouvert !",
-    body: match.manualCloseRequired
-      ? `Le vote contre ${match.opponent ?? "l'adversaire"} est rouvert. Les votes déjà déposés sont conservés ; les joueurs qui n'ont pas encore voté peuvent participer.`
-      : `Le match contre ${match.opponent ?? "l'adversaire"} est terminé. Vote dès maintenant pour les 3 meilleurs joueurs !`,
-    team: match.team,
-    onlyUids: presentPlayerIds.length > 0 ? presentPlayerIds : undefined,
-    data: { type: "voting_open", matchId },
-  });
+  await notifyMembers(await votingOpenedNotification(matchId, match));
 
   console.log(`Vote ouvert et notification envoyée pour le match ${matchId}`);
 }
@@ -106,7 +95,6 @@ export async function handleVotingClosed(
   if (!computed || !notify) return;
   match = computed.match;
   const { mvpUids, totalVotes } = computed.summary;
-  const presentPlayerIds: string[] = match.presentPlayerIds ?? [];
 
   // ── Notification de clôture ──
   const membersSnap = await firestore
@@ -122,20 +110,7 @@ export async function handleVotingClosed(
   const mvpNames = mvpUids
     .map((uid: string) => nameOf[uid] ?? "Joueur inconnu")
     .join(", ");
-  const resultLabel = isTestMatchId(matchId) ? "Résultats du test calculés." : "Le classement a été mis à jour.";
-  const notifBody =
-    mvpUids.length > 0
-      ? `${resultLabel} MVP : ${mvpNames} 🏆`
-      : resultLabel;
-
-  await notifyMembers({
-    adminsOnly: isTestMatchId(matchId),
-    title: "Vote clôturé ✅",
-    body: notifBody,
-    team: match.team,
-    onlyUids: presentPlayerIds.length > 0 ? presentPlayerIds : undefined,
-    data: { type: "voting_closed", matchId },
-  });
+  await notifyMembers(votingClosedNotification(matchId, match, mvpNames));
 
   console.log(
     `Résultats calculés pour le match ${matchId} (${totalVotes} votes, MVP: ${mvpUids.join(", ") || "aucun"})`,

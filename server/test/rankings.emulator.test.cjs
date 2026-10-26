@@ -7,6 +7,8 @@ const { withRankingLock } = require('../dist/rankingLock');
 const { saveTestVote } = require('../dist/testVotes');
 const { voteParticipation } = require('../dist/voteParticipation');
 const { resetVote, ballotVersion } = require('../dist/resetVote');
+const { votingOpenedNotification, votingClosedNotification } = require('../dist/matchNotifications');
+const { notificationTokens } = require('../dist/notificationAudience');
 const { reopenVoting, initializeVotingWindow, closeExpiredVoting, remindReopenedVoting, REOPEN_REMINDER_INTERVAL_MS } = require('../dist/votingLifecycle');
 
 // Refuse to touch any remote or production database.
@@ -30,6 +32,49 @@ async function seedMatch(id, date = '2026-10-12T12:00:00Z', voters = ['d', 'e'])
   return ref;
 }
 async function data(path) { return (await db.doc(path).get()).data(); }
+
+test('reopened votes invite only pending active participants; final results reach previous voters too', async () => {
+  const ref = await seedMatch('notifications');
+  await ref.update({status:'voting_open',manualCloseRequired:true,opponent:'Rennes'});
+  const match = (await ref.get()).data();
+  const users = ['a','b','c','d','e','absent','inactive'].map(uid => ({
+    uid, isActive:uid !== 'inactive', fcmTokens:[uid],
+  }));
+  let notification = await votingOpenedNotification(ref.id, match, db);
+  assert.deepEqual(notificationTokens(users,notification).sort(),['a','b','c']);
+  assert.equal(notification.title,'Vote rouvert !');
+  assert(!JSON.stringify(notification).includes('firstPlaceUid'));
+  for (const uid of ['a','b','c']) await ref.collection('votes').doc(uid).set({voterUid:uid});
+  notification = await votingOpenedNotification(ref.id, match, db);
+  assert.deepEqual(notificationTokens(users,notification),[]);
+  // A reset ballot becomes eligible for the next reopening invitation.
+  await ref.collection('votes').doc('d').delete();
+  notification = await votingOpenedNotification(ref.id, match, db);
+  assert.deepEqual(notificationTokens(users,notification),['d']);
+  const closed = votingClosedNotification(ref.id,match,'Camille');
+  assert.deepEqual(notificationTokens(users,closed).sort(),['a','b','c','d','e']);
+  assert.equal(closed.title,'Classement actualisé ✅');
+  assert(closed.body.includes('votes tardifs'));
+  assert.equal(closed.data.type,'voting_closed');
+  assert.equal(votingClosedNotification(ref.id,{...match,manualCloseRequired:false},'').title,'Vote clôturé ✅');
+});
+
+test('match notifications keep tests admin-only and empty real attendance never targets the club', async () => {
+  const users=[{uid:'admin',role:'admin',isActive:true,fcmTokens:['admin']},
+    {uid:'member',role:'member',isActive:true,fcmTokens:['member']},
+    {uid:'inactive',role:'admin',isActive:false,fcmTokens:['inactive']}];
+  await db.doc('test_matches/test:notification/votes/admin').set({voterUid:'admin'});
+  const match={manualCloseRequired:true,presentPlayerIds:['member']};
+  const opened=await votingOpenedNotification('test:notification',match,db);
+  const closed=votingClosedNotification('test:notification',match,'');
+  for (const notification of [opened,closed]) assert.deepEqual(notificationTokens(users,notification),['admin']);
+  assert(closed.body.includes('Résultats du test'));
+  for (const presentPlayerIds of [[],undefined]) {
+    const real={...match,presentPlayerIds};
+    assert.deepEqual(notificationTokens(users,await votingOpenedNotification('empty',real,db)),[]);
+    assert.deepEqual(notificationTokens(users,votingClosedNotification('empty',real,'')),[]);
+  }
+});
 
 test('reset only removes the selected ballot on an open match, then accepts a fresh vote', async () => {
   await db.doc('users/admin').set({role:'admin',isActive:true});

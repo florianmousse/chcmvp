@@ -4,7 +4,7 @@ La version web utilise **le même code Flutter, le même design et les mêmes do
 
 ## 1. Vérifier la version web en local
 
-Outils : Flutter **3.44.9** (version vérifiée), Node.js 20 ou supérieur, Git. Depuis la racine du dépôt :
+Outils : Flutter **3.44.9** (version vérifiée), Node.js **24 LTS** recommandé (22 minimum pour le backend), Git. Depuis la racine du dépôt :
 
 ```powershell
 flutter pub get --enforce-lockfile

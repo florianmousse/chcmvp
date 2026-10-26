@@ -2,30 +2,29 @@
   "name": "hockey-club-server",
   "description": "Backend autonome (notifications, clôture auto du vote, agrégation des résultats, gestion des membres) - remplace Cloud Functions, déployé sur le VPS du club.",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "test": "node --test test/cors.test.cjs test/members.test.cjs test/tally.test.cjs test/badges.test.cjs",
+    "test": "node --test test/cors.test.cjs test/members.test.cjs test/tally.test.cjs test/badges.test.cjs test/dependency-compatibility.test.cjs",
     "test:emulator": "node --test test/rankings.emulator.test.cjs"
   },
   "dependencies": {
-    "firebase-admin": "^12.3.0",
-    "express": "^4.19.2",
-    "node-cron": "^3.0.3",
     "dotenv": "^16.4.5",
-    "nodemailer": "^6.9.14"
+    "express": "^4.22.3",
+    "firebase-admin": "^14.5.0",
+    "node-cron": "^4.6.0",
+    "nodemailer": "^10.2.1"
   },
   "devDependencies": {
-    "typescript": "^5.5.3",
-    "tsx": "^4.16.2",
     "@types/express": "^4.17.21",
-    "@types/node-cron": "^3.0.11",
-    "@types/node": "^20.14.10",
-    "@types/nodemailer": "^6.4.15"
+    "@types/node": "^24.19.2",
+    "@types/nodemailer": "^8.0.2",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3"
   },
   "private": true
 }

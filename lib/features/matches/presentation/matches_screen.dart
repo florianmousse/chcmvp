@@ -67,6 +67,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
           final sorted = _sortAndFilter(matches);
 
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // ── Barre de filtres ──
               SingleChildScrollView(

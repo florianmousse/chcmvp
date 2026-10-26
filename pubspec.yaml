@@ -1,7 +1,7 @@
 name: chc_mvp
 description: Application de vote des meilleurs joueurs pour club de hockey sur gazon.
 publish_to: "none"
-version: 1.3.0+6
+version: 1.3.1+7
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -56,11 +56,13 @@ dev_dependencies:
   json_serializable: ^6.8.0
   flutter_lints: ^4.0.0
   flutter_launcher_icons: ^0.14.1
+  image: ^4.8.0
 
 flutter:
   uses-material-design: true
   assets:
     - assets/logo/logo.png
+    - assets/logo/display/club.png
     - assets/team_logos/
 
 # Génère l'icône de l'app pour Android et iOS à partir d'une seule image

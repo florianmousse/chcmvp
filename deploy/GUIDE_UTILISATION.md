@@ -55,6 +55,8 @@ Le libellé **Vote rouvert · clôture manuelle** indique qu'aucune clôture aut
 
 Les matchs de test suivent la même clôture manuelle après réouverture ; leurs bulletins simulés restent modifiables et leurs rappels sont préfixés **[TEST]**. Ils n'affectent jamais le classement du club.
 
+À la réouverture d'un vrai match, seuls les participants qui n'ont pas encore voté reçoivent une invitation à voter. À la nouvelle clôture, tous les participants reçoivent une notification **Classement actualisé** pour consulter les résultats recalculés avec les votes tardifs, y compris ceux qui avaient déjà voté.
+
 Les classements n'affichent que les joueurs ayant gagné des points. Un joueur hors podium peut avoir reçu des votes sans gagner de point : ses votes restent comptés dans ses statistiques.
 
 ### Corriger le vote d'un joueur

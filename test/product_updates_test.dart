@@ -17,6 +17,9 @@ import 'package:chc_mvp/features/profile/presentation/profile_screen.dart';
 import 'package:chc_mvp/features/admin/presentation/admin_dashboard_screen.dart';
 import 'package:chc_mvp/features/badges/presentation/badges_providers.dart';
 import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
+import 'package:chc_mvp/features/auth/presentation/login_screen.dart';
+import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
+import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:chc_mvp/core/theme/theme_provider.dart';
 import 'support/dashboard_fixture.dart';
 
@@ -75,6 +78,7 @@ void main() {
   for (final width in [390.0, 900.0, 1100.0, 1440.0]) {
     for (final page in {
       'home': const HomeScreen(),
+      'login': const LoginScreen(),
       'matches': const MatchesScreen(),
       'profile': const ProfileScreen(),
       'admin': const AdminDashboardScreen(),
@@ -111,11 +115,27 @@ void main() {
             width >= 1100 ? findsNothing : findsWidgets,
           );
           if (width >= 1100) {
+            final participation = find.text('Ma participation aux votes');
+            final ranking = find.text('Mon classement général');
             expect(
-              tester.getTopLeft(find.text('Mon classement général')).dx,
-              lessThan(
-                tester.getTopLeft(find.text('Ma participation aux votes')).dx,
+              tester.getTopLeft(participation).dy,
+              greaterThan(
+                tester.getBottomLeft(find.text('Les records de la saison')).dy,
               ),
+            );
+            final participationCard = find
+                .ancestor(of: participation, matching: find.byType(Card))
+                .first;
+            final rankingCard = find
+                .ancestor(of: ranking, matching: find.byType(Card))
+                .first;
+            expect(
+              tester.getRect(participationCard).left,
+              tester.getRect(rankingCard).left,
+            );
+            expect(
+              tester.getSize(participationCard).width,
+              tester.getSize(rankingCard).width,
             );
           }
         }
@@ -131,9 +151,76 @@ void main() {
             ).writeAsBytes(data!.buffer.asUint8List());
             image.dispose();
           });
+          if (page.key == 'home') {
+            await tester.ensureVisible(find.text('Ma participation aux votes'));
+            await tester.pumpAndSettle();
+            await tester.runAsync(() async {
+              final image =
+                  await (capture.currentContext!.findRenderObject()
+                          as RenderRepaintBoundary)
+                      .toImage();
+              final data = await image.toByteData(
+                format: ui.ImageByteFormat.png,
+              );
+              await File(
+                'build/home-bottom-${width.toInt()}.png',
+              ).writeAsBytes(data!.buffer.asUint8List());
+              image.dispose();
+            });
+          }
         }
       });
     }
+  }
+  for (final width in [390.0, 1440.0]) {
+    testWidgets(
+      'Les filtres restent fixes avec un seul match puis aucun résultat à $width',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: demoOverrides,
+            child: ProviderScope(
+              overrides: [
+                matchesListProvider.overrideWith(
+                  (ref, team) => Stream.value([demoMatches.last]),
+                ),
+              ],
+              child: MaterialApp(
+                theme: AppTheme.light,
+                home: const Scaffold(
+                  body: ResponsiveContent(child: MatchesScreen()),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final chips = find.byType(FilterChip);
+        final initialPositions = [
+          for (final element in chips.evaluate())
+            tester.getRect(find.byWidget(element.widget)),
+        ];
+        expect(initialPositions, hasLength(4));
+        await tester.tap(find.widgetWithText(FilterChip, 'Vote ouvert'));
+        await tester.pumpAndSettle();
+        expect(find.text('Aucun match avec ce filtre.'), findsOneWidget);
+        expect([
+          for (final element in chips.evaluate())
+            tester.getRect(find.byWidget(element.widget)),
+        ], initialPositions);
+        await tester.tap(find.widgetWithText(FilterChip, 'Tous'));
+        await tester.pumpAndSettle();
+        expect([
+          for (final element in chips.evaluate())
+            tester.getRect(find.byWidget(element.widget)),
+        ], initialPositions);
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
   testWidgets(
     'Badges obtenus en premier et plus récents en tête, y compris ceux persistés',

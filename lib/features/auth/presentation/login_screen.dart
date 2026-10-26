@@ -57,6 +57,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: Image.asset(
                           clubLogoAssetPath,
                           fit: BoxFit.contain,
+                          filterQuality: FilterQuality.medium,
                           errorBuilder: (context, error, stackTrace) => Icon(
                             Icons.sports_hockey,
                             size: 56,

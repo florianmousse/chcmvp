@@ -84,14 +84,14 @@ sudo firewall-cmd --reload
 Sur Ubuntu :
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo bash -
 sudo apt-get install -y nodejs
 ```
 
 Sur Oracle Linux :
 
 ```bash
-curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+curl -fsSL https://rpm.nodesource.com/setup_24.x | sudo bash -
 sudo yum install -y nodejs
 ```
 

@@ -81,20 +81,7 @@ class HomeScreen extends ConsumerWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (profile != null)
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: _MyRankingCard(uid: profile.uid)),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            child: _VotingParticipationCard(
-                              uid: profile.uid,
-                              allMatches: matches,
-                            ),
-                          ),
-                        ],
-                      ),
+                    if (profile != null) _MyRankingCard(uid: profile.uid),
                     const SizedBox(height: 8),
                     _ActionCardsSection(
                       votingOpen: votingOpen,
@@ -116,6 +103,11 @@ class HomeScreen extends ConsumerWidget {
                       ],
                     ),
                     _SeasonRecordsWrapper(closedMatches: seasonClosed),
+                    if (profile != null)
+                      _VotingParticipationCard(
+                        uid: profile.uid,
+                        allMatches: matches,
+                      ),
                     if (matches.isEmpty)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
@@ -1261,6 +1253,7 @@ class _ClubLogo extends StatelessWidget {
       child: Image.asset(
         clubLogoAssetPath,
         fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium,
         errorBuilder: (context, error, stackTrace) => _fallbackIcon(context),
       ),
     );
