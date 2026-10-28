@@ -2,7 +2,7 @@ import 'package:chc_mvp/core/utils/season.dart';
 import 'package:flutter/material.dart';
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chc_mvp/core/config/club_config.dart';
+import 'package:chc_mvp/core/widgets/club_logo.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/core/widgets/opponent_logo.dart';
 import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
@@ -40,7 +40,7 @@ class HomeScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const _ClubLogo(),
+              const ClubLogo(),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -1235,37 +1235,6 @@ class _LastResultCard extends ConsumerWidget {
           loading: () => const SizedBox.shrink(),
           error: (e, _) => const SizedBox.shrink(),
         ),
-      ),
-    );
-  }
-}
-
-/// Affiche le logo du club depuis les assets locaux (core/config/
-/// club_config.dart) - chargement instantané, pas de requête réseau.
-class _ClubLogo extends StatelessWidget {
-  const _ClubLogo();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
-      width: 48,
-      child: Image.asset(
-        clubLogoAssetPath,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.medium,
-        errorBuilder: (context, error, stackTrace) => _fallbackIcon(context),
-      ),
-    );
-  }
-
-  Widget _fallbackIcon(BuildContext context) {
-    return CircleAvatar(
-      radius: 24,
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      child: Icon(
-        Icons.sports_hockey,
-        color: Theme.of(context).colorScheme.primary,
       ),
     );
   }

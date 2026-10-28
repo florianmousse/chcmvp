@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'web_login_form.dart';
 import 'package:chc_mvp/core/widgets/legal_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chc_mvp/core/config/club_config.dart';
+import 'package:chc_mvp/core/widgets/club_logo.dart';
 import 'package:chc_mvp/core/services/auth_service.dart';
 import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 
@@ -51,20 +51,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SizedBox(
-                        height: 72,
-                        width: 72,
-                        child: Image.asset(
-                          clubLogoAssetPath,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.medium,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.sports_hockey,
-                            size: 56,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                      ),
+                      const Center(child: ClubLogo()),
                       const SizedBox(height: 12),
                       Text(
                         'CHC MVP',
