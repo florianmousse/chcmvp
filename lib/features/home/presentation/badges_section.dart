@@ -53,7 +53,12 @@ class BadgesSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
             const SizedBox(width: 8),
             Text(
               '${earnedTypes.length}/${allBadges.length}',

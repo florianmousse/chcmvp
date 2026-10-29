@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
+import 'package:chc_mvp/core/models/opponent_model.dart';
 import 'package:chc_mvp/core/widgets/opponent_logo.dart';
 import 'package:chc_mvp/features/home/presentation/vote_rate_indicator.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 import 'package:chc_mvp/features/members/presentation/members_providers.dart';
 import 'package:chc_mvp/features/opponents/presentation/opponent_detail_screen.dart';
-import 'package:chc_mvp/features/opponents/presentation/opponents_providers.dart';
 import 'package:chc_mvp/features/voting/presentation/vote_screen.dart';
 import 'package:chc_mvp/features/voting/presentation/voting_providers.dart';
 import 'package:intl/intl.dart';
@@ -195,62 +195,102 @@ class _MatchCard extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(match.label, style: theme.textTheme.titleMedium),
-                ),
-                _StatusChip(status: match.status),
-              ],
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => OpponentDetailScreen(
+              opponent: OpponentModel(
+                id: match.opponentId ?? '',
+                name: match.opponent,
+                logoAsset: match.opponentLogoAsset,
+              ),
             ),
-            if (match.scoreLabel != null) ...[
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      match.label,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  _StatusChip(status: match.status),
+                ],
+              ),
+              if (match.scoreLabel != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  match.scoreLabel!,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
               const SizedBox(height: 4),
               Text(
-                match.scoreLabel!,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
+                '${DateFormat('EEEE dd MMMM', 'fr_FR').format(match.date)} à ${match.time}',
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              VoteParticipation(matchId: match.id),
+              if (match.status == MatchStatus.votingOpen &&
+                  match.manualCloseRequired)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Vote rouvert · clôture manuelle par un admin. Les votes déjà déposés sont conservés.',
+                  ),
                 ),
+              // Le logo se place à droite de ce qui suit - le classement des
+              // joueurs pour un match terminé, le bouton de vote pour un vote
+              // ouvert, ou rien pour un match à venir - jamais dans l'en-tête.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: switch (match.status) {
+                      MatchStatus.votingOpen => _VoteAction(match: match),
+                      MatchStatus.votingClosed => _TopThree(match: match),
+                      MatchStatus.upcoming => const SizedBox.shrink(),
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  OpponentLogo(
+                    logoAssetPath: match.opponentLogoAsset,
+                    size: 56,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(
+                    Icons.history,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Voir le bilan face à ${match.opponent}',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: theme.colorScheme.primary),
+                ],
               ),
             ],
-            const SizedBox(height: 4),
-            Text(
-              '${DateFormat('EEEE dd MMMM', 'fr_FR').format(match.date)} à ${match.time}',
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            VoteParticipation(matchId: match.id),
-            if (match.status == MatchStatus.votingOpen &&
-                match.manualCloseRequired)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: Text(
-                  'Vote rouvert · clôture manuelle par un admin. Les votes déjà déposés sont conservés.',
-                ),
-              ),
-            // Le logo se place à droite de ce qui suit - le classement des
-            // joueurs pour un match terminé, le bouton de vote pour un vote
-            // ouvert, ou rien pour un match à venir - jamais dans l'en-tête.
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: switch (match.status) {
-                    MatchStatus.votingOpen => _VoteAction(match: match),
-                    MatchStatus.votingClosed => _TopThree(match: match),
-                    MatchStatus.upcoming => const SizedBox.shrink(),
-                  },
-                ),
-                const SizedBox(width: 12),
-                _OpponentLogoTappable(match: match),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -420,40 +460,6 @@ class _StatusChip extends StatelessWidget {
       side: BorderSide(color: fgColor.withValues(alpha: 0.3), width: 0.8),
       padding: const EdgeInsets.symmetric(horizontal: 2),
       visualDensity: VisualDensity.compact,
-    );
-  }
-}
-
-/// Logo adverse tappable - navigue vers le détail de l'adversaire si un
-/// `opponentId` est associé au match.
-class _OpponentLogoTappable extends ConsumerWidget {
-  const _OpponentLogoTappable({required this.match});
-  final MatchModel match;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final logo = OpponentLogo(logoAssetPath: match.opponentLogoAsset, size: 56);
-
-    if (match.opponentId == null) return logo;
-
-    return GestureDetector(
-      onTap: () {
-        final opponents = ref.read(opponentsListProvider).value ?? [];
-        final opp = opponents
-            .where((o) => o.id == match.opponentId)
-            .firstOrNull;
-        if (opp != null) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => OpponentDetailScreen(opponent: opp),
-            ),
-          );
-        }
-      },
-      child: Tooltip(
-        message: 'Voir le bilan vs ${match.opponent}',
-        child: logo,
-      ),
     );
   }
 }

@@ -93,16 +93,14 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
             "Vérifie tes choix avant « Valider mon vote ». Tu ne peux pas modifier toi-même un bulletin enregistré. En cas d'erreur, demande à un admin de le réinitialiser pendant que le vote est ouvert. Tu pourras alors voter à nouveau. Le message « Vote enregistré, merci ! » confirme l'enregistrement, puis le match indique « Déjà voté ».",
             "Si tu ne peux pas voter, vérifie ta connexion, que le vote est encore ouvert et que ta présence a été renseignée. Contacte un administrateur si nécessaire. Le suivi admin indique qui n'a pas voté, jamais le top 3 choisi dans un bulletin réel.",
           ]),
-          section(
-            '3 · Résultats, statistiques et badges',
-            Icons.emoji_events_outlined,
-            [
-              'Après la clôture, retrouve le podium dans Matchs et les classements dans Classements. Les points suivent le barème du match ; ils récompensent le podium final.',
-              'Accueil résume les performances du club. Profil → Mes statistiques affiche ton parcours. Les buts, passes et cartons dépendent des feuilles renseignées par les admins.',
-              "Dans Profil, les badges obtenus apparaissent en premier, les plus récents en tête. Touche un badge pour connaître sa condition et sa date d'obtention. Le serveur les recalcule : un badge peut être retiré si un match source est supprimé.",
-              'Profil permet aussi de changer le thème, consulter le tutoriel et la version, puis se déconnecter.',
-            ],
-          ),
+          section('3 · Résultats, statistiques et badges', Icons.emoji_events_outlined, [
+            'Après la clôture, retrouve le podium dans Matchs et les classements dans Classements. Les points suivent le barème du match ; ils récompensent le podium final.',
+            "Dans Matchs, touche la tuile pour voir le bilan face à l'adversaire et l'historique des confrontations. Le bouton Voter reste réservé au vote. Dans Classements, touche la ligne d'un joueur indiquant « Voir le profil » pour consulter son parcours.",
+            "Sur l'accueil, touche le logo du club ou « Bilan » pour voir les victoires, nuls, défaites et buts marqués ou encaissés, toutes saisons confondues. Seuls les matchs joués avec un score renseigné sont comptés, hors matchs de test.",
+            'Accueil résume les performances du club. Profil → Mes statistiques affiche ton parcours. Les buts, passes et cartons dépendent des feuilles renseignées par les admins.',
+            "Dans Profil, les badges obtenus apparaissent en premier, les plus récents en tête. Touche un badge pour connaître sa condition et sa date d'obtention. Le serveur les recalcule : un badge peut être retiré si un match source est supprimé.",
+            'Profil permet aussi de changer le thème, consulter le tutoriel et la version, puis se déconnecter.',
+          ]),
           if (ref.watch(isAdminProvider)) ...[
             section(
               'Admin · Préparer et gérer les matchs',

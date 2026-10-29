@@ -55,7 +55,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen>
         child: TabBarView(
           controller: _tabController,
           children: [
-            _RankingList(scope: 'general'),
+            const _RankingList(scope: 'general'),
             Column(
               children: [
                 _MonthPicker(
@@ -261,12 +261,25 @@ class _RankingList extends ConsumerWidget {
             return ListTile(
               leading: CircleAvatar(child: Text('$rank')),
               title: Text(member?.fullName ?? 'Joueur inconnu'),
-              subtitle: Text(
-                '🥇 ${entry.firstCount}  🥈 ${entry.secondCount}  🥉 ${entry.thirdCount}',
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '🥇 ${entry.firstCount}  🥈 ${entry.secondCount}  🥉 ${entry.thirdCount}',
+                  ),
+                  const _ProfileHint(),
+                ],
               ),
-              trailing: Text(
-                '${entry.points} pts',
-                style: Theme.of(context).textTheme.titleMedium,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${entry.points} pts',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.chevron_right),
+                ],
               ),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
@@ -405,10 +418,29 @@ class _StatsRankingTabState extends ConsumerState<_StatsRankingTab> {
                       ),
                     ),
                     title: Text(name),
-                    subtitle: Text(
-                      '${stats.matchesPlayed} match${stats.matchesPlayed > 1 ? 's' : ''} renseigné${stats.matchesPlayed > 1 ? 's' : ''}',
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${stats.matchesPlayed} match${stats.matchesPlayed > 1 ? 's' : ''} renseigné${stats.matchesPlayed > 1 ? 's' : ''}',
+                        ),
+                        const _ProfileHint(),
+                      ],
                     ),
-                    trailing: _StatValue(stats: stats, sort: _sort),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _StatValue(stats: stats, sort: _sort),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            PlayerStatsScreen(uid: uid, playerName: name),
+                      ),
+                    ),
                   );
                 },
               );
@@ -420,6 +452,18 @@ class _StatsRankingTabState extends ConsumerState<_StatsRankingTab> {
       ],
     );
   }
+}
+
+class _ProfileHint extends StatelessWidget {
+  const _ProfileHint();
+
+  @override
+  Widget build(BuildContext context) => Text(
+    'Voir le profil',
+    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+      color: Theme.of(context).colorScheme.primary,
+    ),
+  );
 }
 
 class _StatValue extends StatelessWidget {

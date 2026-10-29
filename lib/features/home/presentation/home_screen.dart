@@ -40,7 +40,47 @@ class HomeScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const ClubLogo(),
+              Tooltip(
+                message: 'Voir le bilan total du club',
+                child: InkWell(
+                  key: const ValueKey('club-record-link'),
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const MatchHistoryScreen(),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const ClubLogo(),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Bilan',
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                            ),
+                            Icon(
+                              Icons.chevron_right,
+                              size: 16,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -233,7 +273,7 @@ class _SwipableSectionState extends State<_SwipableSection> {
         ),
         const SizedBox(height: 8),
         if (MediaQuery.sizeOf(context).width >= 1100)
-          DesktopCardGrid(children: widget.pages, height: widget.pageHeight)
+          DesktopCardGrid(height: widget.pageHeight, children: widget.pages)
         else
           SizedBox(
             height: widget.pageHeight,

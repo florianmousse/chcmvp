@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:chc_mvp/core/models/match_model.dart';
+import 'package:chc_mvp/core/widgets/responsive_content.dart';
+import 'package:chc_mvp/features/matches/domain/club_record.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:chc_mvp/core/models/opponent_model.dart';
@@ -6,9 +9,15 @@ import 'package:chc_mvp/core/widgets/opponent_logo.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
 
 /// Écran de détail d'un adversaire - bilan des confrontations et historique.
-class OpponentDetailScreen extends ConsumerWidget {
-  const OpponentDetailScreen({super.key, required this.opponent});
-  final OpponentModel opponent;
+class OpponentDetailScreen extends MatchHistoryScreen {
+  const OpponentDetailScreen({super.key, required OpponentModel opponent})
+    : super(opponent: opponent);
+}
+
+/// Bilan global si aucun adversaire n'est précisé.
+class MatchHistoryScreen extends ConsumerWidget {
+  const MatchHistoryScreen({super.key, this.opponent});
+  final OpponentModel? opponent;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -17,89 +26,76 @@ class OpponentDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            OpponentLogo(logoAssetPath: opponent.logoAsset, size: 28),
-            const SizedBox(width: 8),
-            Text(opponent.name),
-          ],
-        ),
+        title: opponent == null
+            ? const Text('Bilan du club')
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  OpponentLogo(logoAssetPath: opponent!.logoAsset, size: 28),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text(opponent!.name)),
+                ],
+              ),
       ),
-      body: matchesAsync.when(
-        data: (allMatches) {
-          // Filtrer les matchs avec cet adversaire et un score
-          final confrontations =
-              allMatches
-                  .where(
-                    (m) =>
-                        m.opponentId == opponent.id &&
-                        m.scoreHome != null &&
-                        m.scoreAway != null,
-                  )
-                  .toList()
-                ..sort((a, b) => b.date.compareTo(a.date));
+      body: ResponsiveContent(
+        maxWidth: 900,
+        child: matchesAsync.when(
+          data: (allMatches) {
+            final record = ClubRecord.fromMatches(
+              allMatches,
+              opponent: opponent,
+            );
+            final confrontations = record.matches;
 
-          // Calculer le bilan
-          var wins = 0;
-          var draws = 0;
-          var losses = 0;
-          var goalsFor = 0;
-          var goalsAgainst = 0;
-          for (final m in confrontations) {
-            goalsFor += m.scoreHome!;
-            goalsAgainst += m.scoreAway!;
-            if (m.scoreHome! > m.scoreAway!) {
-              wins++;
-            } else if (m.scoreHome! == m.scoreAway!) {
-              draws++;
-            } else {
-              losses++;
-            }
-          }
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                const Text(
+                  'Toutes saisons · Matchs joués avec un score renseigné. Les matchs de test sont exclus.',
+                ),
+                const SizedBox(height: 12),
+                // ── Bilan ──
+                _BilanCard(
+                  wins: record.wins,
+                  draws: record.draws,
+                  losses: record.losses,
+                  goalsFor: record.goalsFor,
+                  goalsAgainst: record.goalsAgainst,
+                  played: confrontations.length,
+                  theme: theme,
+                ),
+                const SizedBox(height: 24),
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              // ── Bilan ──
-              _BilanCard(
-                wins: wins,
-                draws: draws,
-                losses: losses,
-                goalsFor: goalsFor,
-                goalsAgainst: goalsAgainst,
-                played: confrontations.length,
-                theme: theme,
-              ),
-              const SizedBox(height: 24),
-
-              // ── Historique ──
-              Text(
-                'Historique des confrontations',
-                style: theme.textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-              if (confrontations.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text(
-                      'Aucune confrontation enregistrée.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.outline,
+                // ── Historique ──
+                Text(
+                  opponent == null
+                      ? 'Historique des matchs'
+                      : 'Historique des confrontations',
+                  style: theme.textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                if (confrontations.isEmpty)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Text(
+                        'Aucun match joué avec un score renseigné.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
                       ),
                     ),
+                  )
+                else
+                  ...confrontations.map(
+                    (m) => _ConfrontationTile(match: m, theme: theme),
                   ),
-                )
-              else
-                ...confrontations.map(
-                  (m) => _ConfrontationTile(match: m, theme: theme),
-                ),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erreur : $e')),
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Erreur : $e')),
+        ),
       ),
     );
   }
@@ -128,8 +124,10 @@ class _BilanCard extends StatelessWidget {
           children: [
             Text('Bilan', style: theme.textTheme.titleLarge),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 24,
+              runSpacing: 16,
               children: [
                 _statColumn('Matchs', '$played', theme),
                 _statColumn('Victoires', '$wins', theme, color: Colors.green),
@@ -140,8 +138,10 @@ class _BilanCard extends StatelessWidget {
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 24,
+              runSpacing: 16,
               children: [
                 _statColumn(
                   'Buts marqués',
@@ -193,13 +193,13 @@ class _BilanCard extends StatelessWidget {
 
 class _ConfrontationTile extends StatelessWidget {
   const _ConfrontationTile({required this.match, required this.theme});
-  final dynamic match;
+  final MatchModel match;
   final ThemeData theme;
 
   @override
   Widget build(BuildContext context) {
-    final scoreHome = match.scoreHome as int;
-    final scoreAway = match.scoreAway as int;
+    final scoreHome = match.scoreHome!;
+    final scoreAway = match.scoreAway!;
     final isWin = scoreHome > scoreAway;
     final isDraw = scoreHome == scoreAway;
 
@@ -233,7 +233,7 @@ class _ConfrontationTile extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          '${DateFormat('dd/MM/yyyy').format(match.date as DateTime)} • ${match.isHome ? "Domicile" : "Extérieur"}',
+          '${DateFormat('dd/MM/yyyy').format(match.date)} • ${match.isHome ? "Domicile" : "Extérieur"} • ${match.team}',
         ),
         trailing: Text(
           resultLabel,
