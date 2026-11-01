@@ -32,6 +32,9 @@ _$MatchModelImpl _$$MatchModelImplFromJson(Map<String, dynamic> json) =>
       status:
           $enumDecodeNullable(_$MatchStatusEnumMap, json['status']) ??
           MatchStatus.upcoming,
+      matchType:
+          $enumDecodeNullable(_$MatchTypeEnumMap, json['matchType']) ??
+          MatchType.championship,
       presentPlayerIds:
           (json['presentPlayerIds'] as List<dynamic>?)
               ?.map((e) => e as String)
@@ -62,6 +65,7 @@ Map<String, dynamic> _$$MatchModelImplToJson(
   'isHome': instance.isHome,
   'team': instance.team,
   'status': _$MatchStatusEnumMap[instance.status]!,
+  'matchType': _$MatchTypeEnumMap[instance.matchType]!,
   'presentPlayerIds': instance.presentPlayerIds,
   'votingOpensAt': const TimestampConverter().toJson(instance.votingOpensAt),
   'votingClosesAt': const TimestampConverter().toJson(instance.votingClosesAt),
@@ -77,4 +81,10 @@ const _$MatchStatusEnumMap = {
   MatchStatus.upcoming: 'upcoming',
   MatchStatus.votingOpen: 'voting_open',
   MatchStatus.votingClosed: 'voting_closed',
+};
+
+const _$MatchTypeEnumMap = {
+  MatchType.championship: 'championship',
+  MatchType.friendly: 'friendly',
+  MatchType.playoff: 'playoff',
 };

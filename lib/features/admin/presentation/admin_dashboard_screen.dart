@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chc_mvp/features/ceremonies/ceremonies_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_admin_screen.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
@@ -29,6 +30,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           LayoutBuilder(
             builder: (context, constraints) {
               final items = <Widget>[
+                _AdminTile(
+                  icon: Icons.emoji_events_outlined,
+                  title: 'Cérémonies',
+                  subtitle:
+                      'Préparer les prix, ouvrir les votes et révéler les lauréats',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CeremoniesScreen()),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 _AdminTile(
                   icon: Icons.group_outlined,
                   title: 'Membres',

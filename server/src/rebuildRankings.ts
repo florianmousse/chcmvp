@@ -106,8 +106,6 @@ export async function rebuildRankingsUnlocked(firestore = getFirestore()): Promi
         ? Math.round((totalVotes / presentPlayerIds.length) * 100)
         : 0;
 
-    matchesProcessed++;
-
     await matchDoc.ref.collection("results").doc("summary").set({
       entries,
       mvpUids,
@@ -117,6 +115,10 @@ export async function rebuildRankingsUnlocked(firestore = getFirestore()): Promi
       computedAt: Timestamp.now(),
     });
 
+    // Friendly podiums belong to their match only: never accumulate them in
+    // official history, rankings, game statistics or badge inputs.
+    if (match.matchType === "friendly") continue;
+    matchesProcessed++;
     const matchDate: Timestamp = match.date;
     const gameStats = await matchDoc.ref.collection("playerStats").get();
     badgeMatches.push({

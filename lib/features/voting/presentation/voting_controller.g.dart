@@ -7,7 +7,7 @@ part of 'voting_controller.dart';
 // **************************************************************************
 
 String _$voteSubmissionControllerHash() =>
-    r'c6ac495feea6f903d49ebe788f325f9b6efb6f64';
+    r'2e4e924e20a0e39182b9640499f9165774dfcb94';
 
 /// See also [VoteSubmissionController].
 @ProviderFor(VoteSubmissionController)

@@ -226,6 +226,7 @@ mixin _$MatchModel {
   bool get isHome => throw _privateConstructorUsedError;
   String get team => throw _privateConstructorUsedError;
   MatchStatus get status => throw _privateConstructorUsedError;
+  MatchType get matchType => throw _privateConstructorUsedError;
   List<String> get presentPlayerIds => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime? get votingOpensAt => throw _privateConstructorUsedError;
@@ -270,6 +271,7 @@ abstract class $MatchModelCopyWith<$Res> {
     bool isHome,
     String team,
     MatchStatus status,
+    MatchType matchType,
     List<String> presentPlayerIds,
     @TimestampConverter() DateTime? votingOpensAt,
     @TimestampConverter() DateTime? votingClosesAt,
@@ -307,6 +309,7 @@ class _$MatchModelCopyWithImpl<$Res, $Val extends MatchModel>
     Object? isHome = null,
     Object? team = null,
     Object? status = null,
+    Object? matchType = null,
     Object? presentPlayerIds = null,
     Object? votingOpensAt = freezed,
     Object? votingClosesAt = freezed,
@@ -351,6 +354,10 @@ class _$MatchModelCopyWithImpl<$Res, $Val extends MatchModel>
                 ? _value.status
                 : status // ignore: cast_nullable_to_non_nullable
                       as MatchStatus,
+            matchType: null == matchType
+                ? _value.matchType
+                : matchType // ignore: cast_nullable_to_non_nullable
+                      as MatchType,
             presentPlayerIds: null == presentPlayerIds
                 ? _value.presentPlayerIds
                 : presentPlayerIds // ignore: cast_nullable_to_non_nullable
@@ -421,6 +428,7 @@ abstract class _$$MatchModelImplCopyWith<$Res>
     bool isHome,
     String team,
     MatchStatus status,
+    MatchType matchType,
     List<String> presentPlayerIds,
     @TimestampConverter() DateTime? votingOpensAt,
     @TimestampConverter() DateTime? votingClosesAt,
@@ -458,6 +466,7 @@ class __$$MatchModelImplCopyWithImpl<$Res>
     Object? isHome = null,
     Object? team = null,
     Object? status = null,
+    Object? matchType = null,
     Object? presentPlayerIds = null,
     Object? votingOpensAt = freezed,
     Object? votingClosesAt = freezed,
@@ -502,6 +511,10 @@ class __$$MatchModelImplCopyWithImpl<$Res>
             ? _value.status
             : status // ignore: cast_nullable_to_non_nullable
                   as MatchStatus,
+        matchType: null == matchType
+            ? _value.matchType
+            : matchType // ignore: cast_nullable_to_non_nullable
+                  as MatchType,
         presentPlayerIds: null == presentPlayerIds
             ? _value._presentPlayerIds
             : presentPlayerIds // ignore: cast_nullable_to_non_nullable
@@ -555,6 +568,7 @@ class _$MatchModelImpl extends _MatchModel {
     required this.isHome,
     required this.team,
     this.status = MatchStatus.upcoming,
+    this.matchType = MatchType.championship,
     final List<String> presentPlayerIds = const <String>[],
     @TimestampConverter() this.votingOpensAt,
     @TimestampConverter() this.votingClosesAt,
@@ -590,6 +604,9 @@ class _$MatchModelImpl extends _MatchModel {
   @override
   @JsonKey()
   final MatchStatus status;
+  @override
+  @JsonKey()
+  final MatchType matchType;
   final List<String> _presentPlayerIds;
   @override
   @JsonKey()
@@ -630,7 +647,7 @@ class _$MatchModelImpl extends _MatchModel {
 
   @override
   String toString() {
-    return 'MatchModel(id: $id, date: $date, time: $time, opponent: $opponent, opponentId: $opponentId, isHome: $isHome, team: $team, status: $status, presentPlayerIds: $presentPlayerIds, votingOpensAt: $votingOpensAt, votingClosesAt: $votingClosesAt, manualCloseRequired: $manualCloseRequired, pointsScale: $pointsScale, allowSelfVote: $allowSelfVote, opponentLogoAsset: $opponentLogoAsset, scoreHome: $scoreHome, scoreAway: $scoreAway)';
+    return 'MatchModel(id: $id, date: $date, time: $time, opponent: $opponent, opponentId: $opponentId, isHome: $isHome, team: $team, status: $status, matchType: $matchType, presentPlayerIds: $presentPlayerIds, votingOpensAt: $votingOpensAt, votingClosesAt: $votingClosesAt, manualCloseRequired: $manualCloseRequired, pointsScale: $pointsScale, allowSelfVote: $allowSelfVote, opponentLogoAsset: $opponentLogoAsset, scoreHome: $scoreHome, scoreAway: $scoreAway)';
   }
 
   @override
@@ -648,6 +665,8 @@ class _$MatchModelImpl extends _MatchModel {
             (identical(other.isHome, isHome) || other.isHome == isHome) &&
             (identical(other.team, team) || other.team == team) &&
             (identical(other.status, status) || other.status == status) &&
+            (identical(other.matchType, matchType) ||
+                other.matchType == matchType) &&
             const DeepCollectionEquality().equals(
               other._presentPlayerIds,
               _presentPlayerIds,
@@ -682,6 +701,7 @@ class _$MatchModelImpl extends _MatchModel {
     isHome,
     team,
     status,
+    matchType,
     const DeepCollectionEquality().hash(_presentPlayerIds),
     votingOpensAt,
     votingClosesAt,
@@ -717,6 +737,7 @@ abstract class _MatchModel extends MatchModel {
     required final bool isHome,
     required final String team,
     final MatchStatus status,
+    final MatchType matchType,
     final List<String> presentPlayerIds,
     @TimestampConverter() final DateTime? votingOpensAt,
     @TimestampConverter() final DateTime? votingClosesAt,
@@ -751,6 +772,8 @@ abstract class _MatchModel extends MatchModel {
   String get team;
   @override
   MatchStatus get status;
+  @override
+  MatchType get matchType;
   @override
   List<String> get presentPlayerIds;
   @override

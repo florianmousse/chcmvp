@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chc_mvp/features/ceremonies/ceremonies_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/user_model.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
@@ -50,6 +51,8 @@ final demoMatches = [
   ),
 ];
 final demoOverrides = [
+  ceremoniesProvider.overrideWith((ref) => Stream.value([])),
+  allBadgesProvider.overrideWith((ref) => Stream.value({})),
   testMatchesListProvider.overrideWith((ref) => Stream.value([])),
   currentUserProfileProvider.overrideWith((ref) => Stream.value(demoMember)),
   matchesListProvider.overrideWith((ref, team) => Stream.value(demoMatches)),

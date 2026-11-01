@@ -143,24 +143,30 @@ class _MatchStatsFormScreenState extends ConsumerState<MatchStatsFormScreen> {
                       const SizedBox(height: 24),
                       const Divider(),
                       const SizedBox(height: 8),
-                      // ─── Stats par joueur ───
-                      Text(
-                        'Stats individuelles',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 12),
-                      ...widget.match.presentPlayerIds.map((uid) {
-                        final data = _stats.putIfAbsent(
-                          uid,
-                          _PlayerStatsData.new,
-                        );
-                        return _PlayerStatsRow(
-                          playerName: nameOf[uid] ?? 'Joueur inconnu',
-                          data: data,
-                          onChanged: () => setState(() {}),
-                        );
-                      }),
+                      if (!widget.match.isFriendly) ...[
+                        // ─── Stats par joueur ───
+                        Text(
+                          'Stats individuelles',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 12),
+                        ...widget.match.presentPlayerIds.map((uid) {
+                          final data = _stats.putIfAbsent(
+                            uid,
+                            _PlayerStatsData.new,
+                          );
+                          return _PlayerStatsRow(
+                            playerName: nameOf[uid] ?? 'Joueur inconnu',
+                            data: data,
+                            onChanged: () => setState(() {}),
+                          );
+                        }),
+                      ],
+                      if (widget.match.isFriendly)
+                        const Text(
+                          'Ce score ne compte pas dans les bilans du club.',
+                        ),
                     ],
                   );
                 },
@@ -199,7 +205,9 @@ class _MatchStatsFormScreenState extends ConsumerState<MatchStatsFormScreen> {
         );
       }).toList();
 
-      await repo.saveAllPlayerMatchStats(widget.match.id, statsList);
+      if (!widget.match.isFriendly) {
+        await repo.saveAllPlayerMatchStats(widget.match.id, statsList);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(

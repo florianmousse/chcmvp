@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { createMember, inviteExistingMember, setMemberActive, deleteMember } = require('../dist/members');
+const { createMember, changeMemberEmail, inviteExistingMember, setMemberActive, deleteMember } = require('../dist/members');
 function fixture() {
   const profiles = new Map(), accounts = new Map(), mails = [];
   let sequence = 0;
@@ -22,6 +22,7 @@ function fixture() {
       getUser: async uid => accounts.get(uid),
       updateUser: async (uid, data) => {
         if (!accounts.has(uid)) throw error('auth/user-not-found');
+        if (data.email && [...accounts.values()].some(a => a.uid !== uid && a.email === data.email)) throw error('auth/email-already-exists');
         accounts.set(uid, { ...accounts.get(uid), ...data });
       },
       deleteUser: async uid => { if (!accounts.delete(uid)) throw error('auth/user-not-found'); },
@@ -32,6 +33,34 @@ function fixture() {
   return { profiles, accounts, mails, deps };
 }
 const player = { firstName: 'Camille', lastName: 'Martin', team: 'Seniors' };
+test('email editing preserves UID, password, profile and rejects duplicates and stale edits', async () => {
+  const f = fixture();
+  const { uid } = await createMember({ ...player, email: 'old@example.test' }, f.deps);
+  const password = f.accounts.get(uid).password;
+  f.profiles.get(uid).badges = ['buteurOr'];
+  const result = await changeMemberEmail(uid, { email: ' NEW@example.test ', expectedEmail: 'old@example.test' }, f.deps);
+  assert.equal(result.uid, uid); assert.equal(f.accounts.size, 1); assert.equal(f.profiles.size, 1);
+  assert.equal(f.accounts.get(uid).password, password);
+  assert.equal(f.accounts.get(uid).email, 'new@example.test');
+  assert.equal(f.accounts.get(uid).emailVerified, false);
+  assert.deepEqual(f.profiles.get(uid).badges, ['buteurOr']);
+  assert.equal(f.profiles.get(uid).email, 'new@example.test');
+  await assert.rejects(changeMemberEmail(uid, { email: 'stale@example.test', expectedEmail: 'old@example.test' }, f.deps), /Recharge/);
+  await createMember({ ...player, email: 'taken@example.test' }, f.deps);
+  await assert.rejects(changeMemberEmail(uid, { email: 'taken@example.test', expectedEmail: 'new@example.test' }, f.deps), /already-exists/);
+  assert.equal(f.profiles.get(uid).email, 'new@example.test');
+});
+test('profile write failure rolls authentication email back without changing identity', async () => {
+  const f = fixture();
+  const { uid } = await createMember({ ...player, email: 'old@example.test' }, f.deps);
+  f.accounts.get(uid).emailVerified = true;
+  const originalDoc = f.deps.db.doc;
+  f.deps.db.doc = path => ({ ...originalDoc(path), update: async () => { throw new Error('database down'); } });
+  await assert.rejects(changeMemberEmail(uid, { email: 'new@example.test', expectedEmail: 'old@example.test' }, f.deps), /database down/);
+  assert.equal(f.accounts.get(uid).email, 'old@example.test');
+  assert.equal(f.accounts.get(uid).emailVerified, true);
+  assert.equal(f.accounts.size, 1);
+});
 test('un joueur sans e-mail est actif sans compte Auth ni invitation', async () => {
   const f = fixture();
   const { uid } = await createMember(player, f.deps);

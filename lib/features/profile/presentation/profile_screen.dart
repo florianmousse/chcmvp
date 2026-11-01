@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide Badge;
+import 'package:chc_mvp/features/ceremonies/award_widgets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:chc_mvp/core/widgets/legal_links.dart';
@@ -23,8 +24,9 @@ class ProfileScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Profil')),
       body: profileAsync.when(
         data: (profile) {
-          if (profile == null)
+          if (profile == null) {
             return const SizedBox.shrink(); // gardé par _AuthenticatedGate
+          }
 
           final identity = <Widget>[
             CircleAvatar(
@@ -106,6 +108,8 @@ class ProfileScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          TrophiesSection(uid: profile.uid),
+                          const SizedBox(height: 16),
                           Card(
                             child: Padding(
                               padding: const EdgeInsets.all(24),
@@ -162,6 +166,8 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: 24),
 
               // ── Badges ──
+              TrophiesSection(uid: profile.uid),
+              const SizedBox(height: 16),
               _BadgesWrapper(uid: profile.uid),
 
               ListTile(
@@ -249,11 +255,14 @@ class _BadgesWrapper extends ConsumerWidget {
     // Celebrate server additions only; never write or restore local badges.
     ref.listen(userBadgesProvider(uid), (previous, next) {
       if (previous?.hasValue != true || !next.hasValue) return;
-      final added = Badge.allDefinitions.values
+      final added = BadgeType.values
+          .map((type) => Badge.forEarned(type, next.value!.keys))
           .where(
             (badge) =>
-                next.value!.containsKey(badge.type.name) &&
-                !previous!.value!.containsKey(badge.type.name),
+                next.value!.containsKey(badge.earnedKey ?? badge.type.name) &&
+                !previous!.value!.containsKey(
+                  badge.earnedKey ?? badge.type.name,
+                ),
           )
           .toList();
       if (added.isEmpty) return;

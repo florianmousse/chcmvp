@@ -18,13 +18,14 @@ export function startMatchListeners(): void {
   const firestore = getFirestore();
   for (const collection of ["matches", "test_matches"]) {
     const lastKnownStatus = new Map<string, string>();
+    const lastKnownType = new Map<string, string>();
     let isFirstSnapshot = true;
 
     firestore.collection(collection).onSnapshot(
       (snapshot) => {
         if (isFirstSnapshot) {
           snapshot.forEach((doc) =>
-            lastKnownStatus.set(doc.id, doc.data().status),
+            (lastKnownType.set(doc.id, doc.data().matchType ?? "championship"), lastKnownStatus.set(doc.id, doc.data().status)),
           );
           isFirstSnapshot = false;
           console.log(
@@ -47,6 +48,11 @@ export function startMatchListeners(): void {
           const before = lastKnownStatus.get(matchId);
           lastKnownStatus.set(matchId, after.status);
 
+          const oldType = lastKnownType.get(matchId);
+          lastKnownType.set(matchId, after.matchType ?? 'championship');
+          if (collection === 'matches' && oldType != null && oldType !== (after.matchType ?? 'championship')) {
+            rebuildRankingsAndStats().catch(e => console.error('Recalcul après changement de type:', e));
+          }
           if (before === after.status) return; // pas un changement de statut, on ignore
 
           if (before !== "voting_open" && after.status === "voting_open") {

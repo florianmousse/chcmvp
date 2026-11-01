@@ -31,6 +31,35 @@ async function vote(match, uid = 'voter', choices = ['a','b','c'], extras = {}) 
   }] }) });
 }
 const match = { status:'voting_open', presentPlayerIds:['voter','a','b','c'], allowSelfVote:false, votingOpensAt:new Date(Date.now() - 3600000), votingClosesAt:new Date(Date.now() + 3600000) };
+test('friendly votes follow the same voting rules; client email edits remain forbidden',async()=>{
+  await seed('matches/friendly',{...match,matchType:'friendly'});
+  assert.equal((await vote('friendly')).status,200);
+  assert.equal((await vote('friendly')).status,403);
+  for(const uid of ['admin','voter']) {
+    const res=await fetch(`${base}/users/voter?updateMask.fieldPaths=email`,{method:'PATCH',headers:{Authorization:`Bearer ${token(uid)}`,'Content-Type':'application/json'},body:JSON.stringify({fields:fields({email:'changed@example.test'})})});
+    assert.equal(res.status,403);
+  }
+  const headers={Authorization:`Bearer ${token('admin')}`,'Content-Type':'application/json'};
+  const res=await fetch(`${base}/matches/bad-type`,{method:'PATCH',headers,body:JSON.stringify({fields:fields({...match,matchType:'unknown'})})});
+  assert.equal(res.status,403);
+  const valid=await fetch(`${base}/matches/good-friendly`,{method:'PATCH',headers,body:JSON.stringify({fields:fields({...match,status:'upcoming',matchType:'friendly'})})});
+  assert.equal(valid.status,200);
+});
+test('Cérémonies : brouillons privés, bulletins privés, résultats serveur uniquement', async()=>{
+  await seed('ceremonies/award',{status:'draft',title:'Prix'});
+  const headers=uid=>({Authorization:`Bearer ${token(uid)}`,'Content-Type':'application/json'});
+  assert.equal((await fetch(`${base}/ceremonies/award`,{headers:headers('voter')})).status,403);
+  assert.equal((await fetch(`${base}/ceremonies/award`,{headers:headers('admin')})).status,200);
+  await seed('ceremonies/award',{status:'open',title:'Prix'});
+  assert.equal((await fetch(`${base}/ceremonies/award`,{headers:headers('voter')})).status,200);
+  assert.equal((await fetch(`${base}/ceremonies/award`,{headers:headers('inactive')})).status,403);
+  await seed('ceremonies/award/votes/voter',{choices:['n1']});
+  assert.equal((await fetch(`${base}/ceremonies/award/votes/voter`,{headers:headers('voter')})).status,200);
+  for(const uid of ['a','admin']) assert.equal((await fetch(`${base}/ceremonies/award/votes/voter`,{headers:headers(uid)})).status,403);
+  for(const uid of ['voter','admin']) for(const path of ['ceremonies/award','ceremonies/award/votes/voter']) {
+    assert.equal((await fetch(`${base}/${path}`,{method:'PATCH',headers:headers(uid),body:JSON.stringify({fields:fields({status:'closed',results:[]})})})).status,403);
+  }
+});
 before(async () => {
   await seed('users/admin', { isActive:true, role:'admin' });
   await seed('users/inactive-admin', { isActive:false, role:'admin' });

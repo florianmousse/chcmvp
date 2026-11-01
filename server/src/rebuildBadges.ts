@@ -46,20 +46,20 @@ export function calculateBadges(matches: BadgeMatch[], now = new Date()): Map<st
       const totalPoints = total(points);
       const firstCount = history.filter((m) => m.entries[uid]?.firstCount).length;
       if (finished && maxPoints > 0 && totalPoints === maxPoints) badges.add("mvpSaison");
-      if (totalPoints >= 100) badges.add("centurion");
-      if (firstCount >= 10) badges.add("podiumMaster");
+      if (totalPoints >= 30) badges.add("centurion");
+      if (firstCount >= 5) badges.add("podiumMaster");
       let streak = 0;
       for (const match of history) {
         const entry = match.entries[uid];
         streak = entry && entry.firstCount + entry.secondCount + entry.thirdCount > 0 ? streak + 1 : 0;
-        if (streak >= 5) badges.add("serieTop3");
+        if (streak >= 3) badges.add("serieTop3");
         if (match.present.length && (match.distinctVoters[uid] ?? 0) / match.present.length >= .8) {
           badges.add("plebiscite");
         }
       }
-      if (points.length >= 6) {
-        const start = total(points.slice(0, 5)) / 5;
-        const rest = total(points.slice(5)) / (points.length - 5);
+      if (points.length >= 4) {
+        const start = total(points.slice(0, 3)) / 3;
+        const rest = total(points.slice(3)) / (points.length - 3);
         if (start > 0 && (rest - start) / start >= .4) badges.add("revelation");
       }
       if (finished && history.length && history.every((m) => m.voters.has(uid))) badges.add("votantAssidu");
@@ -75,11 +75,31 @@ export function calculateBadges(matches: BadgeMatch[], now = new Date()): Map<st
       const goals = sum("goals"), assists = sum("assists"), green = sum("greenCards");
       if (goals >= 5) badges.add("buteur");
       if (assists >= 5) badges.add("passeurDor");
-      if (goals >= 3 && assists >= 3 && green >= 3) badges.add("couteauSuisse");
+      if (goals >= 15) badges.add("buteurArgent");
+      if (goals >= 25) badges.add("buteurOr");
+      if (assists >= 15) badges.add("passeurArgent");
+      if (assists >= 25) badges.add("passeurOr");
+      if (goals >= 3 && assists >= 3) badges.add("couteauSuisse");
+      if (goals >= 8 && assists >= 8) badges.add("couteauSuisseArgent");
+      if (goals >= 15 && assists >= 15) badges.add("couteauSuisseOr");
       if (history.length >= 5 && sheets.every(Boolean) && green + sum("yellowCards") + sum("redCards") === 0) {
         badges.add("fairPlay");
       }
     }
+  }
+  const careerPoints = new Map<string, number>();
+  for (const match of matches) {
+    if (match.id.startsWith('test:')) continue;
+    for (const [uid, entry] of Object.entries(match.entries)) {
+      const points = Number.isFinite(entry.points) ? Math.max(0, entry.points) : 0;
+      careerPoints.set(uid, (careerPoints.get(uid) ?? 0) + points);
+    }
+  }
+  for (const [uid, points] of careerPoints) {
+    if (points < 50) continue;
+    const badges = earned.get(uid) ?? new Set<string>();
+    badges.add('capDes50');
+    earned.set(uid, badges);
   }
   return earned;
 }

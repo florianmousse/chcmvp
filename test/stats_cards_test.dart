@@ -69,6 +69,14 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(
+        tester.getTopLeft(find.text('Le coin des stats')).dy,
+        lessThan(tester.getTopLeft(find.text('Les temps forts')).dy),
+      );
+      expect(
+        tester.widget<Text>(find.text('Le coin des stats')).style?.fontWeight,
+        tester.widget<Text>(find.text('Les temps forts')).style?.fontWeight,
+      );
       final records = tester
           .widget<SeasonRecordsSection>(find.byType(SeasonRecordsSection))
           .records;

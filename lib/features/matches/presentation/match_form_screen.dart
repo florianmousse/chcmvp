@@ -33,6 +33,8 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
   String? _selectedLogoAsset;
   late bool _isTest = widget.existing?.isTest ?? false;
   bool _saving = false;
+  late MatchType _matchType =
+      widget.existing?.matchType ?? MatchType.championship;
 
   bool get _isEditing => widget.existing != null;
 
@@ -74,6 +76,26 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              DropdownButtonFormField<MatchType>(
+                initialValue: _matchType,
+                decoration: const InputDecoration(labelText: 'Type de match'),
+                items: MatchType.values
+                    .map(
+                      (t) => DropdownMenuItem(value: t, child: Text(t.label)),
+                    )
+                    .toList(),
+                onChanged: _saving
+                    ? null
+                    : (v) => setState(() => _matchType = v!),
+              ),
+              if (_matchType == MatchType.friendly)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    'Vote et podium visibles sur ce match uniquement. Aucun effet sur le classement, les statistiques, les badges ou les bilans officiels.',
+                  ),
+                ),
+
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Match de test'),
@@ -353,11 +375,13 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
           'team': _selectedTeam,
           'presentPlayerIds': _presentPlayerIds.toList(),
           'allowSelfVote': _allowSelfVote,
+          'matchType': _matchType.name,
           'opponentLogoAsset': _selectedLogoAsset,
         });
       } else {
         await repo.createMatch(
           isTest: _isTest,
+          matchType: _matchType,
           date: _date,
           time: _formattedTime,
           opponent: opponentName,

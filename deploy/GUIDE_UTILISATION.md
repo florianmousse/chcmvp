@@ -57,7 +57,7 @@ Les matchs de test suivent la même clôture manuelle après réouverture ; leur
 
 À la réouverture d'un vrai match, seuls les participants qui n'ont pas encore voté reçoivent une invitation à voter. À la nouvelle clôture, tous les participants reçoivent une notification **Classement actualisé** pour consulter les résultats recalculés avec les votes tardifs, y compris ceux qui avaient déjà voté.
 
-Les classements n'affichent que les joueurs ayant gagné des points. Un joueur hors podium peut avoir reçu des votes sans gagner de point : ses votes restent comptés dans ses statistiques.
+Les classements affichent les joueurs ayant gagné des points et les membres actifs ayant obtenu un badge ou un trophée. Ces derniers peuvent apparaître à **0 point**, sans numéro de rang. Un joueur hors podium peut avoir reçu des votes sans gagner de point : ses votes restent comptés dans ses statistiques.
 
 ### Corriger le vote d'un joueur
 
@@ -66,5 +66,37 @@ Avec un compte admin, ouvre **Voir le suivi → Ont voté** sur le match, puis *
 La période de vote doit être ouverte. Un match terminé doit d'abord être rouvert ; il faudra alors le clôturer manuellement comme expliqué ci-dessus. La réinitialisation ne prolonge pas le délai d'un vote ordinaire. Elle ne révèle jamais les choix du joueur.
 
 Le suivi présente les noms en gras dans des cartes distinctes. Dans **En attente**, les joueurs sans compte sont regroupés à la fin de la liste ; ils restent inclus dans le total des présents. **Ont voté** affiche les auteurs des bulletins enregistrés, sans leur contenu.
+
+### Organiser une cérémonie
+
+Depuis **Accueil → Cérémonies** ou **Administration → Cérémonies**, crée un prix : Ballon d’or, Golden Boy, Puskás, plus belle passe décisive ou prix personnalisé. Pour une soirée avec plusieurs prix, crée une cérémonie par prix et précise l’édition dans chaque titre.
+
+1. Pour Ballon d’or et Golden Boy, sélectionne simplement les joueurs : aucun titre de nomination à répéter. Choisis un top de **1 à 10**, les nominations et les membres autorisés à voter. Un joueur sans compte peut recevoir un prix. Pour Golden Boy, l’admin choisit lui-même les joueurs éligibles.
+2. Pour une action, indique un titre et éventuellement un lien YouTube public ou non répertorié dont l’intégration est autorisée. Plusieurs actions du même joueur peuvent être nommées. Assure-toi d’avoir les autorisations des personnes filmées.
+3. Sans auto-vote, chaque votant doit avoir assez de nominations appartenant à d’autres joueurs pour remplir son top. Crée le brouillon, vérifie sa fiche, puis **Ouvrir le vote**. Les brouillons sont réservés aux admins.
+4. Les joueurs déjà choisis sont grisés dans les autres places. Utilise la croix pour libérer une place avant de déplacer un joueur. Chaque votant remplit son classement avec un seul choix par joueur et confirme son bulletin. Un top 5 donne 5, 4, 3, 2 et 1 point aux choix. Aucun point n’est ajouté au classement des matchs.
+5. Utilise **Clôturer et révéler** : les résultats sont publiés et les premiers reçoivent leur trophée. La révélation part du dernier rang du top jusqu’au premier, avec avance manuelle, lecture automatique et possibilité de rejouer. Elle n’est pas synchronisée entre les appareils ; pour une soirée, projette un écran commun.
+
+À points égaux, le nombre de premières places départage les nominations, puis celui des places suivantes. Une égalité parfaite conserve un rang commun et tous les premiers reçoivent le trophée. Sans vote, aucun trophée n’est attribué. Seules les nominations ayant reçu des points apparaissent dans les résultats.
+
+Une cérémonie peut être annulée avant sa clôture. Les admins disposent de **Modifier**, **Rouvrir le vote** et **Supprimer**. Modifier préremplit le formulaire (y compris les vidéos) ; enregistrer exige une confirmation et remet tous les votes à zéro, retire les trophées puis repasse la cérémonie en brouillon. Rouvrir conserve les bulletins valides et retire les trophées jusqu’à la prochaine clôture manuelle. Les anciens bulletins avec plusieurs choix pour le même joueur sont invalidés à la réouverture afin de pouvoir être refaits. Supprimer efface définitivement la cérémonie, tous ses bulletins et ses trophées après confirmation. Sur Android, les votants actifs reçoivent une notification d’ouverture ou de réouverture seulement s’ils doivent encore voter. À la clôture, les votants et nominés actifs reçoivent une annonce des résultats sans dévoiler le gagnant. Toucher la notification ouvre la cérémonie. Les notifications doivent être autorisées sur l’appareil ; le web ne reçoit pas de push.
+
+### Regarder les vidéos et consulter les distinctions
+
+Dans une cérémonie, ouvre une nomination puis **Autoriser YouTube pour cette vidéo** pour afficher le lecteur intégré. Ce choix est facultatif et limité au lecteur ouvert. Sur Android, **Réessayer la vidéo** recharge le lecteur ; **Lire dans le navigateur intégré** offre une autre façon de la regarder. **Fermer le lecteur YouTube** le retire. **Ouvrir YouTube** reste disponible si la lecture intégrée échoue. Il est possible de voter sans charger les vidéos.
+
+Les **Trophées de cérémonie** ont leur propre section sur le profil et sur la fiche d’un joueur. Les badges restent des récompenses de progression. Les badges **Buteur** et **Passeur** possèdent trois paliers : **bronze à 5**, **argent à 15**, **or à 25** buts ou passes dans une même saison. Seul le meilleur palier obtenu est affiché par badge. Les saisons ne s’additionnent pas ; un palier obtenu lors d’une saison précédente reste conservé tant que ses matchs le justifient.
+
+**Couteau suisse** récompense les buts ET les passes, sans valoriser les cartons : bronze à **3 + 3**, argent à **8 + 8**, or à **15 + 15** dans une saison. **En feu** demande 3 matchs joués consécutifs dans le top 3. **Révélation** compare la moyenne des matchs suivants aux 3 premiers de la saison (hausse de 40 %, au moins 4 matchs, moyenne initiale non nulle). **Podium Master** demande 5 premières places et **Centurion** 30 points par saison.
+
+Les corrections ou suppressions de matchs peuvent abaisser un palier ou retirer un badge. Elles ne retirent pas un trophée de cérémonie, dont le résultat est indépendant. Les distinctions apparaissent à côté du nom dans le classement ; leur détail reste consultable sur le profil.
+
+**Cap des 50** est un badge de parcours : il récompense 50 points de classement cumulés sur toutes les saisons. Les matchs de test et les points des cérémonies sont exclus. Il peut être retiré si une correction ou suppression de match fait repasser le total sous 50. Il est distinct de Centurion, qui demande 30 points dans une même saison.
+
+### Types de matchs et changements d’e-mail
+
+Dans **Administration → Matchs**, choisis **Championnat** (bleu), **Amical** (gris) ou **Playoff** (vert). Les anciens matchs sont Championnat. Un amical propose le vote MVP, les notifications de vote et le suivi de participation habituels. Après clôture, sa carte affiche le top 3 et le nombre de votants. Ce podium reste amical : aucun point officiel, statistique, badge ou bilan ne lui est attribué ; il reste absent des résumés de l’accueil et des widgets. Son score peut être saisi. Les actions **Ouvrir**, **Clôturer** et **Rouvrir le vote** fonctionnent comme pour les autres matchs. Passer un ancien match en amical retire ses contributions officielles tout en conservant ses votes et son podium local.
+
+Dans **Administration → Membres → Modifier**, une adresse e-mail existante peut être remplacée. L’adresse doit être libre. Le même compte est conservé, avec son mot de passe, ses votes, statistiques, badges et trophées. Il faudra utiliser la nouvelle adresse pour la prochaine connexion par e-mail. Pour un joueur sans compte, utilise toujours **Enregistrer et inviter**.
 
 Contact du club : chcmvp.chateaubourghockeyclub@gmail.com.

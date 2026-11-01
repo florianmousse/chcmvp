@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chc_mvp/features/matches/presentation/match_type_chip.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/core/services/server_client.dart';
@@ -71,6 +72,7 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
           Text(
             '${DateFormat('dd/MM/yyyy').format(match.date)} à ${match.time} · ${match.team} · $_statusLabel',
           ),
+          MatchTypeChip(type: match.matchType),
           VoteParticipation(matchId: match.id),
         ],
       ),
@@ -144,7 +146,12 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
               child: Text('Simuler les votes / résultats'),
             ),
           const PopupMenuItem(value: 'edit', child: Text('Modifier')),
-          const PopupMenuItem(value: 'stats', child: Text('Stats du match')),
+          PopupMenuItem(
+            value: 'stats',
+            child: Text(
+              match.isFriendly ? 'Saisir le score' : 'Stats du match',
+            ),
+          ),
           if (match.status == MatchStatus.upcoming)
             const PopupMenuItem(
               value: 'open_voting',

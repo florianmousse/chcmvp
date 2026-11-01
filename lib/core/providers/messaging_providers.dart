@@ -1,4 +1,5 @@
 import 'package:chc_mvp/core/models/match_reference.dart';
+import 'package:chc_mvp/features/ceremonies/ceremonies_screen.dart';
 import 'package:chc_mvp/features/matches/presentation/test_match_screen.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_admin_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -37,30 +38,57 @@ final messagingServiceProvider = Provider<MessagingService>((ref) {
 /// quand on tape une notification d'ouverture de vote - dans les 3 cas
 /// possibles : app fermée, en arrière-plan, ou déjà ouverte.
 final messagingSyncProvider = Provider<void>((ref) {
+  String? pendingTarget;
+  bool scheduled = false, disposed = false;
+  ref.onDispose(() => disposed = true);
+  void flushTarget() {
+    if (disposed ||
+        scheduled ||
+        pendingTarget == null ||
+        ref.read(currentUserProfileProvider).value?.isActive != true)
+      return;
+    scheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      scheduled = false;
+      if (disposed || rootNavigatorKey.currentState == null) return;
+      final target = pendingTarget;
+      pendingTarget = null;
+      _openVoteFromNotification(ref, target);
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void openTarget(String? target) {
+    if (target == null) return;
+    pendingTarget = target;
+    flushTarget();
+  }
+
+  ref.listen(currentUserProfileProvider, (_, __) => flushTarget());
   ref.listen(authStateProvider, (previous, next) {
     final service = ref.read(messagingServiceProvider);
     final wasSignedIn = previous?.value != null;
     final nowSignedIn = next.value != null;
 
     if (!wasSignedIn && nowSignedIn) {
-      service.initForUser(
-        next.value!.uid,
-        onNotificationTap: (matchId) => _openVoteFromNotification(ref, matchId),
-      );
+      service.initForUser(next.value!.uid, onNotificationTap: openTarget);
     } else if (wasSignedIn && !nowSignedIn) {
       service.clearTokenForUser(previous!.value!.uid);
     }
   });
 
   // Cas 2 : l'app tournait en arrière-plan et l'utilisateur tape la notif.
-  FirebaseMessaging.onMessageOpenedApp.listen((message) {
-    _openVoteFromNotification(ref, message.data['matchId']);
+  final openedSubscription = FirebaseMessaging.onMessageOpenedApp.listen((
+    message,
+  ) {
+    openTarget(notificationTarget(message.data));
   });
+  ref.onDispose(openedSubscription.cancel);
 
   // Cas 3 : l'app était complètement fermée et s'est lancée via la notif.
   FirebaseMessaging.instance.getInitialMessage().then((message) {
     if (message != null) {
-      _openVoteFromNotification(ref, message.data['matchId']);
+      if (!disposed) openTarget(notificationTarget(message.data));
     }
   });
 });
@@ -71,6 +99,16 @@ Future<void> _openVoteFromNotification(Ref ref, String? matchId) async {
   if (navigator == null) return;
 
   try {
+    if (matchId.startsWith('ceremony:')) {
+      final profile = await ref.read(currentUserProfileProvider.future);
+      if (profile == null || !profile.isActive) return;
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => CeremonyDetailScreen(id: matchId.substring(9)),
+        ),
+      );
+      return;
+    }
     final firestore = ref.read(firestoreProvider);
     if (isTestMatchId(matchId) &&
         (await ref.read(currentUserProfileProvider.future))?.isAdmin != true) {

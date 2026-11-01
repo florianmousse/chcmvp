@@ -56,6 +56,24 @@ class HomeWidgetService {
   }
 
   /// Met à jour le widget « Dernier résultat ».
+  static Future<void> clearRanking() async {
+    await HomeWidget.saveWidgetData('ranking_position', '—');
+    await HomeWidget.saveWidgetData('ranking_suffix', '');
+    await HomeWidget.saveWidgetData('ranking_points', 'Aucun point classé');
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: 'fr.florianmousse.chcmvp.RankingWidgetProvider',
+    );
+  }
+
+  static Future<void> clearLastResult() async {
+    await HomeWidget.saveWidgetData('last_result_score', '—');
+    await HomeWidget.saveWidgetData('last_result_opponent', 'Aucun résultat');
+    await HomeWidget.saveWidgetData('last_result_mvp', '');
+    await HomeWidget.updateWidget(
+      qualifiedAndroidName: 'fr.florianmousse.chcmvp.LastResultWidgetProvider',
+    );
+  }
+
   static Future<void> updateLastResult({
     required MatchModel match,
     String? mvpName,

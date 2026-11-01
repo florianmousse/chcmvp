@@ -21,7 +21,9 @@ class HighlightCardsSection extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 12),
           child: Text(
             'Les temps forts',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
         if (MediaQuery.sizeOf(context).width >= 1100)

@@ -32,12 +32,13 @@ export function votingClosedNotification(
   const adminsOnly = isTestMatchId(matchId);
   const reopened = match.manualCloseRequired === true;
   const resultLabel = adminsOnly ? "Résultats du test calculés."
+    : match.matchType === "friendly" ? "Le podium amical est disponible, hors classement officiel."
     : reopened
       ? `Le vote contre ${match.opponent ?? "l'adversaire"} est clôturé après réouverture. Le classement a été recalculé en tenant compte des votes tardifs.`
       : "Le classement a été mis à jour.";
   return {
     adminsOnly,
-    title: reopened ? "Classement actualisé ✅" : "Vote clôturé ✅",
+    title: match.matchType === "friendly" ? "Podium amical disponible ✅" : reopened ? "Classement actualisé ✅" : "Vote clôturé ✅",
     body: mvpNames ? `${resultLabel} MVP : ${mvpNames} 🏆` : resultLabel,
     team: match.team as string | undefined,
     // Everyone present, including previous voters, receives the final results.

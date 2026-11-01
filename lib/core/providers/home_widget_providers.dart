@@ -12,18 +12,25 @@ final homeWidgetSyncProvider = Provider<void>((ref) {
   final user = authState.value;
   if (user == null) return; // Pas connecté → rien à sync
 
-  final matchesAsync = ref.watch(matchesListProvider(null));
+  final matchesAsync = ref
+      .watch(matchesListProvider(null))
+      .whenData((matches) => matches.where((m) => m.countsForStats).toList());
   final rankingAsync = ref.watch(rankingProvider('general'));
 
   // ── Prochain match ──
   matchesAsync.whenData((matches) {
     final now = DateTime.now();
-    final upcoming = matches
-        .where((m) => m.status == MatchStatus.upcoming && m.date.isAfter(now))
-        .toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
+    final upcoming =
+        matches
+            .where(
+              (m) => m.status == MatchStatus.upcoming && m.date.isAfter(now),
+            )
+            .toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
 
-    HomeWidgetService.updateNextMatch(upcoming.isNotEmpty ? upcoming.first : null);
+    HomeWidgetService.updateNextMatch(
+      upcoming.isNotEmpty ? upcoming.first : null,
+    );
   });
 
   // ── Mon classement ──
@@ -37,18 +44,21 @@ final homeWidgetSyncProvider = Provider<void>((ref) {
         totalPoints: entry.points,
         matchesPlayed: entry.firstCount + entry.secondCount + entry.thirdCount,
       );
+    } else {
+      HomeWidgetService.clearRanking();
     }
   });
 
   // ── Dernier résultat ──
   matchesAsync.whenData((matches) {
-    final closed = matches
-        .where((m) => m.status == MatchStatus.votingClosed)
-        .toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+    final closed =
+        matches.where((m) => m.status == MatchStatus.votingClosed).toList()
+          ..sort((a, b) => b.date.compareTo(a.date));
 
     if (closed.isNotEmpty) {
       HomeWidgetService.updateLastResult(match: closed.first);
+    } else {
+      HomeWidgetService.clearLastResult();
     }
   });
 });

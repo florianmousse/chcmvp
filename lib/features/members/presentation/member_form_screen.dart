@@ -74,17 +74,20 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _email,
-                enabled: _canInvite,
+                enabled: !_saving,
                 decoration: InputDecoration(
                   labelText: _canInvite ? 'E-mail (facultatif)' : 'E-mail',
                   helperText: _canInvite
                       ? 'Sans e-mail, le joueur pourra recevoir des votes.'
-                      : null,
+                      : 'Le compte, le mot de passe, les votes et les statistiques sont conservés.',
                   helperMaxLines: 2,
                 ),
                 onChanged: (_) => setState(() {}),
                 validator: (value) {
                   final email = value?.trim() ?? '';
+                  if (!_canInvite && email.isEmpty) {
+                    return 'Adresse e-mail requise';
+                  }
                   return email.isNotEmpty &&
                           !RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)
                       ? 'Adresse e-mail invalide'
@@ -197,6 +200,14 @@ class _MemberFormScreenState extends ConsumerState<MemberFormScreen> {
           await repo.inviteExistingMember(widget.existing!.uid, {
             ...fields,
             'email': _email.text.trim(),
+          });
+        } else if (!_canInvite &&
+            _email.text.trim().toLowerCase() !=
+                widget.existing!.email.toLowerCase()) {
+          await repo.changeEmail(widget.existing!.uid, {
+            ...fields,
+            'email': _email.text.trim(),
+            'expectedEmail': widget.existing!.email,
           });
         } else {
           await repo.updateProfile(widget.existing!.uid, fields);

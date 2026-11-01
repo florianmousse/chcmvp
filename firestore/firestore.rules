@@ -19,8 +19,11 @@ service cloud.firestore {
     }
 
     // Reopening and its persistent manual-close flag are managed by the server.
+    function validMatchType() {
+      return request.resource.data.get('matchType', 'championship') in ['championship', 'friendly', 'playoff'];
+    }
     function validClientMatchUpdate() {
-      return !(resource.data.status == 'voting_closed' &&
+      return validMatchType() && !(resource.data.status == 'voting_closed' &&
                request.resource.data.status != 'voting_closed') &&
         !(resource.data.get('manualCloseRequired', false) &&
           request.resource.data.status == 'upcoming') &&
@@ -39,10 +42,10 @@ service cloud.firestore {
         (isSignedIn() && request.auth.uid == userId);
       allow create: if isAdmin();
       // Un membre peut modifier son propre profil (nom, photo...) mais jamais son rôle ou isActive.
-      allow update: if isAdmin() ||
+      allow update: if request.resource.data.get('email', '') == resource.data.get('email', '') && (isAdmin() ||
         (isSignedIn() && request.auth.uid == userId &&
          request.resource.data.role == resource.data.role &&
-         request.resource.data.isActive == resource.data.isActive);
+         request.resource.data.isActive == resource.data.isActive));
       allow delete: if isAdmin();
     }
 
@@ -73,7 +76,7 @@ service cloud.firestore {
     // ---------- matches ----------
     match /matches/{matchId} {
       allow read: if isActiveMember();
-      allow create: if isAdmin() && !matchId.matches('test:.*');
+      allow create: if isAdmin() && validMatchType() && !matchId.matches('test:.*');
       allow update: if isActiveMember() && isAdmin() && validClientMatchUpdate();
       allow delete: if isAdmin();
 
@@ -127,7 +130,7 @@ service cloud.firestore {
     // les tests, y compris avec une ancienne application mobile.
     match /test_matches/{matchId} {
       allow read: if isActiveMember() && isAdmin();
-      allow create: if isActiveMember() && isAdmin() && matchId.matches('test:.*');
+      allow create: if isActiveMember() && isAdmin() && validMatchType() && matchId.matches('test:.*');
       allow update: if isActiveMember() && isAdmin() && validClientMatchUpdate();
       allow delete: if isActiveMember() && isAdmin();
       match /votes/{voterUid} {
@@ -160,6 +163,15 @@ service cloud.firestore {
     }
 
     // ---------- userBadges ----------
+    match /ceremonies/{eventId} {
+      allow read: if isActiveMember() && (isAdmin() || resource.data.status != 'draft');
+      allow write: if false;
+      match /votes/{uid} {
+        allow read: if isActiveMember() && request.auth.uid == uid;
+        allow write: if false; // validation et clôture atomiques côté serveur
+      }
+    }
+
     match /userBadges/{userId} {
       allow read: if isActiveMember();
       allow write: if false; // calcul serveur ; empêche de rétablir un badge révoqué

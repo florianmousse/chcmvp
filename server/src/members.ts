@@ -86,6 +86,36 @@ export async function setMemberActive(uid: string, isActive: boolean, deps: Memb
   await doc.update({ isActive });
 }
 
+// Serialize admin edits for a player; never recreate their authentication UID.
+const emailEdits = new Map<string, Promise<unknown>>();
+export async function changeMemberEmail(uid: string, input: Record<string, unknown>, deps: MemberDependencies) {
+  if (!uid || uid.includes('/')) throw new Error('Identifiant invalide.');
+  const previous = emailEdits.get(uid) ?? Promise.resolve();
+  const task = previous.catch(() => {}).then(async () => {
+    const doc = deps.db.doc(`users/${uid}`);
+    const profile = (await doc.get()).data();
+    if (!profile?.email) throw new Error('Ce joueur doit être invité avant de modifier son adresse.');
+    const fields = memberFields({ ...profile, ...input });
+    if (!fields.email) throw new Error('Adresse e-mail requise.');
+    if (typeof input.expectedEmail !== 'string' || input.expectedEmail.trim().toLowerCase() !== profile.email.toLowerCase()) {
+      throw new Error('L’adresse a été modifiée. Recharge la fiche du joueur.');
+    }
+    const account = await deps.auth.getUser(uid);
+    if (account.email?.toLowerCase() !== profile.email.toLowerCase()) throw new Error('Les adresses du compte et du profil diffèrent. Vérifie le compte dans Firebase Authentication.');
+    if (fields.email === account.email?.toLowerCase()) { await doc.update(fields); return { uid }; }
+    await deps.auth.updateUser(uid, { email: fields.email, emailVerified: false });
+    try { await doc.update(fields); }
+    catch (error) {
+      try { await deps.auth.updateUser(uid, { email: account.email, emailVerified: account.emailVerified }); }
+      catch { throw new Error('La synchronisation de l’adresse a échoué. Vérifie Firebase Authentication et le profil avant de réessayer.'); }
+      throw error;
+    }
+    return { uid };
+  });
+  emailEdits.set(uid, task);
+  try { return await task; } finally { if (emailEdits.get(uid) === task) emailEdits.delete(uid); }
+}
+
 export async function deleteMember(uid: string, deps: MemberDependencies) {
   try { await deps.auth.deleteUser(uid); }
   catch (error: any) { if (error.code !== "auth/user-not-found") throw error; }

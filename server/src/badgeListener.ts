@@ -15,12 +15,19 @@ const BADGE_LABELS: Record<string, { emoji: string; label: string }> = {
   revelation: { emoji: "🚀", label: "Révélation" },
   votantAssidu: { emoji: "🗳️", label: "Votant assidu" },
   centurion: { emoji: "💯", label: "Centurion" },
+  capDes50: { emoji: "⭐", label: "Cap des 50" },
   podiumMaster: { emoji: "🥇", label: "Podium Master" },
   regularite: { emoji: "📊", label: "Régularité" },
   buteur: { emoji: "⚽", label: "Buteur" },
+  buteurArgent: { emoji: "🥈", label: "Buteur · Argent" },
+  buteurOr: { emoji: "🥇", label: "Buteur · Or" },
+  passeurArgent: { emoji: "🥈", label: "Passeur · Argent" },
+  passeurOr: { emoji: "🥇", label: "Passeur · Or" },
   passeurDor: { emoji: "🎯", label: "Passeur d'or" },
   fairPlay: { emoji: "😇", label: "Fair-play" },
   couteauSuisse: { emoji: "🦸", label: "Couteau suisse" },
+  couteauSuisseArgent: { emoji: "🥈", label: "Couteau suisse · Argent" },
+  couteauSuisseOr: { emoji: "🥇", label: "Couteau suisse · Or" },
 };
 
 export function startBadgeListener(): void {

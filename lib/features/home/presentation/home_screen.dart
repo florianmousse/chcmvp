@@ -1,5 +1,6 @@
 import 'package:chc_mvp/core/utils/season.dart';
 import 'package:flutter/material.dart';
+import 'package:chc_mvp/features/ceremonies/ceremonies_screen.dart';
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/widgets/club_logo.dart';
@@ -31,10 +32,24 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(currentUserProfileProvider).value;
-    final matchesAsync = ref.watch(matchesListProvider(null));
+    final matchesAsync = ref
+        .watch(matchesListProvider(null))
+        .whenData((matches) => matches.where((m) => m.countsForStats).toList());
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Accueil')),
+      appBar: AppBar(
+        title: const Text('Accueil'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CeremoniesScreen()),
+            ),
+            icon: const Icon(Icons.emoji_events_outlined),
+            label: const Text('Cérémonies'),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -130,18 +145,8 @@ class HomeScreen extends ConsumerWidget {
                       profile: profile,
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: _HighlightCardsWrapper(
-                            recentMatches: recentClosed,
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-                        const Expanded(child: _FunStatWrapper()),
-                      ],
-                    ),
+                    const _FunStatWrapper(),
+                    _HighlightCardsWrapper(recentMatches: recentClosed),
                     _SeasonRecordsWrapper(closedMatches: seasonClosed),
                     if (profile != null)
                       _VotingParticipationCard(

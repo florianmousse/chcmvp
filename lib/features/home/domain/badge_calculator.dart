@@ -41,8 +41,8 @@ class BadgeCalculator {
       badges.add(def[BadgeType.mvpSaison]!);
     }
 
-    // 🔥 Série top 3 - 5 matchs consécutifs ou plus dans le top 3
-    if (bestTop3StreakEver(history) >= 5) {
+    // 🔥 Série top 3 - 3 matchs consécutifs ou plus dans le top 3
+    if (bestTop3StreakEver(history) >= 3) {
       badges.add(def[BadgeType.serieTop3]!);
     }
 
@@ -60,14 +60,14 @@ class BadgeCalculator {
       }
     }
 
-    // 🚀 Révélation - +40% de moyenne par rapport aux 5 premiers matchs
-    if (history.length >= 6) {
-      final first5 =
-          history.take(5).map((h) => h.points).reduce((a, b) => a + b) / 5.0;
-      final rest = history.skip(5).toList();
+    // 🚀 Révélation - +40% de moyenne par rapport aux 3 premiers matchs
+    if (history.length >= 4) {
+      final first3 =
+          history.take(3).map((h) => h.points).reduce((a, b) => a + b) / 3.0;
+      final rest = history.skip(3).toList();
       final avgRest =
           rest.map((h) => h.points).reduce((a, b) => a + b) / rest.length;
-      if (first5 > 0 && ((avgRest - first5) / first5) >= 0.4) {
+      if (first3 > 0 && ((avgRest - first3) / first3) >= 0.4) {
         badges.add(def[BadgeType.revelation]!);
       }
     }
@@ -81,13 +81,13 @@ class BadgeCalculator {
       badges.add(def[BadgeType.votantAssidu]!);
     }
 
-    // 💯 Centurion - 100+ points cumulés
-    if (stats.totalPoints >= 100) {
+    // 💯 Centurion - 30+ points cumulés
+    if (stats.totalPoints >= 30) {
       badges.add(def[BadgeType.centurion]!);
     }
 
-    // 🥇 Podium Master - 10+ premières places
-    if (stats.firstCount >= 10) {
+    // 🥇 Podium Master - 5+ premières places
+    if (stats.firstCount >= 5) {
       badges.add(def[BadgeType.podiumMaster]!);
     }
 
@@ -129,10 +129,8 @@ class BadgeCalculator {
         badges.add(def[BadgeType.fairPlay]!);
       }
 
-      // 🦸 Couteau suisse - 3+ buts, 3+ passes, 3+ cartons verts
-      if (gameStats.goals >= 3 &&
-          gameStats.assists >= 3 &&
-          gameStats.greenCards >= 3) {
+      // 🦸 Couteau suisse - 3+ buts et 3+ passes
+      if (gameStats.goals >= 3 && gameStats.assists >= 3) {
         badges.add(def[BadgeType.couteauSuisse]!);
       }
     }

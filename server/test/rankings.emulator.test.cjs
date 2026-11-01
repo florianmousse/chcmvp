@@ -33,6 +33,42 @@ async function seedMatch(id, date = '2026-10-12T12:00:00Z', voters = ['d', 'e'])
 }
 async function data(path) { return (await db.doc(path).get()).data(); }
 
+test('friendly podium and turnout survive rebuilds, but official totals, history and badges are removed', async () => {
+  await db.doc('users/admin').set({role:'admin',isActive:true});
+  const ref = await seedMatch('friendly');
+  await ref.collection('playerStats').doc('a').set({goals:25,assists:25,greenCards:0,yellowCards:0,redCards:0});
+  await rebuildRankingsAndStats(db);
+  assert.equal((await data('player_stats/a')).totalPoints,5);
+  await ref.update({matchType:'friendly'});
+  await rebuildRankingsAndStats(db);
+  const summary = await data('matches/friendly/results/summary');
+  assert.equal(summary.totalVotes,2);
+  assert.equal(summary.entries.a.firstCount,1);
+  assert.equal(summary.voteRate,40);
+  assert.equal(await data('player_stats/a'),undefined);
+  assert.equal((await db.collection('player_stats/a/history').get()).size,0);
+  for (const doc of (await db.collection('userBadges').get()).docs) assert.deepEqual(doc.data().earned,{});
+  assert.equal((await recomputeClosedMatch('friendly',db)).summary.totalVotes,2);
+  await reopenVoting('friendly','admin',db);
+  assert.equal(await data('matches/friendly/results/summary'),undefined);
+  assert.equal((await ref.collection('votes').get()).size,2);
+  assert.equal((await initializeVotingWindow('friendly',24,db)).manualCloseRequired,true);
+  assert.equal(await closeExpiredVoting('friendly',Timestamp.now(),db),false);
+  await ref.update({status:'voting_closed'});
+  await recomputeClosedMatch('friendly',db);
+  assert.equal((await data('matches/friendly/results/summary')).totalVotes,2);
+  assert.equal(await data('player_stats/a'),undefined);
+  const official=await seedMatch('playoff'); await official.update({matchType:'playoff'});
+  await rebuildRankingsAndStats(db);
+  assert.equal((await data('player_stats/a')).totalPoints,5);
+  assert.equal((await db.collection('player_stats/a/history').get()).size,1);
+  await deleteMatchAndRebuild('playoff',db);
+  assert.equal(await data('player_stats/a'),undefined);
+  assert.equal((await data('matches/friendly/results/summary')).totalVotes,2);
+  const notification=votingClosedNotification(ref.id,(await ref.get()).data(),'Alice');
+  assert(notification.body.includes('hors classement officiel'));
+});
+
 test('reopened votes invite only pending active participants; final results reach previous voters too', async () => {
   const ref = await seedMatch('notifications');
   await ref.update({status:'voting_open',manualCloseRequired:true,opponent:'Rennes'});
@@ -382,10 +418,23 @@ test('deleting a source match revokes badges and preserves dates of valid badges
   assert.deepEqual((await data('userBadges/a')).earned, earned);
   await deleteMatchAndRebuild('badge4', db);
   const remaining = (await data('userBadges/a')).earned;
-  assert.deepEqual(Object.keys(remaining), ['buteur']);
+  assert.deepEqual(Object.keys(remaining).sort(), ['buteur', 'couteauSuisse', 'serieTop3']);
   assert.ok(remaining.buteur.isEqual(earned.buteur));
   for (let i = 0; i < 4; i++) await deleteMatchAndRebuild(`badge${i}`, db);
   assert.deepEqual((await data('userBadges/a')).earned, {});
+});
+
+test('career badge persists across seasons, keeps its date and disappears below 50 points', async () => {
+  for(let i=0;i<10;i++) await seedMatch(`career${i}`,i<5 ? '2025-10-12T12:00:00Z' : '2026-10-12T12:00:00Z');
+  await rebuildRankingsAndStats(db);
+  const before=(await data('userBadges/a')).earned;
+  assert(before.capDes50); assert(!before.centurion);
+  assert.equal((await data('player_stats/a')).totalPoints,50);
+  await rebuildRankingsAndStats(db);
+  assert((await data('userBadges/a')).earned.capDes50.isEqual(before.capDes50));
+  await deleteMatchAndRebuild('career9',db);
+  assert.equal((await data('player_stats/a')).totalPoints,45);
+  assert(!(await data('userBadges/a')).earned.capDes50);
 });
 
 test('test ballots validate the voter and candidates and never change real totals or badges', async () => {

@@ -81,6 +81,7 @@ class RecordingMatches extends Fake implements MatchesRepository {
     String? opponentLogoAsset,
     String? opponentId,
     bool isTest = false,
+    MatchType matchType = MatchType.championship,
   }) async {
     createdTest = isTest;
     present = presentPlayerIds;

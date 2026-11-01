@@ -29,12 +29,14 @@ class BadgesSection extends StatelessWidget {
       ...earnedBadges.map((b) => b.type),
       ...BadgeType.values.where((type) => earnedDates.containsKey(type.name)),
     };
-    final definitions = Badge.allDefinitions.values.toList();
+    final definitions = BadgeType.values
+        .map((type) => Badge.forEarned(type, earnedDates.keys))
+        .toList();
     final earned =
         definitions.where((b) => earnedTypes.contains(b.type)).toList()
           ..sort((a, b) {
-            final aDate = earnedDates[a.type.name];
-            final bDate = earnedDates[b.type.name];
+            final aDate = earnedDates[a.earnedKey ?? a.type.name];
+            final bDate = earnedDates[b.earnedKey ?? b.type.name];
             if (aDate != null && bDate != null) {
               final order = bDate.compareTo(aDate);
               if (order != 0) return order;
@@ -80,7 +82,7 @@ class BadgesSection extends StatelessWidget {
                   child: _BadgeChip(
                     badge: badge,
                     earned: earnedTypes.contains(badge.type),
-                    earnedDate: earnedDates[badge.type.name],
+                    earnedDate: earnedDates[badge.earnedKey ?? badge.type.name],
                   ),
                 ),
             ],
@@ -98,7 +100,7 @@ class BadgesSection extends StatelessWidget {
                 return _BadgeChip(
                   badge: badge,
                   earned: earned,
-                  earnedDate: earnedDates[badge.type.name],
+                  earnedDate: earnedDates[badge.earnedKey ?? badge.type.name],
                 );
               },
             ),
@@ -122,6 +124,12 @@ class _BadgeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tierColor = switch (badge.tier) {
+      'Bronze' => const Color(0xffb77942),
+      'Argent' => const Color(0xff8295a8),
+      'Or' => const Color(0xffc9a32c),
+      _ => theme.colorScheme.primary,
+    };
 
     return GestureDetector(
       onTap: () => _showBadgeDetail(context, badge, earned, earnedDate),
@@ -131,12 +139,12 @@ class _BadgeChip extends StatelessWidget {
           width: 80,
           decoration: BoxDecoration(
             color: earned
-                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.5)
+                ? tierColor.withValues(alpha: 0.15)
                 : theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: earned
-                  ? theme.colorScheme.primary.withValues(alpha: 0.4)
+                  ? tierColor.withValues(alpha: 0.65)
                   : theme.colorScheme.outlineVariant,
             ),
           ),

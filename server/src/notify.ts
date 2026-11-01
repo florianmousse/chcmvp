@@ -110,6 +110,7 @@ async function sendToTokens(
   }
 
   const staleTokens: string[] = [];
+  let deliveryFailed = false;
   for (const chunk of chunks) {
     const response = await getMessaging().sendEachForMulticast({
       tokens: chunk,
@@ -119,13 +120,14 @@ async function sendToTokens(
     response.responses.forEach((r, i) => {
       if (!r.success && r.error?.code === "messaging/registration-token-not-registered") {
         staleTokens.push(chunk[i]);
-      }
+      } else if (!r.success) { deliveryFailed = true; }
     });
   }
 
   if (staleTokens.length > 0) {
     await pruneStaleTokens(staleTokens);
   }
+  if (deliveryFailed) throw new Error("Certaines notifications n’ont pas pu être remises à FCM.");
 }
 
 async function pruneStaleTokens(staleTokens: string[]): Promise<void> {

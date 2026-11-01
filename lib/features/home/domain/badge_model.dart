@@ -14,6 +14,7 @@ enum BadgeType {
   passeurDor,
   fairPlay,
   couteauSuisse,
+  capDes50,
 }
 
 class Badge {
@@ -22,14 +23,76 @@ class Badge {
     required this.label,
     required this.emoji,
     required this.description,
+    this.tier,
+    this.earnedKey,
   });
 
   final BadgeType type;
   final String label;
   final String emoji;
   final String description;
+  final String? tier;
+  final String? earnedKey;
+
+  static Badge forEarned(BadgeType type, Iterable<String> keys) {
+    final base = allDefinitions[type]!;
+    if (type != BadgeType.buteur &&
+        type != BadgeType.passeurDor &&
+        type != BadgeType.couteauSuisse) {
+      return base;
+    }
+    final swiss = type == BadgeType.couteauSuisse;
+    final prefix = swiss
+        ? 'couteauSuisse'
+        : type == BadgeType.buteur
+        ? 'buteur'
+        : 'passeur';
+    final gold = keys.contains('${prefix}Or');
+    final silver = keys.contains('${prefix}Argent');
+    final tier = gold
+        ? 'Or'
+        : silver
+        ? 'Argent'
+        : 'Bronze';
+    final earnedKey = gold
+        ? '${prefix}Or'
+        : silver
+        ? '${prefix}Argent'
+        : type.name;
+    final noun = type == BadgeType.buteur ? 'buts' : 'passes décisives';
+    return Badge(
+      type: type,
+      label:
+          '${swiss
+              ? 'Couteau suisse'
+              : type == BadgeType.buteur
+              ? 'Buteur'
+              : 'Passeur'} · $tier',
+      emoji: base.emoji,
+      tier: tier,
+      earnedKey: earnedKey,
+      description: swiss
+          ? '$tier : au moins ${gold
+                ? 15
+                : silver
+                ? 8
+                : 3} buts ET autant de passes décisives en une saison.\nBronze : 3 + 3 · Argent : 8 + 8 · Or : 15 + 15.'
+          : '$tier : ${gold
+                ? 25
+                : silver
+                ? 15
+                : 5} $noun en une saison.\nBronze : 5 · Argent : 15 · Or : 25.',
+    );
+  }
 
   static const allDefinitions = <BadgeType, Badge>{
+    BadgeType.capDes50: Badge(
+      type: BadgeType.capDes50,
+      label: 'Cap des 50',
+      emoji: '⭐',
+      description:
+          '50 points de classement cumulés sur l’ensemble des saisons.',
+    ),
     BadgeType.mvpSaison: Badge(
       type: BadgeType.mvpSaison,
       label: 'MVP de la saison',
@@ -40,7 +103,8 @@ class Badge {
       type: BadgeType.serieTop3,
       label: 'En feu',
       emoji: '🔥',
-      description: '5 matchs consécutifs (ou plus) dans le top 3.',
+      description:
+          '3 matchs joués consécutifs (ou plus) dans le top 3 en une saison.',
     ),
     BadgeType.plebiscite: Badge(
       type: BadgeType.plebiscite,
@@ -54,7 +118,7 @@ class Badge {
       label: 'Révélation',
       emoji: '🚀',
       description:
-          'Moyenne de points en hausse de +40 % par rapport à ses 5 premiers matchs.',
+          'Moyenne de points des matchs suivants en hausse de 40 % ou plus par rapport aux 3 premiers matchs de la saison (au moins 4 matchs, moyenne initiale non nulle).',
     ),
     BadgeType.votantAssidu: Badge(
       type: BadgeType.votantAssidu,
@@ -67,13 +131,13 @@ class Badge {
       type: BadgeType.centurion,
       label: 'Centurion',
       emoji: '💯',
-      description: '100 points ou plus cumulés en une saison.',
+      description: '30 points ou plus cumulés en une saison.',
     ),
     BadgeType.podiumMaster: Badge(
       type: BadgeType.podiumMaster,
       label: 'Podium Master',
       emoji: '🥇',
-      description: '10 premières places ou plus en une saison.',
+      description: '5 premières places ou plus en une saison.',
     ),
     BadgeType.regularite: Badge(
       type: BadgeType.regularite,
@@ -106,7 +170,7 @@ class Badge {
       label: 'Couteau suisse',
       emoji: '🦸',
       description:
-          'Au moins 3 buts, 3 passes D. et 3 cartons verts en une saison.',
+          'Au moins 3 buts et 3 passes décisives en une saison. Paliers : bronze 3 + 3, argent 8 + 8, or 15 + 15. Aucun carton requis.',
     ),
   };
 }

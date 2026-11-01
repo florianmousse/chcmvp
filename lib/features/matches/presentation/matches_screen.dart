@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chc_mvp/features/matches/presentation/match_type_chip.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
 import 'package:chc_mvp/core/models/opponent_model.dart';
@@ -196,6 +197,12 @@ class _MatchCard extends ConsumerWidget {
 
     return Card(
       clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: matchTypeColor(match.matchType).withValues(alpha: .6),
+        ),
+      ),
       child: InkWell(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
@@ -224,6 +231,9 @@ class _MatchCard extends ConsumerWidget {
                   _StatusChip(status: match.status),
                 ],
               ),
+              MatchTypeChip(type: match.matchType),
+              if (match.isFriendly)
+                const Text('Podium amical · hors classement et badges'),
               if (match.scoreLabel != null) ...[
                 const SizedBox(height: 4),
                 Text(

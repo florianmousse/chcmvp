@@ -43,14 +43,14 @@ void main() {
       );
       badges.add({'fairPlay': DateTime(2026, 9, 1)});
       await tester.pumpAndSettle();
-      expect(find.text('1/12'), findsOneWidget);
+      expect(find.text('1/13'), findsOneWidget);
       badges.add({});
       await tester.pumpAndSettle();
-      expect(find.text('0/12'), findsOneWidget);
+      expect(find.text('0/13'), findsOneWidget);
       expect(find.text('Nouveau badge débloqué !'), findsNothing);
       badges.add({'buteur': DateTime(2026, 10, 19)});
       await tester.pumpAndSettle();
-      expect(find.text('1/12'), findsOneWidget);
+      expect(find.text('1/13'), findsOneWidget);
       expect(find.text('Nouveau badge débloqué !'), findsOneWidget);
       await tester.tap(find.text('Super ! 🙌'));
       await tester.pumpAndSettle();
@@ -245,9 +245,14 @@ void main() {
       final labels = tester
           .widgetList<Text>(find.byType(Text))
           .map((w) => w.data)
-          .where((t) => Badge.allDefinitions.values.any((b) => b.label == t))
+          .where(
+            (t) => BadgeType.values.any(
+              (type) =>
+                  Badge.forEarned(type, ['buteur', 'fairPlay']).label == t,
+            ),
+          )
           .toList();
-      expect(labels.take(2), ['Buteur', 'Fair-play']);
+      expect(labels.take(2), ['Buteur · Bronze', 'Fair-play']);
       expect(labels.length, Badge.allDefinitions.length);
     },
   );

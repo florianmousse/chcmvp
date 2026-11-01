@@ -5,7 +5,7 @@ import 'package:chc_mvp/core/models/opponent_model.dart';
 class ClubRecord {
   ClubRecord.fromMatches(Iterable<MatchModel> source, {OpponentModel? opponent})
     : matches = source.where((match) {
-        if (match.isTest ||
+        if (!match.countsForStats ||
             match.status == MatchStatus.upcoming ||
             match.scoreHome == null ||
             match.scoreAway == null ||

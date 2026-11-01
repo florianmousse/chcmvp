@@ -149,7 +149,7 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
 // ---------------------------------------------------------------------------
 
 /// Retourne (uid, pourcentageProgression) du joueur ayant le plus progressé
-/// entre ses 5 premiers matchs et la suite - null si personne n'a assez de
+/// entre ses 3 premiers matchs et la suite - null si personne n'a assez de
 /// matchs ou si aucune progression.
 ({String uid, double progressionPercent})? seasonRevelation(
   Map<String, List<PlayerHistoryPoint>> allHistories,
@@ -159,17 +159,17 @@ int bestTop3StreakEver(List<PlayerHistoryPoint> history) {
 
   for (final e in allHistories.entries) {
     final history = e.value;
-    if (history.length < 6) continue; // besoin d'au moins 6 matchs
+    if (history.length < 4) continue; // besoin d'au moins 4 matchs
 
-    final first5 = history.take(5).toList();
-    final rest = history.skip(5).toList();
+    final first3 = history.take(3).toList();
+    final rest = history.skip(3).toList();
 
-    final avgFirst5 = first5.map((h) => h.points).reduce((a, b) => a + b) / 5.0;
+    final avgFirst3 = first3.map((h) => h.points).reduce((a, b) => a + b) / 3.0;
     final avgRest =
         rest.map((h) => h.points).reduce((a, b) => a + b) / rest.length;
 
-    if (avgFirst5 <= 0) continue; // pas de division par zéro
-    final progression = ((avgRest - avgFirst5) / avgFirst5) * 100;
+    if (avgFirst3 <= 0) continue; // pas de division par zéro
+    final progression = ((avgRest - avgFirst3) / avgFirst3) * 100;
 
     if (progression > bestProgression) {
       bestProgression = progression;

@@ -5,6 +5,11 @@ import 'package:chc_mvp/core/services/local_notifications_service.dart';
 /// Gère la demande de permission et la synchronisation du token FCM sur le
 /// profil Firestore du membre connecté (users/{uid}.fcmTokens, un tableau
 /// car un membre peut être connecté sur plusieurs appareils).
+String? notificationTarget(Map<String, dynamic> data) =>
+    data['ceremonyId'] is String
+    ? 'ceremony:${data['ceremonyId']}'
+    : data['matchId'] as String?;
+
 class MessagingService {
   MessagingService(this._messaging, this._firestore, this._localNotifications);
 
@@ -51,7 +56,7 @@ class MessagingService {
       _localNotifications.show(
         title: notification.title ?? 'CHC MVP',
         body: notification.body ?? '',
-        payload: message.data['matchId'],
+        payload: notificationTarget(message.data),
       );
     });
   }

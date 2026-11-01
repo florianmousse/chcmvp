@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getFirestore } from "firebase-admin/firestore";
 import { requireAuth, requireAdmin, AuthedRequest } from "../middleware/auth";
-import { createMember, inviteExistingMember, setMemberActive, deleteMember, memberDependencies } from "../members";
+import { createMember, changeMemberEmail, inviteExistingMember, setMemberActive, deleteMember, memberDependencies } from "../members";
 
 export const membersRouter = Router();
 membersRouter.use(requireAuth, requireAdmin);
@@ -15,6 +15,11 @@ membersRouter.post("/invite", async (req, res) => {
 membersRouter.post("/:uid/invite", async (req, res) => {
   try { res.json(await inviteExistingMember(req.params.uid, req.body ?? {}, memberDependencies())); }
   catch (e: any) { res.status(400).json({ error: e.message ?? "Erreur inconnue." }); }
+});
+
+membersRouter.post("/:uid/email", async (req, res) => {
+  try { res.json(await changeMemberEmail(req.params.uid, req.body ?? {}, memberDependencies())); }
+  catch (e: any) { res.status(400).json({ error: e.code === 'auth/email-already-exists' ? 'Cette adresse est déjà utilisée par un autre compte.' : e.message }); }
 });
 
 membersRouter.post("/:uid/active", async (req, res) => {

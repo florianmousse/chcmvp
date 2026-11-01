@@ -4,6 +4,16 @@ import 'package:chc_mvp/core/models/user_model.dart';
 part 'match_model.freezed.dart';
 part 'match_model.g.dart';
 
+enum MatchType { championship, friendly, playoff }
+
+extension MatchTypeLabel on MatchType {
+  String get label => switch (this) {
+    MatchType.championship => 'Championnat',
+    MatchType.friendly => 'Amical',
+    MatchType.playoff => 'Playoff',
+  };
+}
+
 enum MatchStatus {
   @JsonValue('upcoming')
   upcoming,
@@ -38,6 +48,7 @@ class MatchModel with _$MatchModel {
     required bool isHome,
     required String team,
     @Default(MatchStatus.upcoming) MatchStatus status,
+    @Default(MatchType.championship) MatchType matchType,
     @Default(<String>[]) List<String> presentPlayerIds,
     @TimestampConverter() DateTime? votingOpensAt,
     @TimestampConverter() DateTime? votingClosesAt,
@@ -62,6 +73,9 @@ class MatchModel with _$MatchModel {
 
   /// Les matchs de test ont un identifiant réservé et une collection séparée.
   bool get isTest => id.startsWith('test:');
+
+  bool get isFriendly => matchType == MatchType.friendly;
+  bool get countsForStats => !isTest && !isFriendly;
 
   String get label => 'CHC vs $opponent';
 

@@ -1,5 +1,8 @@
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:flutter/material.dart';
+import 'package:chc_mvp/features/badges/presentation/badges_providers.dart';
+import 'package:chc_mvp/features/ceremonies/ceremonies_providers.dart';
+import 'package:chc_mvp/features/ceremonies/award_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/utils/season.dart' as season_util;
 import 'package:chc_mvp/features/matches/presentation/matches_providers.dart';
@@ -232,9 +235,30 @@ class _RankingList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final rankingAsync = ref.watch(rankingProvider(scope));
     final membersAsync = ref.watch(membersListProvider(null));
+    final badges = ref.watch(allBadgesProvider);
+    final ceremonies = ref.watch(ceremoniesProvider);
 
     return rankingAsync.when(
-      data: (entries) {
+      data: (ranked) {
+        final decorated = <String>{
+          for (final e in (badges.value ?? {}).entries)
+            if (e.value.isNotEmpty) e.key,
+          for (final e in ceremonies.value ?? []) ...e.winners,
+        };
+        final extra =
+            (membersAsync.value ?? [])
+                .where(
+                  (m) =>
+                      m.isActive &&
+                      decorated.contains(m.uid) &&
+                      !ranked.any((r) => r.uid == m.uid),
+                )
+                .toList()
+              ..sort((a, b) => a.fullName.compareTo(b.fullName));
+        final entries = [
+          ...ranked,
+          for (final m in extra) RankingEntry(uid: m.uid, points: 0),
+        ];
         if (entries.isEmpty) {
           return const Center(
             child: Text('Aucun résultat pour cette période.'),
@@ -259,8 +283,18 @@ class _RankingList extends ConsumerWidget {
             final rank =
                 1 + entries.where((e) => e.points > entry.points).length;
             return ListTile(
-              leading: CircleAvatar(child: Text('$rank')),
-              title: Text(member?.fullName ?? 'Joueur inconnu'),
+              leading: CircleAvatar(
+                child: Text(entry.points > 0 ? '$rank' : '—'),
+              ),
+              title: Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(member?.fullName ?? 'Joueur inconnu'),
+                  PlayerAwardMarks(uid: entry.uid),
+                ],
+              ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -268,6 +302,11 @@ class _RankingList extends ConsumerWidget {
                     '🥇 ${entry.firstCount}  🥈 ${entry.secondCount}  🥉 ${entry.thirdCount}',
                   ),
                   const _ProfileHint(),
+                  if (entry.points == 0)
+                    const Text(
+                      'Distinctions obtenues · 0 point sur cette période',
+                      style: TextStyle(fontSize: 11),
+                    ),
                 ],
               ),
               trailing: Row(
@@ -417,7 +456,15 @@ class _StatsRankingTabState extends ConsumerState<_StatsRankingTab> {
                         ),
                       ),
                     ),
-                    title: Text(name),
+                    title: Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(name),
+                        PlayerAwardMarks(uid: uid),
+                      ],
+                    ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

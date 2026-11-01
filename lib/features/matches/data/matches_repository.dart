@@ -75,6 +75,7 @@ class MatchesRepository {
     String? opponentLogoAsset,
     String? opponentId,
     bool isTest = false,
+    MatchType matchType = MatchType.championship,
   }) async {
     final target = isTest
         ? _firestore.collection('test_matches').doc('test:${_matches.doc().id}')
@@ -86,6 +87,7 @@ class MatchesRepository {
       'isHome': isHome,
       'team': team,
       'status': 'upcoming',
+      'matchType': matchType.name,
       'presentPlayerIds': presentPlayerIds,
       'votingOpensAt': null,
       'votingClosesAt': null,

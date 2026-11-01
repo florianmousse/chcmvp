@@ -104,11 +104,11 @@ void main() {
   );
 
   test(
-    'revelation compares first five with subsequent matches and handles zeros',
+    'revelation compares first three with subsequent matches and handles zeros',
     () {
       expect(
         seasonRevelation({
-          'a': [for (var i = 0; i < 5; i++) point(2), point(3)],
+          'a': [for (var i = 0; i < 3; i++) point(2), point(3)],
         })!.progressionPercent,
         50,
       );

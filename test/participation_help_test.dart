@@ -398,6 +398,8 @@ void main() {
     await tester.pumpAndSettle();
     final title = find.text('Admin · Préparer et gérer les matchs');
     await tester.scrollUntilVisible(title, 300);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
     await tester.tap(title);
     await tester.pumpAndSettle();
     expect(find.textContaining('Sur chaque carte de match'), findsOneWidget);

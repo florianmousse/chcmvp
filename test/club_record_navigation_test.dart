@@ -38,6 +38,7 @@ void main() {
         loss,
         draw,
         win.copyWith(id: 'test:demo', scoreHome: 99),
+        win.copyWith(id: 'friendly', matchType: MatchType.friendly, scoreHome: 99),
         win.copyWith(id: 'future', status: MatchStatus.upcoming),
         win.copyWith(id: 'missing', scoreAway: null),
         win.copyWith(id: 'negative', scoreHome: -1),

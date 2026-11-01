@@ -1,5 +1,6 @@
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:flutter/material.dart' hide Badge;
+import 'package:chc_mvp/features/ceremonies/award_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/features/badges/presentation/badges_providers.dart';
 import 'package:chc_mvp/features/home/domain/badge_model.dart';
@@ -31,6 +32,8 @@ class PlayerStatsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             children: [
               // ── Badges du joueur (lus depuis Firestore) ──
+              TrophiesSection(uid: uid),
+              const SizedBox(height: 16),
               _PublicBadgesSection(uid: uid, playerName: playerName),
               const SizedBox(height: 8),
               Row(

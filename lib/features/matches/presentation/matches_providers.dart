@@ -82,7 +82,8 @@ final gameStatsForScopeProvider =
           AsyncError<Map<String, AggregatedPlayerStats>>? error;
 
           for (final match in matches) {
-            if (match.status != MatchStatus.votingClosed ||
+            if (!match.countsForStats ||
+                match.status != MatchStatus.votingClosed ||
                 (scope != null && seasonId(match.date) != scope)) {
               continue;
             }

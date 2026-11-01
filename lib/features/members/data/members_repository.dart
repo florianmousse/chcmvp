@@ -53,6 +53,9 @@ class MembersRepository {
     return _firestore.collection('users').doc(uid).update(fields);
   }
 
+  Future<void> changeEmail(String uid, Map<String, dynamic> fields) =>
+      _server.post('/members/$uid/email', fields);
+
   Future<void> setActive(String uid, bool isActive) {
     return _server.post('/members/$uid/active', {'isActive': isActive});
   }
