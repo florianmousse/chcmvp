@@ -27,3 +27,9 @@ final membersListProvider = StreamProvider.family<List<UserModel>, String?>((
   ref.watch(authStateProvider);
   return ref.watch(membersRepositoryProvider).watchMembers(team: team);
 });
+
+final managedMembersListProvider = StreamProvider<List<UserModel>>((ref) {
+  if (!ref.watch(isAdminProvider)) return Stream.value([]);
+  ref.watch(authStateProvider);
+  return ref.watch(membersRepositoryProvider).watchAllMembers();
+});

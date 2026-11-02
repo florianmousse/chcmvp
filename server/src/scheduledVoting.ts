@@ -1,3 +1,4 @@
+import { auditChange } from "./audit";
 import { matchReference } from "./matchReference";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { getClubSettings, notifyMembers, notifyAdmins } from "./notify";
@@ -88,6 +89,8 @@ export async function processScheduledVoting(): Promise<void> {
         await firestore.runTransaction(async (tx) => {
           const current = (await tx.get(doc.ref)).data();
           if (!current || current.status !== "upcoming" || current.manualCloseRequired) return;
+          auditChange(tx, firestore, 'system', { firstName: 'Cycle automatique' }, 'open_voting', doc.ref.path,
+            { status: current.status }, { status: 'voting_open' });
           tx.update(doc.ref, {
             status: "voting_open",
             votingOpensAt: Timestamp.fromMillis(voteOpenThresholdMs),

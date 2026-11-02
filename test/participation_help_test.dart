@@ -88,6 +88,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            isReviewerProvider.overrideWithValue(false),
             isAdminProvider.overrideWithValue(true),
             serverClientProvider.overrideWithValue(server),
           ],
@@ -129,6 +130,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          isReviewerProvider.overrideWithValue(false),
           isAdminProvider.overrideWithValue(true),
           serverClientProvider.overrideWithValue(server),
         ],
@@ -172,6 +174,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            isReviewerProvider.overrideWithValue(false),
             isAdminProvider.overrideWithValue(true),
             serverClientProvider.overrideWithValue(server),
           ],
@@ -222,6 +225,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            isReviewerProvider.overrideWithValue(false),
             isAdminProvider.overrideWithValue(true),
             serverClientProvider.overrideWithValue(server),
           ],
@@ -266,6 +270,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            isReviewerProvider.overrideWithValue(false),
             isAdminProvider.overrideWithValue(true),
             serverClientProvider.overrideWithValue(server),
           ],
@@ -312,6 +317,7 @@ void main() {
           ProviderScope(
             key: ValueKey(admin),
             overrides: [
+              isReviewerProvider.overrideWithValue(false),
               isAdminProvider.overrideWithValue(admin),
               serverClientProvider.overrideWithValue(server),
             ],
@@ -348,6 +354,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            isReviewerProvider.overrideWithValue(false),
             currentUserProfileProvider.overrideWith(
               (ref) => Stream.value(demoMember),
             ),
@@ -391,7 +398,10 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [isAdminProvider.overrideWithValue(true)],
+        overrides: [
+          isReviewerProvider.overrideWithValue(false),
+          isAdminProvider.overrideWithValue(true),
+        ],
         child: const MaterialApp(home: HelpScreen()),
       ),
     );

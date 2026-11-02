@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 import 'package:chc_mvp/features/matches/presentation/match_type_chip.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
@@ -19,7 +20,13 @@ class MatchesAdminScreen extends ConsumerWidget {
     final matchesAsync = ref.watch(adminMatchesListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Matchs')),
+      appBar: AppBar(
+        title: Text(
+          ref.watch(isReviewerProvider)
+              ? 'Validation · matchs isolés'
+              : 'Matchs',
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
         label: const Text('Créer un match'),
@@ -72,6 +79,8 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
           Text(
             '${DateFormat('dd/MM/yyyy').format(match.date)} à ${match.time} · ${match.team} · $_statusLabel',
           ),
+          if (match.reviewCreatedBy != null)
+            const Text('Équipe de validation · aucune notification'),
           MatchTypeChip(type: match.matchType),
           VoteParticipation(matchId: match.id),
         ],

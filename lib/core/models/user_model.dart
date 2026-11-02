@@ -4,7 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'user_model.freezed.dart';
 part 'user_model.g.dart';
 
-enum UserRole { admin, member }
+enum UserRole { admin, member, reviewer }
 
 @freezed
 class UserModel with _$UserModel {
@@ -28,6 +28,7 @@ class UserModel with _$UserModel {
 
   String get fullName => '$firstName $lastName';
   bool get isAdmin => role == UserRole.admin;
+  bool get isReviewer => role == UserRole.reviewer;
   bool get hasAccount => email.trim().isNotEmpty;
 }
 

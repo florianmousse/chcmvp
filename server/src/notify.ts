@@ -1,3 +1,4 @@
+import { suppressMatchNotification } from "./reviewAccess";
 import { notificationTokens } from "./notificationAudience";
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
@@ -47,6 +48,7 @@ export async function notifyMembers({
   data?: Record<string, string>;
 }): Promise<void> {
   const firestore = getFirestore();
+  if (await suppressMatchNotification(data?.matchId, firestore)) return;
   let query = firestore.collection("users").where("isActive", "==", true) as FirebaseFirestore.Query;
   if (team && !adminsOnly) query = query.where("team", "==", team);
 
@@ -78,6 +80,7 @@ export async function notifyAdmins({
   data?: Record<string, string>;
 }): Promise<void> {
   const firestore = getFirestore();
+  if (await suppressMatchNotification(data?.matchId, firestore)) return;
   const adminsSnap = await firestore
     .collection("users")
     .where("isActive", "==", true)

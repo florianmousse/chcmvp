@@ -1,10 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:chc_mvp/core/services/audited_data.dart';
 import 'package:chc_mvp/core/models/user_model.dart';
 import 'package:chc_mvp/core/services/server_client.dart';
 import 'package:chc_mvp/core/utils/firestore_json.dart';
 
-/// Les lectures et la mise à jour de son propre profil passent par Firestore
-/// direct (autorisé par les règles). Les opérations sensibles (créer un
+/// Les lectures passent par Firestore. Toutes les modifications du profil
+/// passent par le serveur et son journal. Les opérations sensibles (créer un
 /// compte, désactiver, changer de rôle, supprimer) passent par le serveur du
 /// VPS (server/src/routes/members.ts) - impossible à faire depuis le client
 /// avec le SDK Auth seul sans déconnecter l'admin.
@@ -14,7 +15,12 @@ class MembersRepository {
   final FirebaseFirestore _firestore;
   final ServerClient _server;
 
-  Stream<List<UserModel>> watchMembers({String? team}) {
+  Stream<List<UserModel>> watchMembers({String? team}) => watchAllMembers(
+    team: team,
+  ).map((members) => members.where((m) => !m.isReviewer).toList());
+
+  /// Management list also includes isolated review accounts.
+  Stream<List<UserModel>> watchAllMembers({String? team}) {
     Query<Map<String, dynamic>> query = _firestore.collection('users');
     if (team != null) query = query.where('team', isEqualTo: team);
     return query
@@ -48,9 +54,9 @@ class MembersRepository {
   }
 
   /// Modification des champs non sensibles (nom, équipe, numéro, photo) -
-  /// autorisée directement par les règles Firestore pour un admin.
+  /// autorisée et journalisée par le serveur.
   Future<void> updateProfile(String uid, Map<String, dynamic> fields) {
-    return _firestore.collection('users').doc(uid).update(fields);
+    return writeAuditedData(_server, 'users/$uid', 'update', fields);
   }
 
   Future<void> changeEmail(String uid, Map<String, dynamic> fields) =>

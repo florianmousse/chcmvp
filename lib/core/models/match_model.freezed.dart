@@ -223,6 +223,7 @@ mixin _$MatchModel {
 
   /// ID du document dans la collection `opponents`.
   String? get opponentId => throw _privateConstructorUsedError;
+  String? get reviewCreatedBy => throw _privateConstructorUsedError;
   bool get isHome => throw _privateConstructorUsedError;
   String get team => throw _privateConstructorUsedError;
   MatchStatus get status => throw _privateConstructorUsedError;
@@ -268,6 +269,7 @@ abstract class $MatchModelCopyWith<$Res> {
     String time,
     String opponent,
     String? opponentId,
+    String? reviewCreatedBy,
     bool isHome,
     String team,
     MatchStatus status,
@@ -306,6 +308,7 @@ class _$MatchModelCopyWithImpl<$Res, $Val extends MatchModel>
     Object? time = null,
     Object? opponent = null,
     Object? opponentId = freezed,
+    Object? reviewCreatedBy = freezed,
     Object? isHome = null,
     Object? team = null,
     Object? status = null,
@@ -341,6 +344,10 @@ class _$MatchModelCopyWithImpl<$Res, $Val extends MatchModel>
             opponentId: freezed == opponentId
                 ? _value.opponentId
                 : opponentId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            reviewCreatedBy: freezed == reviewCreatedBy
+                ? _value.reviewCreatedBy
+                : reviewCreatedBy // ignore: cast_nullable_to_non_nullable
                       as String?,
             isHome: null == isHome
                 ? _value.isHome
@@ -425,6 +432,7 @@ abstract class _$$MatchModelImplCopyWith<$Res>
     String time,
     String opponent,
     String? opponentId,
+    String? reviewCreatedBy,
     bool isHome,
     String team,
     MatchStatus status,
@@ -463,6 +471,7 @@ class __$$MatchModelImplCopyWithImpl<$Res>
     Object? time = null,
     Object? opponent = null,
     Object? opponentId = freezed,
+    Object? reviewCreatedBy = freezed,
     Object? isHome = null,
     Object? team = null,
     Object? status = null,
@@ -498,6 +507,10 @@ class __$$MatchModelImplCopyWithImpl<$Res>
         opponentId: freezed == opponentId
             ? _value.opponentId
             : opponentId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        reviewCreatedBy: freezed == reviewCreatedBy
+            ? _value.reviewCreatedBy
+            : reviewCreatedBy // ignore: cast_nullable_to_non_nullable
                   as String?,
         isHome: null == isHome
             ? _value.isHome
@@ -565,6 +578,7 @@ class _$MatchModelImpl extends _MatchModel {
     required this.time,
     required this.opponent,
     this.opponentId,
+    this.reviewCreatedBy,
     required this.isHome,
     required this.team,
     this.status = MatchStatus.upcoming,
@@ -597,6 +611,8 @@ class _$MatchModelImpl extends _MatchModel {
   /// ID du document dans la collection `opponents`.
   @override
   final String? opponentId;
+  @override
+  final String? reviewCreatedBy;
   @override
   final bool isHome;
   @override
@@ -647,7 +663,7 @@ class _$MatchModelImpl extends _MatchModel {
 
   @override
   String toString() {
-    return 'MatchModel(id: $id, date: $date, time: $time, opponent: $opponent, opponentId: $opponentId, isHome: $isHome, team: $team, status: $status, matchType: $matchType, presentPlayerIds: $presentPlayerIds, votingOpensAt: $votingOpensAt, votingClosesAt: $votingClosesAt, manualCloseRequired: $manualCloseRequired, pointsScale: $pointsScale, allowSelfVote: $allowSelfVote, opponentLogoAsset: $opponentLogoAsset, scoreHome: $scoreHome, scoreAway: $scoreAway)';
+    return 'MatchModel(id: $id, date: $date, time: $time, opponent: $opponent, opponentId: $opponentId, reviewCreatedBy: $reviewCreatedBy, isHome: $isHome, team: $team, status: $status, matchType: $matchType, presentPlayerIds: $presentPlayerIds, votingOpensAt: $votingOpensAt, votingClosesAt: $votingClosesAt, manualCloseRequired: $manualCloseRequired, pointsScale: $pointsScale, allowSelfVote: $allowSelfVote, opponentLogoAsset: $opponentLogoAsset, scoreHome: $scoreHome, scoreAway: $scoreAway)';
   }
 
   @override
@@ -662,6 +678,8 @@ class _$MatchModelImpl extends _MatchModel {
                 other.opponent == opponent) &&
             (identical(other.opponentId, opponentId) ||
                 other.opponentId == opponentId) &&
+            (identical(other.reviewCreatedBy, reviewCreatedBy) ||
+                other.reviewCreatedBy == reviewCreatedBy) &&
             (identical(other.isHome, isHome) || other.isHome == isHome) &&
             (identical(other.team, team) || other.team == team) &&
             (identical(other.status, status) || other.status == status) &&
@@ -691,13 +709,14 @@ class _$MatchModelImpl extends _MatchModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     id,
     date,
     time,
     opponent,
     opponentId,
+    reviewCreatedBy,
     isHome,
     team,
     status,
@@ -711,7 +730,7 @@ class _$MatchModelImpl extends _MatchModel {
     opponentLogoAsset,
     scoreHome,
     scoreAway,
-  );
+  ]);
 
   /// Create a copy of MatchModel
   /// with the given fields replaced by the non-null parameter values.
@@ -734,6 +753,7 @@ abstract class _MatchModel extends MatchModel {
     required final String time,
     required final String opponent,
     final String? opponentId,
+    final String? reviewCreatedBy,
     required final bool isHome,
     required final String team,
     final MatchStatus status,
@@ -766,6 +786,8 @@ abstract class _MatchModel extends MatchModel {
   /// ID du document dans la collection `opponents`.
   @override
   String? get opponentId;
+  @override
+  String? get reviewCreatedBy;
   @override
   bool get isHome;
   @override

@@ -1,3 +1,5 @@
+import { auditChange } from "./audit";
+import { canManageMatch } from "./reviewAccess";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { isTestMatchId, matchReference } from "./matchReference";
 import { withRankingLock } from "./rankingLock";
@@ -12,7 +14,7 @@ export function reopenVoting(matchId: string, adminUid: string, db = getFirestor
       const [admin, snapshot] = await Promise.all([
         tx.get(db.doc(`users/${adminUid}`)), tx.get(ref),
       ]);
-      if (admin.data()?.role !== "admin" || admin.data()?.isActive !== true) {
+      if (!canManageMatch({ ...admin.data(), uid: adminUid }, matchId, snapshot.data())) {
         throw Object.assign(new Error("Action réservée aux administrateurs actifs."), { status: 403 });
       }
       if (!snapshot.exists) throw Object.assign(new Error("Match introuvable."), { status: 404 });
@@ -62,6 +64,8 @@ export function closeExpiredVoting(matchId: string, now: Timestamp, db = getFire
     const match = (await tx.get(ref)).data();
     if (!match || match.status !== "voting_open" || match.manualCloseRequired === true ||
         !match.votingClosesAt || match.votingClosesAt.toMillis() > now.toMillis()) return false;
+    auditChange(tx, db, 'system', { firstName: 'Cycle automatique' }, 'close_voting', ref.path,
+      { status: match.status }, { status: 'voting_closed' });
     tx.update(ref, { status: "voting_closed" });
     return true;
   });

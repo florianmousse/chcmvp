@@ -6,7 +6,7 @@ import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 
 final voteParticipationProvider = StreamProvider.autoDispose
     .family<Map<String, dynamic>, String>((ref, matchId) {
-      if (!ref.watch(isAdminProvider)) return const Stream.empty();
+      if (!ref.watch(canManageMatchesProvider)) return const Stream.empty();
       final server = ref.watch(serverClientProvider);
       final controller = StreamController<Map<String, dynamic>>();
       var disposed = false, busy = false;
@@ -44,7 +44,7 @@ class VoteParticipation extends ConsumerWidget {
   final String matchId;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(isAdminProvider) || !TickerMode.of(context)) {
+    if (!ref.watch(canManageMatchesProvider) || !TickerMode.of(context)) {
       return const SizedBox.shrink();
     }
     final value = ref.watch(voteParticipationProvider(matchId));
@@ -198,7 +198,7 @@ class _ParticipationDialogState extends ConsumerState<_ParticipationDialog> {
 
   @override
   Widget build(BuildContext context) {
-    if (!ref.watch(isAdminProvider)) {
+    if (!ref.watch(canManageMatchesProvider)) {
       return const AlertDialog(content: Text('Réservé aux administrateurs.'));
     }
     final value = ref.watch(voteParticipationProvider(widget.matchId));

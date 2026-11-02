@@ -1,5 +1,6 @@
+import { auditRequest } from '../audit';
 import { Router } from "express";
-import { requireAuth, requireAdmin, AuthedRequest } from "../middleware/auth";
+import { requireAuth, requireMatchAccess, AuthedRequest } from "../middleware/auth";
 import { matchReference } from "../matchReference";
 import { saveTestVote } from "../testVotes";
 import { voteParticipation } from "../voteParticipation";
@@ -9,7 +10,7 @@ import { handleVotingClosed } from "../matchListeners";
 import { deleteMatchAndRebuild, rebuildRankingsAndStats } from "../rebuildRankings";
 
 export const matchesRouter = Router();
-matchesRouter.use(requireAuth, requireAdmin);
+matchesRouter.use(requireAuth, requireMatchAccess, auditRequest);
 
 matchesRouter.post("/:matchId/votes/:voterUid/reset", async (req: AuthedRequest, res) => {
   try {

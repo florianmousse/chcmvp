@@ -4,7 +4,10 @@ import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 import 'package:chc_mvp/features/opponents/data/opponents_repository.dart';
 
 final opponentsRepositoryProvider = Provider<OpponentsRepository>((ref) {
-  return OpponentsRepository(ref.watch(firestoreProvider));
+  return OpponentsRepository(
+    ref.watch(firestoreProvider),
+    ref.watch(serverClientProvider),
+  );
 });
 
 final opponentsListProvider = StreamProvider<List<OpponentModel>>((ref) {

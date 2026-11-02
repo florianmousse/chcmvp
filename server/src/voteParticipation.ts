@@ -1,3 +1,4 @@
+import { canManageMatch } from "./reviewAccess";
 import { getFirestore } from "firebase-admin/firestore";
 import { matchReference } from "./matchReference";
 import { ballotVersion, canResetVote } from "./resetVote";
@@ -6,11 +7,11 @@ import { ballotVersion, canResetVote } from "./resetVote";
 export async function voteParticipation(matchId: string, adminUid: string, db = getFirestore()) {
   return db.runTransaction(async (tx) => {
     const admin = (await tx.get(db.doc(`users/${adminUid}`))).data();
-    if (admin?.role !== "admin" || admin?.isActive !== true) {
-      throw Object.assign(new Error("Réservé aux administrateurs."), { status: 403 });
-    }
     const ref = matchReference(matchId, db);
     const match = (await tx.get(ref)).data();
+    if (!canManageMatch({ ...admin, uid: adminUid }, matchId, match)) {
+      throw Object.assign(new Error("Accès refusé."), { status: 403 });
+    }
     if (!match) throw Object.assign(new Error("Match introuvable."), { status: 404 });
     const present = [...new Set<string>(match.presentPlayerIds ?? [])];
     // No ballot fields are fetched: only document IDs and update times.

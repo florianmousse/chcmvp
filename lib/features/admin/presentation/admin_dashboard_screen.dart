@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
+import 'audit_log_screen.dart';
+import 'review_account_screen.dart';
 import 'package:chc_mvp/features/ceremonies/ceremonies_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/features/matches/presentation/matches_admin_screen.dart';
@@ -22,6 +25,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (ref.watch(isReviewerProvider)) return const MatchesAdminScreen();
+    if (!ref.watch(isAdminProvider)) {
+      return const Scaffold(
+        body: Center(child: Text('Accès réservé aux administrateurs.')),
+      );
+    }
     return Scaffold(
       appBar: AppBar(title: const Text('Administration')),
       body: ListView(
@@ -30,6 +39,28 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           LayoutBuilder(
             builder: (context, constraints) {
               final items = <Widget>[
+                _AdminTile(
+                  icon: Icons.history,
+                  title: 'Journal des actions',
+                  subtitle: 'Auteurs, dates et modifications',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AuditLogScreen()),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _AdminTile(
+                  icon: Icons.science_outlined,
+                  title: 'Compte de validation',
+                  subtitle: 'Créer un accès isolé pour les tests',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ReviewAccountScreen(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 _AdminTile(
                   icon: Icons.emoji_events_outlined,
                   title: 'Cérémonies',

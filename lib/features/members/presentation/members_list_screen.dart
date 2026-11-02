@@ -10,7 +10,7 @@ class MembersListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final membersAsync = ref.watch(membersListProvider(null));
+    final membersAsync = ref.watch(managedMembersListProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Membres')),
@@ -83,6 +83,7 @@ class _MemberTile extends ConsumerWidget {
       subtitle: Text(
         '${member.team}'
         '${member.jerseyNumber != null ? " · #${member.jerseyNumber}" : ""}'
+        '${member.isReviewer ? " · Validation (tests isolés)" : ""}'
         '${!member.hasAccount ? " · sans compte" : ""}'
         '${!member.isActive ? " · désactivé" : ""}',
       ),
@@ -115,7 +116,7 @@ class _MemberTile extends ConsumerWidget {
             value: 'toggle_active',
             child: Text(member.isActive ? 'Désactiver' : 'Réactiver'),
           ),
-          if (member.hasAccount)
+          if (member.hasAccount && !member.isReviewer)
             PopupMenuItem(
               value: 'toggle_admin',
               child: Text(

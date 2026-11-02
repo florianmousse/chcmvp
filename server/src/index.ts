@@ -1,5 +1,6 @@
 import "./firebase"; // initialise firebase-admin avant tout le reste
 import express from "express";
+import { dataRouter } from "./routes/data";
 import path from "path";
 import cron from "node-cron";
 import { startBadgeListener } from "./badgeListener";
@@ -36,6 +37,7 @@ app.get("/health", (_req, res) =>
 // authRouter est volontairement public (pas de requireAuth) - contrairement
 // aux deux routeurs suivants, qui exigent un admin authentifié.
 app.use("/auth", authRouter);
+app.use("/data", dataRouter);
 app.use("/members", membersRouter);
 app.use("/matches", matchesRouter);
 app.use("/ceremonies", ceremoniesRouter);

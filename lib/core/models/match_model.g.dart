@@ -27,6 +27,7 @@ _$MatchModelImpl _$$MatchModelImplFromJson(Map<String, dynamic> json) =>
       time: json['time'] as String,
       opponent: json['opponent'] as String,
       opponentId: json['opponentId'] as String?,
+      reviewCreatedBy: json['reviewCreatedBy'] as String?,
       isHome: json['isHome'] as bool,
       team: json['team'] as String,
       status:
@@ -62,6 +63,7 @@ Map<String, dynamic> _$$MatchModelImplToJson(
   'time': instance.time,
   'opponent': instance.opponent,
   'opponentId': instance.opponentId,
+  'reviewCreatedBy': instance.reviewCreatedBy,
   'isHome': instance.isHome,
   'team': instance.team,
   'status': _$MatchStatusEnumMap[instance.status]!,

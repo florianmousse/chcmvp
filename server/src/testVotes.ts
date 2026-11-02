@@ -1,3 +1,4 @@
+import { canManageMatch } from "./reviewAccess";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { isTestMatchId, matchReference } from "./matchReference";
 
@@ -16,8 +17,8 @@ export async function saveTestVote(matchId: string, adminUid: string, input: any
   const matchRef = matchReference(matchId, db);
   await db.runTransaction(async (tx) => {
     const admin = (await tx.get(db.doc(`users/${adminUid}`))).data();
-    if (admin?.role !== "admin" || admin?.isActive !== true) reject(403, "Réservé aux administrateurs.");
     const match = (await tx.get(matchRef)).data();
+    if (!canManageMatch({ ...admin, uid: adminUid }, matchId, match)) reject(403, "Accès refusé.");
     if (!match) reject(404, "Match de test introuvable.");
     if (match.status !== "voting_open") reject(409, "Ouvre le vote du match de test avant de simuler un bulletin.");
     const now = Timestamp.now();

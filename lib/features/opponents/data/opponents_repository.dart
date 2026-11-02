@@ -1,8 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:chc_mvp/core/services/server_client.dart';
+import 'package:chc_mvp/core/services/audited_data.dart';
 import 'package:chc_mvp/core/models/opponent_model.dart';
 
 class OpponentsRepository {
-  OpponentsRepository(this._firestore);
+  OpponentsRepository(this._firestore, [ServerClient? server])
+    : _server = server ?? ServerClient();
+  final ServerClient _server;
   final FirebaseFirestore _firestore;
 
   CollectionReference<Map<String, dynamic>> get _col =>
@@ -10,21 +14,20 @@ class OpponentsRepository {
 
   /// Stream de tous les adversaires triés par nom.
   Stream<List<OpponentModel>> watchOpponents() {
-    return _col.orderBy('name').snapshots().map(
+    return _col
+        .orderBy('name')
+        .snapshots()
+        .map(
           (snap) => snap.docs
-              .map(
-                (d) => OpponentModel.fromJson({...d.data(), 'id': d.id}),
-              )
+              .map((d) => OpponentModel.fromJson({...d.data(), 'id': d.id}))
               .toList(),
         );
   }
 
   /// Crée un nouvel adversaire et retourne son ID.
-  Future<String> addOpponent({
-    required String name,
-    String? logoAsset,
-  }) async {
-    final doc = await _col.add({
+  Future<String> addOpponent({required String name, String? logoAsset}) async {
+    final doc = _col.doc();
+    await writeAuditedData(_server, doc.path, 'create', {
       'name': name,
       if (logoAsset != null) 'logoAsset': logoAsset,
     });
@@ -37,12 +40,13 @@ class OpponentsRepository {
     required String name,
     String? logoAsset,
   }) {
-    return _col.doc(id).update({
+    return writeAuditedData(_server, _col.doc(id).path, 'update', {
       'name': name,
       'logoAsset': logoAsset,
     });
   }
 
   /// Supprime un adversaire.
-  Future<void> deleteOpponent(String id) => _col.doc(id).delete();
+  Future<void> deleteOpponent(String id) =>
+      writeAuditedData(_server, _col.doc(id).path, 'delete');
 }

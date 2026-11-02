@@ -166,7 +166,7 @@ class _MainShellState extends ConsumerState<_MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    final isAdmin = ref.watch(isAdminProvider);
+    final isAdmin = ref.watch(canManageMatchesProvider);
     final destinations = [
       const NavigationDestination(
         icon: Icon(Icons.home_outlined),
@@ -189,10 +189,10 @@ class _MainShellState extends ConsumerState<_MainShell> {
         label: 'Profil',
       ),
       if (isAdmin)
-        const NavigationDestination(
-          icon: Icon(Icons.admin_panel_settings_outlined),
-          selectedIcon: Icon(Icons.admin_panel_settings),
-          label: 'Admin',
+        NavigationDestination(
+          icon: const Icon(Icons.admin_panel_settings_outlined),
+          selectedIcon: const Icon(Icons.admin_panel_settings),
+          label: ref.watch(isReviewerProvider) ? 'Validation' : 'Admin',
         ),
     ];
 

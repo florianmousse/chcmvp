@@ -4,7 +4,10 @@ import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 import 'package:chc_mvp/features/teams/data/teams_repository.dart';
 
 final teamsRepositoryProvider = Provider<TeamsRepository>((ref) {
-  return TeamsRepository(ref.watch(firestoreProvider));
+  return TeamsRepository(
+    ref.watch(firestoreProvider),
+    ref.watch(serverClientProvider),
+  );
 });
 
 final teamsListProvider = StreamProvider<List<TeamModel>>((ref) {

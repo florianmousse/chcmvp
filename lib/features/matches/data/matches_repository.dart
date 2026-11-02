@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/services/audited_data.dart';
 import 'package:chc_mvp/core/models/match_reference.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:chc_mvp/core/models/match_model.dart';
@@ -5,11 +6,12 @@ import 'package:chc_mvp/core/models/player_match_stats_model.dart';
 import 'package:chc_mvp/core/services/server_client.dart';
 import 'package:chc_mvp/core/utils/firestore_json.dart';
 
-/// Les écritures directes sont réservées aux admins par les règles Firestore.
+/// Les écritures passent par le serveur pour contrôler les droits et journaliser.
 /// La suppression et les recalculs passent par le serveur pour nettoyer aussi
 /// les sous-collections et les classements.
 class MatchesRepository {
-  MatchesRepository(this._firestore, this._server);
+  MatchesRepository(this._firestore, this._server, {this.reviewerUid});
+  final String? reviewerUid;
   final FirebaseFirestore _firestore;
   final ServerClient _server;
 
@@ -19,19 +21,23 @@ class MatchesRepository {
   DocumentReference<Map<String, dynamic>> _match(String id) =>
       _firestore.collection(matchCollection(id)).doc(id);
 
-  Stream<List<MatchModel>> watchTestMatches() => _firestore
-      .collection('test_matches')
-      .orderBy('date', descending: true)
-      .snapshots()
-      .map(
-        (snap) => snap.docs
-            .map(
-              (d) => MatchModel.fromJson(
-                sanitizeFirestoreJson({...d.data(), 'id': d.id}),
-              ),
-            )
-            .toList(),
-      );
+  Stream<List<MatchModel>> watchTestMatches() {
+    Query<Map<String, dynamic>> query = _firestore.collection('test_matches');
+    if (reviewerUid != null) {
+      query = query.where('reviewCreatedBy', isEqualTo: reviewerUid);
+    }
+    return query.snapshots().map(
+      (snap) =>
+          snap.docs
+              .map(
+                (d) => MatchModel.fromJson(
+                  sanitizeFirestoreJson({...d.data(), 'id': d.id}),
+                ),
+              )
+              .toList()
+            ..sort((a, b) => b.date.compareTo(a.date)),
+    );
+  }
 
   Future<void> saveTestVote(
     String matchId, {
@@ -77,10 +83,10 @@ class MatchesRepository {
     bool isTest = false,
     MatchType matchType = MatchType.championship,
   }) async {
-    final target = isTest
+    final target = (isTest || reviewerUid != null)
         ? _firestore.collection('test_matches').doc('test:${_matches.doc().id}')
         : _matches.doc();
-    await target.set({
+    await writeAuditedData(_server, target.path, 'create', {
       'date': Timestamp.fromDate(date),
       'time': time,
       'opponent': opponent,
@@ -100,14 +106,14 @@ class MatchesRepository {
   }
 
   Future<void> updateMatch(String matchId, Map<String, dynamic> fields) {
-    return _match(matchId).update(fields);
+    return writeAuditedData(_server, _match(matchId).path, 'update', fields);
   }
 
   /// Ouvre le vote : le serveur prend le relais pour calculer
   /// `votingClosesAt` et notifier les membres - ce repository ne fait que
-  /// déclencher la transition d'état.
+  /// demander la transition d'état au serveur.
   Future<void> openVoting(String matchId) {
-    return _match(matchId).update({
+    return updateMatch(matchId, {
       'status': 'voting_open',
       'votingOpensAt': null,
       'votingClosesAt': null,
@@ -118,7 +124,7 @@ class MatchesRepository {
   /// Fermeture manuelle anticipée par l'admin (en plus de la clôture auto
   /// après le délai configuré, gérée côté serveur).
   Future<void> closeVoting(String matchId) {
-    return _match(matchId).update({'status': 'voting_closed'});
+    return updateMatch(matchId, {'status': 'voting_closed'});
   }
 
   /// Conserve les bulletins et retire les anciens totaux jusqu'à la clôture manuelle.
@@ -151,9 +157,10 @@ class MatchesRepository {
     required int scoreHome,
     required int scoreAway,
   }) {
-    return _match(
-      matchId,
-    ).update({'scoreHome': scoreHome, 'scoreAway': scoreAway});
+    return updateMatch(matchId, {
+      'scoreHome': scoreHome,
+      'scoreAway': scoreAway,
+    });
   }
 
   /// Stream des stats individuelles d'un match.
@@ -178,10 +185,12 @@ class MatchesRepository {
     PlayerMatchStats stats,
   ) {
     final data = stats.toJson()..remove('playerId');
-    return _match(matchId)
-        .collection('playerStats')
-        .doc(playerId)
-        .set(data, SetOptions(merge: true));
+    return writeAuditedData(
+      _server,
+      '${_match(matchId).path}/playerStats/$playerId',
+      'merge',
+      data,
+    );
   }
 
   /// Sauvegarde les stats de tous les joueurs en batch (une écriture atomique).
@@ -189,13 +198,10 @@ class MatchesRepository {
     String matchId,
     List<PlayerMatchStats> statsList,
   ) async {
-    final batch = _firestore.batch();
-    final col = _match(matchId).collection('playerStats');
-    for (final stats in statsList) {
-      final data = stats.toJson()..remove('playerId');
-      batch.set(col.doc(stats.playerId), data, SetOptions(merge: true));
-    }
-    await batch.commit();
+    await _server.post('/data/stats', {
+      'matchId': matchId,
+      'stats': statsList.map((s) => s.toJson()).toList(),
+    });
     final match = await _match(matchId).get();
     if (match.data()?['status'] == 'voting_closed') {
       await recomputeResults(matchId);

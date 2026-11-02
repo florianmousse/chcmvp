@@ -43,7 +43,7 @@ test('friendly votes follow the same voting rules; client email edits remain for
   const res=await fetch(`${base}/matches/bad-type`,{method:'PATCH',headers,body:JSON.stringify({fields:fields({...match,matchType:'unknown'})})});
   assert.equal(res.status,403);
   const valid=await fetch(`${base}/matches/good-friendly`,{method:'PATCH',headers,body:JSON.stringify({fields:fields({...match,status:'upcoming',matchType:'friendly'})})});
-  assert.equal(valid.status,200);
+  assert.equal(valid.status,403);
 });
 test('Cérémonies : brouillons privés, bulletins privés, résultats serveur uniquement', async()=>{
   await seed('ceremonies/award',{status:'draft',title:'Prix'});
@@ -138,7 +138,7 @@ test('Reopening is server-only; manual deadlines cannot be restored by a client'
     assert.equal((await access(path,'admin',{...match,status:'upcoming'})).status,403);
     const manual={...match,status:'voting_open',manualCloseRequired:true,votingClosesAt:null};
     await seed(path,manual);
-    assert.equal((await access(path,'admin',{...manual,status:'voting_closed'})).status,200);
+    assert.equal((await access(path,'admin',{...manual,status:'voting_closed'})).status,403);
     await seed(path,manual);
     assert.equal((await access(path,'admin',{...manual,manualCloseRequired:false})).status,403);
     assert.equal((await access(path,'admin',{...manual,votingClosesAt:new Date()})).status,403);
@@ -170,7 +170,7 @@ test('Les tests et leurs sous-collections sont lisibles uniquement par les admin
 });
 
 test('Création des tests protégée et bulletins simulés réservés au serveur', async () => {
-  assert.equal((await access('test_matches/test:created', 'admin', match)).status, 200);
+  assert.equal((await access('test_matches/test:created', 'admin', match)).status, 403);
   assert.equal((await access('test_matches/test:denied', 'voter', match)).status, 403);
   assert.equal((await access('test_matches/test:inactive', 'inactive-admin', match)).status, 403);
   assert.equal((await access('test_matches/unprefixed', 'admin', match)).status, 403);
@@ -186,4 +186,37 @@ test('Un client ne peut pas réattribuer un badge révoqué, même admin', async
     assert.equal((await access('userBadges/voter', uid, { earned:{ fairPlay:new Date() } })).status, 403);
     assert.equal((await access('userBadges/voter', uid)).status, 200);
   }
+});
+
+
+test('Validation : lecture propriétaire, écriture serveur et journal privé immuable',async()=>{
+  await seed('users/review',{role:'reviewer',isActive:true});
+  await seed('users/other-review',{role:'reviewer',isActive:true});
+  await seed('test_matches/test:review',{...match,reviewCreatedBy:'review'});
+  await seed('test_matches/test:review/results/summary',{totalVotes:0});
+  await seed('audit_logs/log',{actorUid:'review',action:'create'});
+  for(const path of ['test_matches/test:review','test_matches/test:review/results/summary']) {
+    for(const uid of ['admin','review']) assert.equal((await access(path,uid)).status,200);
+    for(const uid of ['voter','other-review','inactive-admin']) assert.equal((await access(path,uid)).status,403);
+  }
+  for(const uid of ['admin','review','voter']) {
+    assert.equal((await access('test_matches/test:review',uid,{...match,reviewCreatedBy:'review'})).status,403);
+    assert.equal((await access('audit_logs/forged',uid,{actorUid:uid})).status,403);
+    assert.equal((await access('audit_logs/log',uid,{actorUid:uid})).status,403);
+  }
+  assert.equal((await access('audit_logs/log','admin')).status,200);
+  for(const uid of ['review','voter','inactive-admin']) assert.equal((await access('audit_logs/log',uid)).status,403);
+  await seed('matches/reviewer-vote',{...match,presentPlayerIds:['review','a','b','c']});
+  assert.equal((await vote('reviewer-vote','review')).status,403);
+  for(const uid of ['admin','review','voter']) assert.equal((await access('users/review',uid,{role:'admin',isActive:true})).status,403);
+});
+
+
+test('La requête de liste du testeur exige le filtre propriétaire',async()=>{
+  await seed('users/list-review',{role:'reviewer',isActive:true});
+  await seed('test_matches/test:list-review',{...match,reviewCreatedBy:'list-review'});
+  const query=async filtered=>fetch(`${base}:runQuery`,{method:'POST',headers:{Authorization:`Bearer ${token('list-review')}`,'Content-Type':'application/json'},
+    body:JSON.stringify({structuredQuery:{from:[{collectionId:'test_matches'}],...(filtered?{where:{fieldFilter:{field:{fieldPath:'reviewCreatedBy'},op:'EQUAL',value:{stringValue:'list-review'}}}}:{})}})});
+  assert.equal((await query(true)).status,200);
+  assert.equal((await query(false)).status,403);
 });

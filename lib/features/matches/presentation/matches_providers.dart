@@ -11,6 +11,9 @@ final matchesRepositoryProvider = Provider<MatchesRepository>((ref) {
   return MatchesRepository(
     ref.watch(firestoreProvider),
     ref.watch(serverClientProvider),
+    reviewerUid: ref.watch(currentUserProfileProvider).value?.isReviewer == true
+        ? ref.watch(currentUserProfileProvider).value?.uid
+        : null,
   );
 });
 
@@ -162,10 +165,11 @@ class AggregatedPlayerStats extends GameStats {
 
 /// Tests remain outside all normal match and statistics providers.
 final testMatchesListProvider = StreamProvider<List<MatchModel>>((ref) {
-  if (!ref.watch(isAdminProvider)) return Stream.value([]);
+  if (!ref.watch(canManageMatchesProvider)) return Stream.value([]);
   return ref.watch(matchesRepositoryProvider).watchTestMatches();
 });
 final adminMatchesListProvider = Provider<AsyncValue<List<MatchModel>>>((ref) {
+  if (ref.watch(isReviewerProvider)) return ref.watch(testMatchesListProvider);
   final real = ref.watch(matchesListProvider(null));
   final tests = ref.watch(testMatchesListProvider);
   return real.when(
@@ -180,7 +184,7 @@ final adminMatchesListProvider = Provider<AsyncValue<List<MatchModel>>>((ref) {
 });
 final testVotesProvider =
     StreamProvider.family<List<Map<String, dynamic>>, String>((ref, id) {
-      if (!ref.watch(isAdminProvider) || !isTestMatchId(id)) {
+      if (!ref.watch(canManageMatchesProvider) || !isTestMatchId(id)) {
         return Stream.value([]);
       }
       return ref

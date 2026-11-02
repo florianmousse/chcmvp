@@ -45,6 +45,7 @@ class MatchModel with _$MatchModel {
 
     /// ID du document dans la collection `opponents`.
     String? opponentId,
+    String? reviewCreatedBy,
     required bool isHome,
     required String team,
     @Default(MatchStatus.upcoming) MatchStatus status,

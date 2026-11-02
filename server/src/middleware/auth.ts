@@ -1,9 +1,29 @@
 import { Request, Response, NextFunction } from "express";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
+import { canManageMatch } from '../reviewAccess';
+import { matchReference } from '../matchReference';
 
 export interface AuthedRequest extends Request {
   uid?: string;
+}
+
+/** Router-wide guard: reviewers can only reach their own test match routes. */
+export async function requireMatchAccess(req: AuthedRequest, res: Response, next: NextFunction) {
+  try {
+    const db = getFirestore();
+    const user: any = { ...(await db.doc(`users/${req.uid}`).get()).data(), uid: req.uid };
+    if (user.isActive === true && user.role === 'admin') { next(); return; }
+    const matchId = decodeURIComponent(req.path.split('/')[1] ?? '');
+    if (!matchId.startsWith('test:') || matchId.includes('/')) {
+      res.status(403).json({ error: 'Réservé aux administrateurs.' }); return;
+    }
+    const match = (await matchReference(matchId, db).get()).data();
+    if (!canManageMatch(user, matchId, match)) {
+      res.status(403).json({ error: 'Vous pouvez uniquement gérer vos matchs de validation.' }); return;
+    }
+    next();
+  } catch { res.status(403).json({ error: 'Accès refusé.' }); }
 }
 
 /**

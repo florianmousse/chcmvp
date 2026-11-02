@@ -1,3 +1,4 @@
+import { canManageMatch } from "./reviewAccess";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { matchReference } from "./matchReference";
 
@@ -22,7 +23,7 @@ export async function resetVote(
   const ballot = ref.collection("votes").doc(voterUid);
   await db.runTransaction(async (tx) => {
     const [admin, match, vote] = await tx.getAll(db.doc(`users/${adminUid}`), ref, ballot);
-    if (admin.data()?.role !== "admin" || admin.data()?.isActive !== true) {
+    if (!canManageMatch({ ...admin.data(), uid: adminUid }, matchId, match.data())) {
       throw Object.assign(new Error("Réservé aux administrateurs actifs."), { status: 403 });
     }
     if (!match.exists) throw Object.assign(new Error("Match introuvable."), { status: 404 });

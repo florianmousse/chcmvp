@@ -1,3 +1,4 @@
+import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +29,7 @@ Future<void> openForm(WidgetTester tester, RecordingOpponents repo) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        isReviewerProvider.overrideWithValue(false),
         opponentsRepositoryProvider.overrideWithValue(repo),
         opponentsListProvider.overrideWith(
           (ref) => Stream.value([

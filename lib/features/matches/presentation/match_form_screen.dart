@@ -1,3 +1,4 @@
+import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,7 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
   @override
   void initState() {
     super.initState();
+    if (ref.read(isReviewerProvider)) _isTest = true;
     _presentPlayerIds.addAll(widget.existing?.presentPlayerIds ?? []);
     _selectedTeam = widget.existing?.team;
     _selectedLogoAsset = widget.existing?.opponentLogoAsset;
@@ -98,12 +100,16 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
 
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Match de test'),
+                title: Text(
+                  ref.watch(isReviewerProvider)
+                      ? 'Match de validation — sans notifications'
+                      : 'Match de test',
+                ),
                 subtitle: const Text(
-                  'Visible et notifié uniquement aux admins. Sans effet sur les classements et badges du club.',
+                  'Visible dans l’administration uniquement. Les matchs de validation ne déclenchent aucune notification et ne comptent pas dans les classements.',
                 ),
                 value: _isTest,
-                onChanged: _isEditing
+                onChanged: _isEditing || ref.watch(isReviewerProvider)
                     ? null
                     : (value) => setState(() => _isTest = value),
               ),
@@ -191,24 +197,27 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          IconButton.filledTonal(
-                            icon: const Icon(Icons.add),
-                            tooltip: 'Ajouter un adversaire',
-                            onPressed: () async {
-                              final opponent = await showDialog<OpponentModel>(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (_) => const QuickAddOpponentDialog(),
-                              );
-                              if (opponent != null && mounted) {
-                                setState(() {
-                                  _newOpponent = opponent;
-                                  _selectedOpponentId = opponent.id;
-                                  _selectedLogoAsset = opponent.logoAsset;
-                                });
-                              }
-                            },
-                          ),
+                          if (!ref.watch(isReviewerProvider))
+                            IconButton.filledTonal(
+                              icon: const Icon(Icons.add),
+                              tooltip: 'Ajouter un adversaire',
+                              onPressed: () async {
+                                final opponent =
+                                    await showDialog<OpponentModel>(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (_) =>
+                                          const QuickAddOpponentDialog(),
+                                    );
+                                if (opponent != null && mounted) {
+                                  setState(() {
+                                    _newOpponent = opponent;
+                                    _selectedOpponentId = opponent.id;
+                                    _selectedLogoAsset = opponent.logoAsset;
+                                  });
+                                }
+                              },
+                            ),
                         ],
                       );
                     },

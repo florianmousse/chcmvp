@@ -35,4 +35,8 @@ Map<String, dynamic> _$$UserModelImplToJson(_$UserModelImpl instance) =>
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
     };
 
-const _$UserRoleEnumMap = {UserRole.admin: 'admin', UserRole.member: 'member'};
+const _$UserRoleEnumMap = {
+  UserRole.admin: 'admin',
+  UserRole.member: 'member',
+  UserRole.reviewer: 'reviewer',
+};

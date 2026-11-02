@@ -1,8 +1,9 @@
+import { auditRequest } from '../audit';
 import { Router } from 'express';
 import { requireAuth, AuthedRequest } from '../middleware/auth';
 import { createCeremony, updateCeremony, ceremonyAction, castCeremonyVote } from '../ceremonies';
 export const ceremoniesRouter = Router();
-ceremoniesRouter.use(requireAuth);
+ceremoniesRouter.use(requireAuth, auditRequest);
 ceremoniesRouter.post('/', async (req: AuthedRequest, res) => {
   try { res.json({ id: await createCeremony(req.body, req.uid!) }); }
   catch (e: any) { res.status(e.status ?? 500).json({ error: e.message }); }

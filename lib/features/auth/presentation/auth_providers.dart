@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chc_mvp/core/models/user_model.dart';
 import 'package:chc_mvp/core/services/auth_service.dart';
@@ -56,3 +55,10 @@ final currentUserProfileProvider = StreamProvider<UserModel?>((ref) {
 final isAdminProvider = Provider<bool>((ref) {
   return ref.watch(currentUserProfileProvider).value?.isAdmin ?? false;
 });
+
+final isReviewerProvider = Provider<bool>(
+  (ref) => ref.watch(currentUserProfileProvider).value?.isReviewer ?? false,
+);
+final canManageMatchesProvider = Provider<bool>(
+  (ref) => ref.watch(isAdminProvider) || ref.watch(isReviewerProvider),
+);

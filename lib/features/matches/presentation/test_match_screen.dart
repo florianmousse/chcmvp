@@ -59,7 +59,7 @@ class _TestMatchScreenState extends ConsumerState<TestMatchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!ref.watch(isAdminProvider) || !widget.match.isTest) {
+    if (!ref.watch(canManageMatchesProvider) || !widget.match.isTest) {
       return const Scaffold(
         body: Center(child: Text('Réservé aux administrateurs.')),
       );

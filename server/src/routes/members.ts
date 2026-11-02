@@ -1,10 +1,35 @@
+import { auditRequest } from '../audit';
+import { randomBytes } from 'crypto';
+import { getAuth } from 'firebase-admin/auth';
 import { Router } from "express";
 import { getFirestore } from "firebase-admin/firestore";
 import { requireAuth, requireAdmin, AuthedRequest } from "../middleware/auth";
 import { createMember, changeMemberEmail, inviteExistingMember, setMemberActive, deleteMember, memberDependencies } from "../members";
 
 export const membersRouter = Router();
-membersRouter.use(requireAuth, requireAdmin);
+membersRouter.use(requireAuth, requireAdmin, auditRequest);
+
+// Credentials are returned only once, never emailed or written to the audit log.
+membersRouter.post('/review-account', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Adresse e-mail invalide.' });
+  const password = randomBytes(24).toString('base64url');
+  const doc = getFirestore().collection('users').doc();
+  try {
+    await getAuth().createUser({ uid: doc.id, email, password, displayName: 'Équipe de validation' });
+    try {
+      const batch = getFirestore().batch();
+      batch.set(doc, { email, firstName: 'Équipe de', lastName: 'validation', team: 'Validation',
+        role: 'reviewer', isActive: true, fcmTokens: [], createdAt: new Date().toISOString() });
+      batch.create(getFirestore().collection('audit_logs').doc(), { actorUid: (req as AuthedRequest).uid,
+        action: 'create', target: doc.path, source: 'transaction', status: 'success', at: new Date() });
+      await batch.commit();
+    } catch (error) { await getAuth().deleteUser(doc.id); throw error; }
+    res.json({ uid: doc.id, email, password });
+  } catch (error: any) { res.status(400).json({ error: error.code === 'auth/email-already-exists'
+    ? 'Cette adresse possède déjà un compte. Aucun compte existant n’a été modifié.' : 'Création impossible. Vérifiez les comptes avant de réessayer.' }); }
+});
 
 // Empty email creates a player profile without a login account.
 membersRouter.post("/invite", async (req, res) => {
@@ -37,6 +62,7 @@ membersRouter.post("/:uid/role", async (req, res) => {
   try {
     const doc = getFirestore().doc(`users/${req.params.uid}`);
     const profile = (await doc.get()).data();
+    if (profile?.role === 'reviewer') return res.status(400).json({ error: 'Un compte de validation doit conserver son rôle isolé.' });
     if (!profile?.email && role === "admin") return res.status(400).json({ error: "Invitez ce joueur avant de le promouvoir." });
     await doc.update({ role });
     res.json({ success: true });

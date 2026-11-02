@@ -69,6 +69,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            isReviewerProvider.overrideWithValue(false),
             isAdminProvider.overrideWithValue(true),
             matchesRepositoryProvider.overrideWithValue(repo),
             adminMatchesListProvider.overrideWith(

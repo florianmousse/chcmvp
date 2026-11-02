@@ -106,6 +106,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            isReviewerProvider.overrideWithValue(false),
             isAdminProvider.overrideWithValue(true),
             matchesRepositoryProvider.overrideWithValue(repo),
             testMatchesListProvider.overrideWith(
@@ -159,6 +160,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            isReviewerProvider.overrideWithValue(false),
             isAdminProvider.overrideWithValue(true),
             matchesRepositoryProvider.overrideWithValue(repo),
             testMatchesListProvider.overrideWith(
@@ -203,7 +205,10 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           key: ValueKey(admin),
-          overrides: [isAdminProvider.overrideWithValue(admin)],
+          overrides: [
+            isReviewerProvider.overrideWithValue(false),
+            isAdminProvider.overrideWithValue(admin),
+          ],
           child: MaterialApp(
             home: TestMatchScreen(
               match: admin ? match.copyWith(id: 'real') : match,
@@ -226,6 +231,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          isReviewerProvider.overrideWithValue(false),
           matchesRepositoryProvider.overrideWithValue(repo),
           membersListProvider.overrideWith(
             (ref, team) => Stream.value(members),
@@ -273,4 +279,70 @@ void main() {
     expect(find.text('Nouveau'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+  testWidgets(
+    'reviewer creation is forced to test and hides real opponent creation',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final repo = RecordingMatches();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            isReviewerProvider.overrideWithValue(true),
+            matchesRepositoryProvider.overrideWithValue(repo),
+            membersListProvider.overrideWith(
+              (ref, team) => Stream.value(members),
+            ),
+            teamsListProvider.overrideWith(
+              (ref) =>
+                  Stream.value([const TeamModel(id: 's', name: 'Seniors')]),
+            ),
+            opponentsListProvider.overrideWith(
+              (ref) =>
+                  Stream.value([const OpponentModel(id: 'r', name: 'Rennes')]),
+            ),
+          ],
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MatchFormScreen()),
+                  ),
+                  child: const Text('Nouveau'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Nouveau'));
+      await tester.pumpAndSettle();
+      final toggle = tester.widget<SwitchListTile>(
+        find.widgetWithText(
+          SwitchListTile,
+          'Match de validation — sans notifications',
+        ),
+      );
+      expect(toggle.value, isTrue);
+      expect(toggle.onChanged, isNull);
+      expect(find.byTooltip('Ajouter un adversaire'), findsNothing);
+      await choose(tester, 'Adversaire', 'Rennes');
+      await choose(tester, 'Équipe concernée', 'Seniors');
+      for (final member in members) {
+        final chip = find.widgetWithText(FilterChip, member.fullName);
+        await tester.ensureVisible(chip);
+        await tester.tap(chip);
+        await tester.pumpAndSettle();
+      }
+      final save = find.text('Créer le match');
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(repo.createdTest, isTrue);
+      expect(repo.present, containsAll(['a', 'b', 'c', 'd']));
+      expect(find.text('Nouveau'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

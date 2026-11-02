@@ -102,7 +102,7 @@ async function prepareCeremony(body: unknown, db: Firestore) {
   const uids = [...new Set([...event.voterIds, ...event.nominees.map(n => n.uid)])];
   const docs = await db.getAll(...uids.map(uid => db.doc(`users/${uid}`)));
   const users = new Map(docs.map(doc => [doc.id, doc.data()]));
-  if (uids.some(uid => users.get(uid)?.isActive !== true)) throw new CeremonyError('Un joueur sélectionné est absent ou inactif.');
+  if (uids.some(uid => users.get(uid)?.isActive !== true || users.get(uid)?.role === 'reviewer')) throw new CeremonyError('Un joueur sélectionné est absent ou inactif.');
   if (event.voterIds.some(uid => !users.get(uid)?.email)) throw new CeremonyError('Les votants doivent disposer d’un compte avec e-mail.');
   for (const n of event.nominees) {
     const user = users.get(n.uid)!;
@@ -182,7 +182,7 @@ export async function castCeremonyVote(eventId: string, uid: string, choices: un
   const ref = db.doc(`ceremonies/${id(eventId)}`);
   await db.runTransaction(async tx => {
     const [user, snap, prior] = await tx.getAll(db.doc(`users/${id(uid)}`), ref, ref.collection('votes').doc(uid));
-    if (user.data()?.isActive !== true) throw new CeremonyError('Compte inactif.', 403);
+    if (user.data()?.isActive !== true || user.data()?.role === 'reviewer') throw new CeremonyError('Compte inactif.', 403);
     if (!snap.exists) throw new CeremonyError('Cérémonie introuvable.', 404);
     const event = snap.data() as Ceremony;
     if ((event.revision ?? 0) !== (expectedRevision ?? 0)) throw new CeremonyError('La cérémonie a été modifiée. Recharge la page avant de voter.', 409);

@@ -5,7 +5,7 @@ export function notificationTokens(
 ): string[] {
   const tokens = new Set<string>();
   for (const user of users) {
-    if (user.isActive !== true) continue;
+    if (user.isActive !== true || user.role === "reviewer") continue;
     if (options.adminsOnly) {
       // A simulated voter's team/presence must never redirect test notifications.
       if (user.role !== "admin") continue;

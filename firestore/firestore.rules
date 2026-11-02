@@ -14,24 +14,22 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() &&
+      return isActiveMember() &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Reopening and its persistent manual-close flag are managed by the server.
-    function validMatchType() {
-      return request.resource.data.get('matchType', 'championship') in ['championship', 'friendly', 'playoff'];
+    function isReviewer() {
+      return isActiveMember() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'reviewer';
     }
-    function validClientMatchUpdate() {
-      return validMatchType() && !(resource.data.status == 'voting_closed' &&
-               request.resource.data.status != 'voting_closed') &&
-        !(resource.data.get('manualCloseRequired', false) &&
-          request.resource.data.status == 'upcoming') &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'manualCloseRequired', 'reopenedAt', 'reopenedBy', 'adminReopenReminderSentAt'
-        ]) &&
-        (!resource.data.get('manualCloseRequired', false) ||
-          request.resource.data.get('votingClosesAt', null) == null);
+    function canReadTest(matchId) {
+      return isActiveMember() && (isAdmin() || (isReviewer() &&
+        get(/databases/$(database)/documents/test_matches/$(matchId)).data.get('reviewCreatedBy', '') == request.auth.uid));
+    }
+
+    // Append-only server journal. Clients, including admins, cannot alter it.
+    match /audit_logs/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     // ---------- users ----------
@@ -40,45 +38,40 @@ service cloud.firestore {
       // désactivé ou sans fiche, sans ouvrir les autres données du club.
       allow read: if isActiveMember() ||
         (isSignedIn() && request.auth.uid == userId);
-      allow create: if isAdmin();
-      // Un membre peut modifier son propre profil (nom, photo...) mais jamais son rôle ou isActive.
-      allow update: if request.resource.data.get('email', '') == resource.data.get('email', '') && (isAdmin() ||
-        (isSignedIn() && request.auth.uid == userId &&
-         request.resource.data.role == resource.data.role &&
-         request.resource.data.isActive == resource.data.isActive));
-      allow delete: if isAdmin();
+      allow create, delete: if false;
+      // Only push-token maintenance remains direct. Profile edits use the audited API.
+      allow update: if isActiveMember() && request.auth.uid == userId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens']);
     }
 
     // ---------- settings (barème, durée de vote, délai de rappel...) ----------
     match /settings/{doc} {
       allow read: if isActiveMember();
-      allow write: if isAdmin();
+      allow write: if false; // audited API only
     }
 
     // ---------- teams ----------
     match /teams/{teamId} {
       allow read: if isActiveMember();
-      allow write: if isAdmin();
+      allow write: if false; // audited API only
     }
 
     // ---------- opponents ----------
     match /opponents/{opponentId} {
       allow read: if isActiveMember();
-      allow write: if isAdmin();
+      allow write: if false; // audited API only
     }
 
     // ---------- seasons ----------
     match /seasons/{seasonId} {
       allow read: if isActiveMember();
-      allow write: if isAdmin();
+      allow write: if false; // audited API only
     }
 
     // ---------- matches ----------
     match /matches/{matchId} {
       allow read: if isActiveMember();
-      allow create: if isAdmin() && validMatchType() && !matchId.matches('test:.*');
-      allow update: if isActiveMember() && isAdmin() && validClientMatchUpdate();
-      allow delete: if isAdmin();
+      allow create, update, delete: if false; // audited API only
 
       // ---------- votes (sous-collection) ----------
       // Un vote ne peut être créé que par son auteur, une seule fois, et uniquement
@@ -99,7 +92,7 @@ service cloud.firestore {
             (m.get('votingClosesAt', null) == null || request.time < m.votingClosesAt);
         }
         allow read: if isSignedIn() && request.auth.uid == voterUid;
-        allow create: if isActiveMember() &&
+        allow create: if isActiveMember() && !isReviewer() &&
           request.auth.uid == voterUid &&
           request.resource.data.keys().hasAll(['voterUid', 'firstPlaceUid', 'secondPlaceUid', 'thirdPlaceUid', 'votedAt']) &&
           request.resource.data.keys().hasOnly(['voterUid', 'firstPlaceUid', 'secondPlaceUid', 'thirdPlaceUid', 'votedAt']) &&
@@ -121,7 +114,7 @@ service cloud.firestore {
       // Stats individuelles (buts, passes, cartons) - saisies par l'admin.
       match /playerStats/{playerId} {
         allow read: if isActiveMember();
-        allow create, update, delete: if isAdmin();
+        allow create, update, delete: if false;
       }
     }
 
@@ -129,20 +122,12 @@ service cloud.firestore {
     // Collections séparées : aucun filtre client n'est nécessaire pour protéger
     // les tests, y compris avec une ancienne application mobile.
     match /test_matches/{matchId} {
-      allow read: if isActiveMember() && isAdmin();
-      allow create: if isActiveMember() && isAdmin() && validMatchType() && matchId.matches('test:.*');
-      allow update: if isActiveMember() && isAdmin() && validClientMatchUpdate();
-      allow delete: if isActiveMember() && isAdmin();
-      match /votes/{voterUid} {
-        allow read: if isActiveMember() && isAdmin();
-        allow write: if false; // simulation validée par le serveur
-      }
-      match /results/{doc} {
-        allow read: if isActiveMember() && isAdmin();
+      allow read: if isActiveMember() && (isAdmin() ||
+        (isReviewer() && resource.data.get('reviewCreatedBy', '') == request.auth.uid));
+      allow write: if false;
+      match /{collection}/{id} {
+        allow read: if collection in ['votes', 'results', 'playerStats'] && canReadTest(matchId);
         allow write: if false;
-      }
-      match /playerStats/{uid} {
-        allow read, write: if isActiveMember() && isAdmin();
       }
     }
 
