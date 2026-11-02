@@ -1,4 +1,6 @@
-import { getFirestore, Firestore, Timestamp } from 'firebase-admin/firestore';
+import { reviewDatabaseOwner } from "./database";
+import { getFirestore } from "./database";
+import { Firestore, Timestamp } from "firebase-admin/firestore";
 
 export class CeremonyError extends Error {
   constructor(message: string, public status = 400) { super(message); }
@@ -169,7 +171,7 @@ export async function ceremonyAction(eventId: string, actor: string, action: str
       if (!['draft', 'open'].includes(event.status)) throw new CeremonyError('Cette cérémonie est déjà terminée.', 409);
       tx.update(ref, { status: 'cancelled', cancelledAt: Timestamp.now() });
     } else throw new CeremonyError('Action inconnue.');
-    if (['open', 'reopen', 'close'].includes(action)) {
+    if (!reviewDatabaseOwner(db) && ['open', 'reopen', 'close'].includes(action)) {
       const notification = db.collection('ceremony_notifications').doc();
       tx.set(notification, { ceremonyId: eventId, action, done: false, createdAt: Timestamp.now() });
       tx.update(ref, { notificationId: notification.id });

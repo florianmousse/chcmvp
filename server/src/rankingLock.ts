@@ -1,9 +1,12 @@
-// One VPS process owns the listeners and HTTP routes. Serialize every ranking
-// writer so a manual rebuild cannot overlap a closure or a deletion.
-let pending: Promise<unknown> = Promise.resolve();
+import { getReviewSpaceUid } from './database';
 
+// Serialize calculations per data space: a review rebuild never blocks the club queue.
+const queues = new Map<string, Promise<unknown>>();
 export function withRankingLock<T>(work: () => Promise<T>): Promise<T> {
-  const result = pending.then(work);
-  pending = result.catch(() => undefined);
+  const key = getReviewSpaceUid() ?? 'production';
+  const result = (queues.get(key) ?? Promise.resolve()).then(work);
+  const pending = result.catch(() => undefined);
+  queues.set(key, pending);
+  void pending.finally(() => { if (queues.get(key) === pending) queues.delete(key); });
   return result;
 }

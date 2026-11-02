@@ -8,6 +8,8 @@ import 'package:chc_mvp/core/config/server_config.dart';
 /// de l'admin connecté en en-tête (vérifié côté serveur par requireAuth +
 /// requireAdmin, voir server/src/middleware/auth.ts).
 class ServerClient {
+  ServerClient({this.reviewSpace});
+  final String? Function()? reviewSpace;
   Future<Map<String, dynamic>> get(String path) async {
     final response = await http
         .get(Uri.parse('$serverBaseUrl$path'), headers: await _authHeaders())
@@ -20,6 +22,8 @@ class ServerClient {
     return {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
+      if (token != null && reviewSpace?.call() != null)
+        'X-Review-Space': reviewSpace!()!,
     };
   }
 

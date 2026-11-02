@@ -17,7 +17,9 @@ Future<void> writeAuditedData(
   }
 
   await server.post('/data', {
-    'path': path,
+    'path': path.startsWith('review_spaces/')
+        ? path.split('/').skip(2).join('/')
+        : path,
     'operation': operation,
     'data': encode(data),
   });

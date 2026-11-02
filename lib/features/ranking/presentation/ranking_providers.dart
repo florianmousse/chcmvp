@@ -11,7 +11,10 @@ export 'package:chc_mvp/features/ranking/data/ranking_repository.dart'
     show PlayerStats, PlayerHistoryPoint, RankingEntry;
 
 final rankingRepositoryProvider = Provider<RankingRepository>((ref) {
-  return RankingRepository(ref.watch(firestoreProvider));
+  return RankingRepository(
+    ref.watch(firestoreProvider),
+    reviewSpaceUid: ref.watch(reviewSpaceUidProvider),
+  );
 });
 
 /// scope : "general" | "2026" (annuel) | "2026-08" (mensuel)

@@ -7,6 +7,7 @@ final teamsRepositoryProvider = Provider<TeamsRepository>((ref) {
   return TeamsRepository(
     ref.watch(firestoreProvider),
     ref.watch(serverClientProvider),
+    ref.watch(reviewSpaceUidProvider),
   );
 });
 

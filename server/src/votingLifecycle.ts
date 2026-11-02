@@ -1,6 +1,7 @@
+import { getFirestore } from "./database";
 import { auditChange } from "./audit";
 import { canManageMatch } from "./reviewAccess";
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 import { isTestMatchId, matchReference } from "./matchReference";
 import { withRankingLock } from "./rankingLock";
 import { rebuildRankingsUnlocked } from "./rebuildRankings";

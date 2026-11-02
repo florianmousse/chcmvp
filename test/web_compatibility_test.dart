@@ -47,9 +47,12 @@ class VoteCollection extends Fake
 class TestFirestore extends Fake implements FirebaseFirestore {
   TestFirestore(this.reject);
   final bool reject;
+  String? lastCollection;
   @override
-  CollectionReference<Map<String, dynamic>> collection(String path) =>
-      VoteCollection(reject);
+  CollectionReference<Map<String, dynamic>> collection(String path) {
+    lastCollection = path;
+    return VoteCollection(reject);
+  }
 }
 
 void main() {
@@ -70,45 +73,53 @@ void main() {
     });
   }
 
-  for (final reject in [false, true]) {
-    test(
-      'Un vote ${reject ? "refusé est propagé à l'écran" : 'accepté se termine sans erreur'}',
-      () async {
-        final container = ProviderContainer(
-          overrides: [
-            firebaseAuthProvider.overrideWithValue(TestAuth()),
-            firestoreProvider.overrideWithValue(TestFirestore(reject)),
-          ],
-        );
-        addTearDown(container.dispose);
-        final subscription = container.listen(
-          voteSubmissionControllerProvider,
-          (_, __) {},
-        );
-        addTearDown(subscription.close);
-        await container.read(voteSubmissionControllerProvider.future);
-        final submission = container
-            .read(voteSubmissionControllerProvider.notifier)
-            .submit(
-              matchId: 'match',
-              firstPlaceUid: 'a',
-              secondPlaceUid: 'b',
-              thirdPlaceUid: 'c',
+  for (final namespace in [null, 'voter']) {
+    for (final reject in [false, true]) {
+      test(
+        'Espace $namespace : un vote ${reject ? "refusé est propagé à l'écran" : 'accepté se termine sans erreur'}',
+        () async {
+          final firestore = TestFirestore(reject);
+          final container = ProviderContainer(
+            overrides: [
+              firebaseAuthProvider.overrideWithValue(TestAuth()),
+              firestoreProvider.overrideWithValue(firestore),
+              reviewSpaceUidProvider.overrideWithValue(namespace),
+            ],
+          );
+          addTearDown(container.dispose);
+          final subscription = container.listen(
+            voteSubmissionControllerProvider,
+            (_, __) {},
+          );
+          addTearDown(subscription.close);
+          await container.read(voteSubmissionControllerProvider.future);
+          final submission = container
+              .read(voteSubmissionControllerProvider.notifier)
+              .submit(
+                matchId: 'match',
+                firstPlaceUid: 'a',
+                secondPlaceUid: 'b',
+                thirdPlaceUid: 'c',
+              );
+          expect(
+            firestore.lastCollection,
+            namespace == null ? 'matches' : 'review_spaces/voter/matches',
+          );
+          if (reject) {
+            await expectLater(submission, throwsA(isA<FirebaseException>()));
+            expect(
+              container.read(voteSubmissionControllerProvider).hasError,
+              isTrue,
             );
-        if (reject) {
-          await expectLater(submission, throwsA(isA<FirebaseException>()));
-          expect(
-            container.read(voteSubmissionControllerProvider).hasError,
-            isTrue,
-          );
-        } else {
-          await submission;
-          expect(
-            container.read(voteSubmissionControllerProvider).hasError,
-            isFalse,
-          );
-        }
-      },
-    );
+          } else {
+            await submission;
+            expect(
+              container.read(voteSubmissionControllerProvider).hasError,
+              isFalse,
+            );
+          }
+        },
+      );
+    }
   }
 }

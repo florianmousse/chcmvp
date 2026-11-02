@@ -1,4 +1,5 @@
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { getFirestore } from "./database";
+import { Timestamp } from "firebase-admin/firestore";
 import { Tally } from "./matchTally";
 import { seasonId } from "./season";
 

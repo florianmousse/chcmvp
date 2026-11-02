@@ -42,7 +42,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
               Expanded(
                 child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                   stream: ref
-                      .watch(firestoreProvider)
+                      .watch(appDatabaseProvider)
                       .collection('audit_logs')
                       .orderBy('at', descending: true)
                       .limit(_limit)
@@ -118,7 +118,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
       title: Text('${data['action']} · ${data['target']}'),
       subtitle: Text(
         '$time · ${name?.isNotEmpty == true ? name : data['actorUid']} · $status'
-        '${data['actorRole'] == 'reviewer' ? ' · Équipe de validation' : ''}',
+        '${data['reviewSpaceUid'] != null || data['actorRole'] == 'reviewer' ? ' · Équipe de validation' : ''}',
       ),
       children: [
         Padding(

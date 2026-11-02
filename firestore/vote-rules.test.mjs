@@ -220,3 +220,36 @@ test('La requête de liste du testeur exige le filtre propriétaire',async()=>{
   assert.equal((await query(true)).status,200);
   assert.equal((await query(false)).status,403);
 });
+
+
+test('Espace complet : lectures privées, vote normal et aucune sortie vers le club',async()=>{
+  const uid='sandbox-review';
+  await seed(`users/${uid}`,{role:'reviewer',isActive:true});
+  await seed('users/sandbox-other',{role:'reviewer',isActive:true});
+  const root=`review_spaces/${uid}`;
+  await seed(root,{ownerUid:uid});
+  await seed(`${root}/users/${uid}`,{role:'admin',isActive:true});
+  for(const collection of ['users','teams','opponents','matches','ceremonies','rankings_cache','player_stats','userBadges','audit_logs']) {
+    await seed(`${root}/${collection}/sample`,{name:'Démo'});
+    for(const actor of [uid,'admin']) assert.equal((await access(`${root}/${collection}/sample`,actor)).status,200);
+    for(const actor of ['voter','sandbox-other','inactive-admin']) assert.equal((await access(`${root}/${collection}/sample`,actor)).status,403);
+    assert.equal((await access(`${root}/${collection}/sample`,uid,{name:'Falsifié'})).status,403);
+  }
+  for(const path of ['matches','ceremonies','teams','opponents','rankings_cache','users']) assert.equal((await access(path,uid)).status,403);
+  assert.equal((await access(`users/${uid}`,uid)).status,200);
+  await seed(`${root}/simulated_accounts/private`,{email:'simulation@example.invalid'});
+  assert.equal((await access(`${root}/simulated_accounts/private`,uid)).status,403);
+  await seed(`${root}/matches/play`,{...match,presentPlayerIds:[uid,'a','b','c']});
+  const sendVote=()=>fetch(`${base}:commit`,{method:'POST',headers:{Authorization:`Bearer ${token(uid)}`,'Content-Type':'application/json'},body:JSON.stringify({writes:[{
+    update:{name:`${database}/documents/${root}/matches/play/votes/${uid}`,fields:fields({voterUid:uid,firstPlaceUid:'a',secondPlaceUid:'b',thirdPlaceUid:'c'})},
+    updateTransforms:[{fieldPath:'votedAt',setToServerValue:'REQUEST_TIME'}]
+  }]})});
+  assert.equal((await sendVote()).status,200);
+  assert.equal((await sendVote()).status,403);
+  await seed(`${root}/ceremonies/sample/votes/${uid}`,{choices:['n1']});
+  assert.equal((await access(`${root}/ceremonies/sample/votes/${uid}`,uid)).status,200);
+  assert.equal((await access(`${root}/ceremonies/sample/votes/${uid}`,'sandbox-other')).status,403);
+  await seed(`users/${uid}`,{role:'reviewer',isActive:false});
+  assert.equal((await access(`${root}/matches/play`,uid)).status,403);
+  assert.equal((await access(`${root}/matches/play`,'admin')).status,200);
+});

@@ -1,4 +1,5 @@
 import { Firestore, Timestamp } from 'firebase-admin/firestore';
+import { reviewDatabaseOwner } from './database';
 import { Ceremony, validateBallot } from './ceremonies';
 
 type Sender = (message: { title: string; body: string; onlyUids: string[]; data: Record<string, string> }) => Promise<void>;
@@ -7,6 +8,7 @@ type Sender = (message: { title: string; body: string; onlyUids: string[]; data:
 // ceremony. A lease prevents simultaneous workers from sending the same job.
 // Delivery is at-least-once if the process stops after FCM accepts the message.
 export async function processCeremonyNotifications(db: Firestore, send: Sender) {
+  if (reviewDatabaseOwner(db)) return;
   const pending = await db.collection('ceremony_notifications').where('done', '==', false).get();
   for (const doc of pending.docs) {
     const job = await db.runTransaction(async tx => {

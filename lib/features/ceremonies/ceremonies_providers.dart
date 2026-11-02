@@ -4,7 +4,7 @@ import 'ceremony_model.dart';
 
 final ceremoniesProvider = StreamProvider<List<Ceremony>>((ref) {
   ref.watch(authStateProvider);
-  final collection = ref.watch(firestoreProvider).collection('ceremonies');
+  final collection = ref.watch(appDatabaseProvider).collection('ceremonies');
   final query = ref.watch(isAdminProvider)
       ? collection
       : collection.where('status', whereIn: ['open', 'closed', 'cancelled']);
@@ -27,7 +27,7 @@ final myCeremonyVoteProvider = StreamProvider.autoDispose
               ?.revision ??
           0;
       return ref
-          .watch(firestoreProvider)
+          .watch(appDatabaseProvider)
           .collection('ceremonies')
           .doc(id)
           .collection('votes')

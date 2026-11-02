@@ -1,10 +1,12 @@
+import 'package:chc_mvp/core/services/scoped_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Repository pour les badges stockés dans Firestore.
 /// Collection : `userBadges/{userId}` - un document par utilisateur.
 class BadgesRepository {
-  BadgesRepository(this._firestore);
-  final FirebaseFirestore _firestore;
+  BadgesRepository(FirebaseFirestore firestore, {String? reviewSpaceUid})
+    : _firestore = ScopedFirestore(firestore, reviewSpaceUid);
+  final ScopedFirestore _firestore;
 
   DocumentReference<Map<String, dynamic>> _doc(String userId) =>
       _firestore.collection('userBadges').doc(userId);

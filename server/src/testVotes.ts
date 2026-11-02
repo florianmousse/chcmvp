@@ -1,5 +1,6 @@
+import { getFirestore } from "./database";
 import { canManageMatch } from "./reviewAccess";
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 import { isTestMatchId, matchReference } from "./matchReference";
 
 function reject(status: number, message: string): never {

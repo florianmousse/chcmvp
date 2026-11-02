@@ -11,9 +11,7 @@ final matchesRepositoryProvider = Provider<MatchesRepository>((ref) {
   return MatchesRepository(
     ref.watch(firestoreProvider),
     ref.watch(serverClientProvider),
-    reviewerUid: ref.watch(currentUserProfileProvider).value?.isReviewer == true
-        ? ref.watch(currentUserProfileProvider).value?.uid
-        : null,
+    reviewSpaceUid: ref.watch(reviewSpaceUidProvider),
   );
 });
 
@@ -33,7 +31,7 @@ final matchResultProvider =
     StreamProvider.family<Map<String, dynamic>?, String>((ref, matchId) {
       ref.watch(authStateProvider);
       return ref
-          .watch(firestoreProvider)
+          .watch(appDatabaseProvider)
           .collection(matchCollection(matchId))
           .doc(matchId)
           .collection('results')
@@ -169,7 +167,6 @@ final testMatchesListProvider = StreamProvider<List<MatchModel>>((ref) {
   return ref.watch(matchesRepositoryProvider).watchTestMatches();
 });
 final adminMatchesListProvider = Provider<AsyncValue<List<MatchModel>>>((ref) {
-  if (ref.watch(isReviewerProvider)) return ref.watch(testMatchesListProvider);
   final real = ref.watch(matchesListProvider(null));
   final tests = ref.watch(testMatchesListProvider);
   return real.when(
@@ -188,7 +185,7 @@ final testVotesProvider =
         return Stream.value([]);
       }
       return ref
-          .watch(firestoreProvider)
+          .watch(appDatabaseProvider)
           .collection('test_matches')
           .doc(id)
           .collection('votes')

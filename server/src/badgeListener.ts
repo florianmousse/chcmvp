@@ -1,4 +1,6 @@
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { getReviewSpaceUid } from "./database";
+import { getFirestore } from "./database";
+import { Timestamp } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 
 /**
@@ -98,6 +100,7 @@ async function sendBadgeNotification(
   userId: string,
   newBadgeTypes: string[],
 ): Promise<void> {
+  if (getReviewSpaceUid()) return;
   const firestore = getFirestore();
 
   // Récupérer les tokens FCM du joueur

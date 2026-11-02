@@ -1,13 +1,18 @@
+import 'package:chc_mvp/core/services/scoped_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:chc_mvp/core/services/server_client.dart';
 import 'package:chc_mvp/core/services/audited_data.dart';
 import 'package:chc_mvp/core/models/opponent_model.dart';
 
 class OpponentsRepository {
-  OpponentsRepository(this._firestore, [ServerClient? server])
-    : _server = server ?? ServerClient();
+  OpponentsRepository(
+    FirebaseFirestore firestore, [
+    ServerClient? server,
+    String? reviewSpaceUid,
+  ]) : _firestore = ScopedFirestore(firestore, reviewSpaceUid),
+       _server = server ?? ServerClient();
   final ServerClient _server;
-  final FirebaseFirestore _firestore;
+  final ScopedFirestore _firestore;
 
   CollectionReference<Map<String, dynamic>> get _col =>
       _firestore.collection('opponents');

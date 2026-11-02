@@ -1,3 +1,4 @@
+import { getReviewSpaceUid } from "./database";
 import nodemailer from "nodemailer";
 
 /**
@@ -63,6 +64,7 @@ export async function sendInviteEmail({
   firstName: string;
   resetLink: string;
 }): Promise<void> {
+  if (getReviewSpaceUid()) return;
   if (!isSmtpConfigured()) {
     console.warn(
       `SMTP non configuré (.env) - e-mail d'invitation pour ${to} non envoyé. Lien : ${resetLink}`,
@@ -99,6 +101,7 @@ export async function sendPasswordResetEmail({
   to: string;
   resetLink: string;
 }): Promise<void> {
+  if (getReviewSpaceUid()) return;
   if (!isSmtpConfigured()) {
     console.warn(
       `SMTP non configuré (.env) - e-mail de réinitialisation pour ${to} non envoyé. Lien : ${resetLink}`,

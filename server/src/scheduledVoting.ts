@@ -1,6 +1,7 @@
+import { getFirestore } from "./database";
 import { auditChange } from "./audit";
 import { matchReference } from "./matchReference";
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 import { getClubSettings, notifyMembers, notifyAdmins } from "./notify";
 import { closeExpiredVoting, remindReopenedVoting } from "./votingLifecycle";
 

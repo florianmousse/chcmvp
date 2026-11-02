@@ -1,6 +1,9 @@
+import { getFirestore } from "./database";
+import { getReviewSpaceUid } from "./database";
+import { simulatedAuth } from "./reviewMembers";
 import { randomBytes } from "crypto";
 import { Auth, getAuth } from "firebase-admin/auth";
-import { Firestore, getFirestore } from "firebase-admin/firestore";
+import { Firestore } from "firebase-admin/firestore";
 import { sendInviteEmail } from "./mailer";
 
 export interface MemberDependencies {
@@ -9,7 +12,8 @@ export interface MemberDependencies {
   sendInvite: typeof sendInviteEmail;
 }
 export const memberDependencies = (): MemberDependencies => ({
-  auth: getAuth(), db: getFirestore(), sendInvite: sendInviteEmail,
+  auth: getReviewSpaceUid() ? simulatedAuth(getFirestore()) : getAuth(), db: getFirestore(),
+  sendInvite: getReviewSpaceUid() ? async () => {} : sendInviteEmail,
 });
 
 export function memberFields(input: Record<string, unknown>) {

@@ -25,15 +25,13 @@ class _ReviewAccountScreenState extends ConsumerState<ReviewAccountScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Compte de validation')),
-    body: !ref.watch(isAdminProvider)
+    body: ref.watch(accountProfileProvider).value?.isAdmin != true
         ? const Center(child: Text('Accès réservé aux administrateurs.'))
         : ListView(
             padding: const EdgeInsets.all(24),
             children: [
               const Text(
-                'Ce compte peut créer et gérer ses propres matchs de test, simuler des votes et consulter les résultats. '
-                'Ses matchs restent visibles uniquement pour lui et les admins, sans notifications ni effet sur les classements. '
-                'Les membres, équipes, adversaires et cérémonies du club restent protégés.',
+                'Ce compte utilise toute l’application dans son propre espace de démonstration : matchs, cérémonies, votes, membres, équipes, classements et badges. Les notifications sont coupées et les invitations sont simulées. Aucun compte membre réel n’est créé.',
               ),
               const SizedBox(height: 16),
               if (_credentials == null) ...[

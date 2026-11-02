@@ -1,6 +1,8 @@
+import { getReviewSpaceUid } from "./database";
+import { getFirestore } from "./database";
 import { suppressMatchNotification } from "./reviewAccess";
 import { notificationTokens } from "./notificationAudience";
-import { getFirestore } from "firebase-admin/firestore";
+
 import { getMessaging } from "firebase-admin/messaging";
 import {
   VOTE_DURATION_HOURS,
@@ -47,6 +49,7 @@ export async function notifyMembers({
   onlyUids?: string[];
   data?: Record<string, string>;
 }): Promise<void> {
+  if (getReviewSpaceUid()) return;
   const firestore = getFirestore();
   if (await suppressMatchNotification(data?.matchId, firestore)) return;
   let query = firestore.collection("users").where("isActive", "==", true) as FirebaseFirestore.Query;
@@ -79,6 +82,7 @@ export async function notifyAdmins({
   body: string;
   data?: Record<string, string>;
 }): Promise<void> {
+  if (getReviewSpaceUid()) return;
   const firestore = getFirestore();
   if (await suppressMatchNotification(data?.matchId, firestore)) return;
   const adminsSnap = await firestore
@@ -134,6 +138,7 @@ async function sendToTokens(
 }
 
 async function pruneStaleTokens(staleTokens: string[]): Promise<void> {
+  if (getReviewSpaceUid()) return;
   const firestore = getFirestore();
   const usersSnap = await firestore
     .collection("users")

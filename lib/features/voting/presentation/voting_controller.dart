@@ -23,7 +23,7 @@ class VoteSubmissionController extends _$VoteSubmissionController {
 
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      final firestore = ref.read(firestoreProvider);
+      final firestore = ref.read(appDatabaseProvider);
       final voteRef = firestore
           .collection('matches')
           .doc(matchId)

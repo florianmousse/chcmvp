@@ -7,6 +7,7 @@ final opponentsRepositoryProvider = Provider<OpponentsRepository>((ref) {
   return OpponentsRepository(
     ref.watch(firestoreProvider),
     ref.watch(serverClientProvider),
+    ref.watch(reviewSpaceUidProvider),
   );
 });
 

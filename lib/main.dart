@@ -1,4 +1,5 @@
 import 'package:chc_mvp/core/widgets/web_push_prompt.dart';
+import 'package:chc_mvp/core/widgets/review_mode_banner.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -76,7 +77,9 @@ class HockeyClubApp extends ConsumerWidget {
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1600),
-          child: kIsWeb ? WebPushPrompt(child: child!) : child!,
+          child: ReviewModeBanner(
+            child: kIsWeb ? WebPushPrompt(child: child!) : child!,
+          ),
         ),
       ),
       home: const _RootRouter(),
@@ -109,11 +112,40 @@ class _AuthenticatedGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(currentUserProfileProvider);
+    final profileAsync = ref.watch(accountProfileProvider);
     return profileAsync.when(
       data: (profile) => profile == null || !profile.isActive
           ? const _UnrecognizedAccountScreen()
-          : const _MainShell(),
+          : ref
+                .watch(reviewSpaceReadyProvider)
+                .when(
+                  data: (_) => _MainShell(
+                    key: ValueKey(ref.watch(reviewSpaceUidProvider)),
+                  ),
+                  loading: () => const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (e, _) => Scaffold(
+                    body: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Préparation de l’espace impossible : $e'),
+                          TextButton(
+                            onPressed: () =>
+                                ref.invalidate(reviewSpaceReadyProvider),
+                            child: const Text('Réessayer'),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                ref.read(authServiceProvider).signOut(),
+                            child: const Text('Se déconnecter'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('Erreur : $e'))),
@@ -155,7 +187,7 @@ class _UnrecognizedAccountScreen extends ConsumerWidget {
 /// Coquille avec navigation par onglets : Accueil, Matchs, Classements, Profil
 /// (+ Administration si isAdminProvider)
 class _MainShell extends ConsumerStatefulWidget {
-  const _MainShell();
+  const _MainShell({super.key});
 
   @override
   ConsumerState<_MainShell> createState() => _MainShellState();

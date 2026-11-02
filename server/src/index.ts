@@ -1,5 +1,8 @@
+import { getFirestore } from "./database";
 import "./firebase"; // initialise firebase-admin avant tout le reste
 import express from "express";
+import { requireAuth } from "./middleware/auth";
+import { processReviewSpaces } from "./reviewMaintenance";
 import { dataRouter } from "./routes/data";
 import path from "path";
 import cron from "node-cron";
@@ -12,7 +15,7 @@ import { matchesRouter } from "./routes/matches";
 import { ceremoniesRouter } from "./routes/ceremonies";
 import { createCorsMiddleware } from "./middleware/cors";
 
-import { getFirestore } from 'firebase-admin/firestore';
+
 import { notifyMembers } from './notify';
 import { processCeremonyNotifications } from './ceremonyNotifications';
 
@@ -37,6 +40,7 @@ app.get("/health", (_req, res) =>
 // authRouter est volontairement public (pas de requireAuth) - contrairement
 // aux deux routeurs suivants, qui exigent un admin authentifié.
 app.use("/auth", authRouter);
+app.post("/review-space", requireAuth, (_req, res) => res.json({ success: true }));
 app.use("/data", dataRouter);
 app.use("/members", membersRouter);
 app.use("/matches", matchesRouter);
@@ -58,6 +62,7 @@ startBadgeListener();
 // rappels, clôture. Toutes les 10 minutes pour une réactivité raisonnable
 // (un match de 20:00 → vote ouvert entre 22:00 et 22:10 au plus tard).
 cron.schedule("*/10 * * * *", () => {
+  processReviewSpaces().catch(e => console.error("Cycle validation:", e));
   processScheduledVoting().catch((e) =>
     console.error("Erreur processScheduledVoting :", e),
   );

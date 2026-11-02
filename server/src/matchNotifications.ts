@@ -1,4 +1,5 @@
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore } from "./database";
+
 import { isTestMatchId, matchReference } from "./matchReference";
 
 export async function votingOpenedNotification(

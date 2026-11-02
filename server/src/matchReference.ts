@@ -1,4 +1,5 @@
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore } from "./database";
+
 
 // ':' cannot occur in a Firestore auto-ID. Test matches live in an entirely
 // separate collection, so old clients and broad production queries cannot leak them.

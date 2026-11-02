@@ -1,4 +1,6 @@
-import { FieldValue, getFirestore, Transaction, Firestore } from 'firebase-admin/firestore';
+import { getReviewSpaceUid, reviewDatabaseOwner } from "./database";
+import { getFirestore } from "./database";
+import { FieldValue, Transaction, Firestore } from "firebase-admin/firestore";
 import { NextFunction, Response } from 'express';
 import { AuthedRequest } from './middleware/auth';
 
@@ -10,7 +12,7 @@ export async function auditRequest(req: AuthedRequest, res: Response, next: Next
     const user = (await db.doc(`users/${req.uid}`).get()).data();
     const entry = db.collection('audit_logs').doc();
     await entry.set({ actorUid: req.uid, actorName: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
-      actorRole: user?.role ?? 'unknown', action: req.method, target: req.originalUrl.split('?')[0],
+      actorRole: user?.role ?? 'unknown', reviewSpaceUid: getReviewSpaceUid() ?? null, action: req.method, target: req.originalUrl.split('?')[0],
       source: 'api', status: 'pending', at: FieldValue.serverTimestamp() });
     // A pending entry survives a crash and must not be mistaken for success.
     let resultId: string | null = null;
@@ -32,7 +34,8 @@ export function auditChange(tx: Transaction, db: Firestore, actorUid: string, ac
   action: string, target: string, before: unknown, after: unknown) {
   tx.create(db.collection('audit_logs').doc(), {
     actorUid, actorName: `${actor?.firstName ?? ''} ${actor?.lastName ?? ''}`.trim(),
-    actorRole: actor?.role ?? 'system', action, target, before, after,
+    actorRole: actor?.role ?? 'system',
+    reviewSpaceUid: reviewDatabaseOwner(db) ?? null, action, target, before, after,
     source: 'transaction', status: 'success', at: FieldValue.serverTimestamp(),
   });
 }

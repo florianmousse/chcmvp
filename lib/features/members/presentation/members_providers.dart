@@ -7,6 +7,7 @@ final membersRepositoryProvider = Provider<MembersRepository>((ref) {
   return MembersRepository(
     ref.watch(firestoreProvider),
     ref.watch(serverClientProvider),
+    reviewSpaceUid: ref.watch(reviewSpaceUidProvider),
   );
 });
 

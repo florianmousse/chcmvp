@@ -1,5 +1,9 @@
+import { getFirestore } from "../database";
+import { reviewDatabaseOwner } from "../database";
+import { initializeVotingWindow } from "../votingLifecycle";
+import { recomputeClosedMatch } from "../rebuildRankings";
 import { Router } from 'express';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { Timestamp } from "firebase-admin/firestore";
 import { requireAuth, AuthedRequest } from '../middleware/auth';
 import { auditChange, auditRequest } from '../audit';
 import { canManageMatch } from '../reviewAccess';
@@ -81,6 +85,11 @@ export async function writeData(uid: string, input: any, db = getFirestore()) {
     else if (operation === 'update') tx.update(ref, converted);
     else tx.set(ref, converted, { merge: true });
   });
+  if (reviewDatabaseOwner(db) && kind === 'matches') {
+    const match = (await ref.get()).data();
+    if (match?.status === 'voting_open') await initializeVotingWindow(p[1], 48, db);
+    if (match?.status === 'voting_closed') await recomputeClosedMatch(p[1], db);
+  }
   return { success: true };
 }
 

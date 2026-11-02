@@ -1,6 +1,8 @@
+import { getFirestore } from "../database";
+import { enterRequestSpace } from "../reviewSpace";
 import { Request, Response, NextFunction } from "express";
 import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+
 import { canManageMatch } from '../reviewAccess';
 import { matchReference } from '../matchReference';
 
@@ -47,9 +49,9 @@ export async function requireAuth(
       header.slice("Bearer ".length),
     );
     req.uid = decoded.uid;
-    next();
-  } catch {
-    res.status(401).json({ error: "Token invalide ou expiré." });
+    await enterRequestSpace(req, res, next);
+  } catch (error: any) {
+    res.status(error.status ?? 401).json({ error: error.status ? error.message : "Connexion ou préparation de l’espace impossible. Réessayez." });
   }
 }
 

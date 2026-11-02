@@ -1,5 +1,6 @@
+import { getFirestore } from "./database";
 import { canManageMatch } from "./reviewAccess";
-import { getFirestore } from "firebase-admin/firestore";
+
 import { matchReference } from "./matchReference";
 import { ballotVersion, canResetVote } from "./resetVote";
 

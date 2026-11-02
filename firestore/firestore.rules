@@ -13,6 +13,10 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
     }
 
+    function isClubMember() {
+      return isActiveMember() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role != 'reviewer';
+    }
+
     function isAdmin() {
       return isActiveMember() &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
@@ -32,11 +36,63 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Full isolated application, one namespace per review account.
+    match /review_spaces/{spaceUid} {
+      function canAccessSpace() {
+        return isAdmin() || (isReviewer() && request.auth.uid == spaceUid);
+      }
+      allow read: if canAccessSpace();
+      allow write: if false;
+      match /{collection}/{document} {
+        allow read: if canAccessSpace() && collection in [
+          'users', 'teams', 'opponents', 'settings', 'seasons', 'matches', 'test_matches',
+          'rankings_cache', 'player_stats', 'userBadges', 'ceremonies', 'audit_logs'
+        ];
+        allow write: if false;
+      }
+      match /matches/{matchId}/votes/{voterUid} {
+        function validSandboxBallot() {
+          let m = get(/databases/$(database)/documents/review_spaces/$(spaceUid)/matches/$(matchId)).data;
+          let v = request.resource.data;
+          return m.status == 'voting_open' && request.auth.uid in m.presentPlayerIds &&
+            v.firstPlaceUid in m.presentPlayerIds && v.secondPlaceUid in m.presentPlayerIds && v.thirdPlaceUid in m.presentPlayerIds &&
+            (m.get('allowSelfVote', false) || !(request.auth.uid in [v.firstPlaceUid, v.secondPlaceUid, v.thirdPlaceUid])) &&
+            (m.get('votingOpensAt', null) == null || request.time >= m.votingOpensAt) &&
+            (m.get('votingClosesAt', null) == null || request.time < m.votingClosesAt);
+        }
+        allow read: if canAccessSpace() && request.auth.uid == voterUid;
+        allow create: if canAccessSpace() && request.auth.uid == voterUid &&
+          request.resource.data.keys().hasAll(['voterUid', 'firstPlaceUid', 'secondPlaceUid', 'thirdPlaceUid', 'votedAt']) &&
+          request.resource.data.keys().hasOnly(['voterUid', 'firstPlaceUid', 'secondPlaceUid', 'thirdPlaceUid', 'votedAt']) &&
+          request.resource.data.voterUid == voterUid && request.resource.data.votedAt == request.time &&
+          request.resource.data.firstPlaceUid != request.resource.data.secondPlaceUid &&
+          request.resource.data.firstPlaceUid != request.resource.data.thirdPlaceUid &&
+          request.resource.data.secondPlaceUid != request.resource.data.thirdPlaceUid && validSandboxBallot();
+        allow update, delete: if false;
+      }
+      match /matches/{matchId}/{collection}/{document} {
+        allow read: if canAccessSpace() && collection in ['results', 'playerStats'];
+        allow write: if false;
+      }
+      match /test_matches/{matchId}/{collection}/{document} {
+        allow read: if canAccessSpace() && collection in ['results', 'playerStats', 'votes'];
+        allow write: if false;
+      }
+      match /player_stats/{uid}/history/{matchId} {
+        allow read: if canAccessSpace();
+        allow write: if false;
+      }
+      match /ceremonies/{id}/votes/{uid} {
+        allow read: if canAccessSpace() && request.auth.uid == uid;
+        allow write: if false;
+      }
+    }
+
     // ---------- users ----------
     match /users/{userId} {
       // Lire sa propre fiche permet aussi d'afficher proprement un compte
       // désactivé ou sans fiche, sans ouvrir les autres données du club.
-      allow read: if isActiveMember() ||
+      allow read: if isClubMember() ||
         (isSignedIn() && request.auth.uid == userId);
       allow create, delete: if false;
       // Only push-token maintenance remains direct. Profile edits use the audited API.
@@ -46,31 +102,31 @@ service cloud.firestore {
 
     // ---------- settings (barème, durée de vote, délai de rappel...) ----------
     match /settings/{doc} {
-      allow read: if isActiveMember();
+      allow read: if isClubMember();
       allow write: if false; // audited API only
     }
 
     // ---------- teams ----------
     match /teams/{teamId} {
-      allow read: if isActiveMember();
+      allow read: if isClubMember();
       allow write: if false; // audited API only
     }
 
     // ---------- opponents ----------
     match /opponents/{opponentId} {
-      allow read: if isActiveMember();
+      allow read: if isClubMember();
       allow write: if false; // audited API only
     }
 
     // ---------- seasons ----------
     match /seasons/{seasonId} {
-      allow read: if isActiveMember();
+      allow read: if isClubMember();
       allow write: if false; // audited API only
     }
 
     // ---------- matches ----------
     match /matches/{matchId} {
-      allow read: if isActiveMember();
+      allow read: if isClubMember();
       allow create, update, delete: if false; // audited API only
 
       // ---------- votes (sous-collection) ----------
@@ -107,13 +163,13 @@ service cloud.firestore {
 
       // Résultats agrégés : lecture publique aux membres, écriture réservée au backend (Admin SDK).
       match /results/{doc} {
-        allow read: if isActiveMember();
+        allow read: if isClubMember();
         allow write: if false; // uniquement via Cloud Function avec les privilèges admin
       }
 
       // Stats individuelles (buts, passes, cartons) - saisies par l'admin.
       match /playerStats/{playerId} {
-        allow read: if isActiveMember();
+        allow read: if isClubMember();
         allow create, update, delete: if false;
       }
     }
@@ -132,24 +188,24 @@ service cloud.firestore {
     }
 
     match /rankings_cache/{scope} {
-      allow read: if isActiveMember();
+      allow read: if isClubMember();
       allow write: if false; // recalculé par Cloud Function
     }
 
     // ---------- player_stats (all-time, alimenté par computeMatchResults) ----------
     match /player_stats/{uid} {
-      allow read: if isActiveMember();
+      allow read: if isClubMember();
       allow write: if false;
 
       match /history/{matchId} {
-        allow read: if isActiveMember();
+        allow read: if isClubMember();
         allow write: if false;
       }
     }
 
     // ---------- userBadges ----------
     match /ceremonies/{eventId} {
-      allow read: if isActiveMember() && (isAdmin() || resource.data.status != 'draft');
+      allow read: if isClubMember() && (isAdmin() || resource.data.status != 'draft');
       allow write: if false;
       match /votes/{uid} {
         allow read: if isActiveMember() && request.auth.uid == uid;
@@ -158,7 +214,7 @@ service cloud.firestore {
     }
 
     match /userBadges/{userId} {
-      allow read: if isActiveMember();
+      allow read: if isClubMember();
       allow write: if false; // calcul serveur ; empêche de rétablir un badge révoqué
     }
   }

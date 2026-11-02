@@ -109,7 +109,7 @@ Future<void> _openVoteFromNotification(Ref ref, String? matchId) async {
       );
       return;
     }
-    final firestore = ref.read(firestoreProvider);
+    final firestore = ref.read(appDatabaseProvider);
     if (isTestMatchId(matchId) &&
         (await ref.read(currentUserProfileProvider.future))?.isAdmin != true) {
       return;

@@ -4,7 +4,10 @@ import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 import 'package:chc_mvp/features/badges/data/badges_repository.dart';
 
 final badgesRepositoryProvider = Provider<BadgesRepository>((ref) {
-  return BadgesRepository(ref.watch(firestoreProvider));
+  return BadgesRepository(
+    ref.watch(firestoreProvider),
+    reviewSpaceUid: ref.watch(reviewSpaceUidProvider),
+  );
 });
 
 /// Stream des badges gagnés pour un utilisateur donné.
@@ -22,7 +25,7 @@ final allBadgesProvider = StreamProvider<Map<String, Map<String, DateTime>>>((
 ) {
   ref.watch(authStateProvider);
   return ref
-      .watch(firestoreProvider)
+      .watch(appDatabaseProvider)
       .collection('userBadges')
       .snapshots()
       .map(

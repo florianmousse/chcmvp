@@ -10,7 +10,7 @@ final hasVotedProvider = StreamProvider.family<bool, String>((ref, matchId) {
   final uid = ref.watch(firebaseAuthProvider).currentUser?.uid;
   if (uid == null) return Stream.value(false);
   return ref
-      .watch(firestoreProvider)
+      .watch(appDatabaseProvider)
       .collection('matches')
       .doc(matchId)
       .collection('votes')

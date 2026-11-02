@@ -1,4 +1,3 @@
-import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -42,7 +41,6 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
   @override
   void initState() {
     super.initState();
-    if (ref.read(isReviewerProvider)) _isTest = true;
     _presentPlayerIds.addAll(widget.existing?.presentPlayerIds ?? []);
     _selectedTeam = widget.existing?.team;
     _selectedLogoAsset = widget.existing?.opponentLogoAsset;
@@ -100,16 +98,12 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
 
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(
-                  ref.watch(isReviewerProvider)
-                      ? 'Match de validation — sans notifications'
-                      : 'Match de test',
-                ),
+                title: const Text('Match de test'),
                 subtitle: const Text(
-                  'Visible dans l’administration uniquement. Les matchs de validation ne déclenchent aucune notification et ne comptent pas dans les classements.',
+                  'Réservé à l’administration, avec simulation des votes et sans effet sur les classements. Laissez désactivé pour tester le parcours habituel dans votre espace de validation.',
                 ),
                 value: _isTest,
-                onChanged: _isEditing || ref.watch(isReviewerProvider)
+                onChanged: _isEditing
                     ? null
                     : (value) => setState(() => _isTest = value),
               ),
@@ -197,27 +191,24 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          if (!ref.watch(isReviewerProvider))
-                            IconButton.filledTonal(
-                              icon: const Icon(Icons.add),
-                              tooltip: 'Ajouter un adversaire',
-                              onPressed: () async {
-                                final opponent =
-                                    await showDialog<OpponentModel>(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (_) =>
-                                          const QuickAddOpponentDialog(),
-                                    );
-                                if (opponent != null && mounted) {
-                                  setState(() {
-                                    _newOpponent = opponent;
-                                    _selectedOpponentId = opponent.id;
-                                    _selectedLogoAsset = opponent.logoAsset;
-                                  });
-                                }
-                              },
-                            ),
+                          IconButton.filledTonal(
+                            icon: const Icon(Icons.add),
+                            tooltip: 'Ajouter un adversaire',
+                            onPressed: () async {
+                              final opponent = await showDialog<OpponentModel>(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (_) => const QuickAddOpponentDialog(),
+                              );
+                              if (opponent != null && mounted) {
+                                setState(() {
+                                  _newOpponent = opponent;
+                                  _selectedOpponentId = opponent.id;
+                                  _selectedLogoAsset = opponent.logoAsset;
+                                });
+                              }
+                            },
+                          ),
                         ],
                       );
                     },

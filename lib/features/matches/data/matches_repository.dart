@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/services/scoped_firestore.dart';
 import 'package:chc_mvp/core/services/audited_data.dart';
 import 'package:chc_mvp/core/models/match_reference.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -10,9 +11,14 @@ import 'package:chc_mvp/core/utils/firestore_json.dart';
 /// La suppression et les recalculs passent par le serveur pour nettoyer aussi
 /// les sous-collections et les classements.
 class MatchesRepository {
-  MatchesRepository(this._firestore, this._server, {this.reviewerUid});
+  MatchesRepository(
+    FirebaseFirestore firestore,
+    this._server, {
+    this.reviewerUid,
+    String? reviewSpaceUid,
+  }) : _firestore = ScopedFirestore(firestore, reviewSpaceUid);
   final String? reviewerUid;
-  final FirebaseFirestore _firestore;
+  final ScopedFirestore _firestore;
   final ServerClient _server;
 
   CollectionReference<Map<String, dynamic>> get _matches =>
@@ -83,7 +89,7 @@ class MatchesRepository {
     bool isTest = false,
     MatchType matchType = MatchType.championship,
   }) async {
-    final target = (isTest || reviewerUid != null)
+    final target = isTest
         ? _firestore.collection('test_matches').doc('test:${_matches.doc().id}')
         : _matches.doc();
     await writeAuditedData(_server, target.path, 'create', {

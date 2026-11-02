@@ -280,7 +280,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   testWidgets(
-    'reviewer creation is forced to test and hides real opponent creation',
+    'reviewer uses normal match creation and can add sandbox opponents',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 1200));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -319,14 +319,11 @@ void main() {
       await tester.tap(find.text('Nouveau'));
       await tester.pumpAndSettle();
       final toggle = tester.widget<SwitchListTile>(
-        find.widgetWithText(
-          SwitchListTile,
-          'Match de validation — sans notifications',
-        ),
+        find.widgetWithText(SwitchListTile, 'Match de test'),
       );
-      expect(toggle.value, isTrue);
-      expect(toggle.onChanged, isNull);
-      expect(find.byTooltip('Ajouter un adversaire'), findsNothing);
+      expect(toggle.value, isFalse);
+      expect(toggle.onChanged, isNotNull);
+      expect(find.byTooltip('Ajouter un adversaire'), findsOneWidget);
       await choose(tester, 'Adversaire', 'Rennes');
       await choose(tester, 'Équipe concernée', 'Seniors');
       for (final member in members) {
@@ -339,7 +336,7 @@ void main() {
       await tester.ensureVisible(save);
       await tester.tap(save);
       await tester.pumpAndSettle();
-      expect(repo.createdTest, isTrue);
+      expect(repo.createdTest, isFalse);
       expect(repo.present, containsAll(['a', 'b', 'c', 'd']));
       expect(find.text('Nouveau'), findsOneWidget);
       expect(tester.takeException(), isNull);

@@ -1,5 +1,6 @@
+import { getFirestore } from "./database";
 import { canManageMatch } from "./reviewAccess";
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 import { matchReference } from "./matchReference";
 
 // Identifies exactly the ballot displayed to the admin, without revealing its choices.

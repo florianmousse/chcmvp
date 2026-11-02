@@ -11,10 +11,11 @@ test('CORS : preflight autorisé, origine étrangère refusée, client natif acc
   await new Promise(resolve => server.once('listening', resolve));
   const url = `http://127.0.0.1:${server.address().port}/members/invite`;
   try {
-    const preflight = await fetch(url, { method:'OPTIONS', headers:{ Origin:'https://club.example', 'Access-Control-Request-Method':'POST', 'Access-Control-Request-Headers':'authorization,content-type' } });
+    const preflight = await fetch(url, { method:'OPTIONS', headers:{ Origin:'https://club.example', 'Access-Control-Request-Method':'POST', 'Access-Control-Request-Headers':'authorization,content-type,x-review-space' } });
     assert.equal(preflight.status, 204);
     assert.equal(preflight.headers.get('access-control-allow-origin'), 'https://club.example');
     assert.match(preflight.headers.get('access-control-allow-headers'), /Authorization/);
+    assert.match(preflight.headers.get('access-control-allow-headers'), /X-Review-Space/);
     const denied = await fetch(url, { method:'POST', headers:{ Origin:'https://evil.example' } });
     assert.equal(denied.status, 403);
     assert.equal(denied.headers.get('access-control-allow-origin'), null);

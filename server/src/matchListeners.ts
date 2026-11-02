@@ -1,5 +1,6 @@
+import { getFirestore } from "./database";
 import { votingOpenedNotification, votingClosedNotification } from "./matchNotifications";
-import { getFirestore } from "firebase-admin/firestore";
+
 import { initializeVotingWindow } from "./votingLifecycle";
 import { getClubSettings, notifyMembers } from "./notify";
 import { rebuildRankingsAndStats, recomputeClosedMatch } from "./rebuildRankings";

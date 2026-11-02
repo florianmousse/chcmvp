@@ -13,7 +13,7 @@ export function createCorsMiddleware(origins: string[]): RequestHandler {
     }
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Review-Space");
     res.setHeader("Access-Control-Max-Age", "600");
     if (req.method === "OPTIONS") {
       res.sendStatus(204);

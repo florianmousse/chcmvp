@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/services/scoped_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -58,8 +59,9 @@ class PlayerHistoryPoint {
 /// par le sélecteur des écrans, correspond aux clés écrites par
 /// `computeMatchResults` côté Cloud Function.
 class RankingRepository {
-  RankingRepository(this._firestore);
-  final FirebaseFirestore _firestore;
+  RankingRepository(FirebaseFirestore firestore, {String? reviewSpaceUid})
+    : _firestore = ScopedFirestore(firestore, reviewSpaceUid);
+  final ScopedFirestore _firestore;
 
   Stream<List<RankingEntry>> watchRanking(String scope) {
     return _firestore.collection('rankings_cache').doc(scope).snapshots().map((

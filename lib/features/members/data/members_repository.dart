@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/services/scoped_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:chc_mvp/core/services/audited_data.dart';
 import 'package:chc_mvp/core/models/user_model.dart';
@@ -10,9 +11,13 @@ import 'package:chc_mvp/core/utils/firestore_json.dart';
 /// VPS (server/src/routes/members.ts) - impossible à faire depuis le client
 /// avec le SDK Auth seul sans déconnecter l'admin.
 class MembersRepository {
-  MembersRepository(this._firestore, this._server);
+  MembersRepository(
+    FirebaseFirestore firestore,
+    this._server, {
+    String? reviewSpaceUid,
+  }) : _firestore = ScopedFirestore(firestore, reviewSpaceUid);
 
-  final FirebaseFirestore _firestore;
+  final ScopedFirestore _firestore;
   final ServerClient _server;
 
   Stream<List<UserModel>> watchMembers({String? team}) => watchAllMembers(

@@ -1,3 +1,4 @@
+import { getFirestore } from "./database";
 export function canManageMatch(user: any, matchId: string, match: any): boolean {
   return user?.isActive === true && (user.role === 'admin' ||
     (user.role === 'reviewer' && matchId.startsWith('test:') &&
@@ -7,7 +8,7 @@ export function canManageMatch(user: any, matchId: string, match: any): boolean 
 export function isSilentReviewMatch(match: any): boolean {
   return typeof match?.reviewCreatedBy === 'string' && match.reviewCreatedBy.length > 0;
 }
-import { getFirestore } from 'firebase-admin/firestore';
+
 import { matchReference } from './matchReference';
 
 
