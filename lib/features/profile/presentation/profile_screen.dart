@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/widgets/web_push_prompt.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:chc_mvp/features/ceremonies/award_widgets.dart';
 import 'package:flutter/foundation.dart';
@@ -90,6 +91,7 @@ class ProfileScreen extends ConsumerWidget {
                             children: [
                               ...identity,
                               const _HelpAndVersion(),
+                              if (kIsWeb) const WebPushPrompt(),
                               const SizedBox(height: 24),
                               OutlinedButton.icon(
                                 icon: const Icon(Icons.logout),
@@ -196,6 +198,7 @@ class ProfileScreen extends ConsumerWidget {
               ),
               const Divider(height: 32),
               const _HelpAndVersion(),
+              if (kIsWeb) const WebPushPrompt(),
 
               // ── Thème ──
               _ThemeSelector(),
@@ -204,7 +207,7 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 const Text(
                   "Sur le web, consulte les votes et résultats dans l'application. "
-                  "Les notifications push et les widgets d'écran d'accueil restent disponibles dans l'application mobile.",
+                  "Active les notifications ci-dessus. Les widgets Android restent disponibles dans l'application mobile.",
                 ),
                 const SizedBox(height: 12),
                 const LegalLinks(),

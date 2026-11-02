@@ -72,7 +72,7 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
             section('Utiliser le site web', Icons.language, [
               "Ouvre https://chc-mvp.vercel.app/ dans ton navigateur. Utilise les mêmes identifiants que dans l'application Android : tes votes, résultats et badges sont partagés.",
               "Sur téléphone, navigue avec les onglets en bas. Sur ordinateur, utilise le menu à gauche. Une connexion Internet est nécessaire.",
-              "Tu peux ajouter le site aux favoris ou à l'écran d'accueil si ton navigateur le propose. Le site ne reçoit pas de notifications push et ne propose pas les widgets Android : consulte l'onglet Matchs pour voir les votes ouverts.",
+              "Sur iPhone ou iPad (iOS 16.4 minimum), ouvre le site dans Safari puis utilise Partager → Sur l’écran d’accueil. Ouvre cette icône et active les notifications dans Profil. Sur les autres navigateurs compatibles, active-les directement dans Profil. Les widgets Android restent réservés à l’application mobile.",
               "Un gestionnaire de mots de passe peut remplir la connexion. Vérifie que l'identifiant enregistré correspond à l'adresse du site. Sur un ordinateur partagé, déconnecte-toi depuis Profil.",
             ], open: true)
           else
@@ -103,7 +103,7 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
           ]),
           section('4 · Cérémonies et distinctions', Icons.auto_awesome, [
             'Depuis Accueil → Cérémonies, choisis un prix au vote ouvert. Si tu fais partie des votants, classe les nominations proposées dans l’ordre et confirme ton bulletin. Un joueur ne peut figurer qu’une seule fois, même avec plusieurs actions nominées. Les joueurs déjà classés sont grisés ; la croix permet de libérer une place. Tu ne peux voter qu’une fois par tour.',
-            'Sur Android, les notifications annoncent le vote aux personnes qui doivent encore voter, puis les résultats aux votants et nominés actifs, sans révéler le gagnant. Touche la notification pour ouvrir la cérémonie. Le web ne reçoit pas de push.',
+            'Les notifications annoncent le vote aux personnes qui doivent encore voter, puis les résultats aux votants et nominés actifs, sans révéler le gagnant. Touche la notification pour ouvrir la cérémonie. Sur le web, active les notifications dans Profil ; sur iPhone, ouvre d’abord le site depuis son icône sur l’écran d’accueil.',
             'Les vidéos YouTube sont facultatives et ne se chargent qu’après ton autorisation. Après la clôture, lance la révélation du dernier au premier, avance à ton rythme ou active la lecture automatique. Les résultats peuvent aussi être consultés directement.',
             'Le premier reçoit un trophée de cérémonie distinct des badges. Une égalité parfaite attribue le trophée à chaque lauréat. Buteur et Passeur : bronze à 5, argent à 15, or à 25 par saison. Couteau suisse : 3 buts et 3 passes, puis 8 et 8, puis 15 et 15 ; les cartons ne comptent pas. Le meilleur palier valide est affiché.',
             'En feu demande 3 matchs joués consécutifs dans le top 3. Révélation compare la moyenne des matchs suivants aux 3 premiers (+40 %). Centurion demande 30 points et Podium Master 5 premières places dans la saison.',

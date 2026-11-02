@@ -165,3 +165,8 @@ Future<void> _openVoteFromNotification(Ref ref, String? matchId) async {
     debugPrint('Erreur navigation depuis notification : $e');
   }
 }
+
+final notificationOpenerProvider = Provider<Future<void> Function(String?)>(
+  (ref) =>
+      (target) => _openVoteFromNotification(ref, target),
+);

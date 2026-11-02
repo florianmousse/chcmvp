@@ -372,7 +372,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Utiliser le site web'), findsOneWidget);
       expect(
-        find.textContaining('Le site ne reçoit pas de notifications push'),
+        find.textContaining('Sur iPhone ou iPad (iOS 16.4 minimum)'),
         findsOneWidget,
       );
       await tester.scrollUntilVisible(

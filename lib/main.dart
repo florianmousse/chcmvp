@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/widgets/web_push_prompt.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -75,7 +76,7 @@ class HockeyClubApp extends ConsumerWidget {
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1600),
-          child: child!,
+          child: kIsWeb ? WebPushPrompt(child: child!) : child!,
         ),
       ),
       home: const _RootRouter(),
