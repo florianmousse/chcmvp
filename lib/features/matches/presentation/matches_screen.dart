@@ -195,13 +195,16 @@ class _MatchCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
+    final categoryColor = matchTypeColor(match.matchType);
+    final city = match.city?.trim();
+    final competition = match.competitionLabel;
+
     return Card(
+      margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: matchTypeColor(match.matchType).withValues(alpha: .6),
-        ),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
       ),
       child: InkWell(
         onTap: () => Navigator.of(context).push(
@@ -215,99 +218,196 @@ class _MatchCard extends ConsumerWidget {
             ),
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // The category stays explicit even when an event has its own name.
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              color: categoryColor.withValues(alpha: .10),
+              child: Row(
                 children: [
-                  Expanded(
-                    child: Text(
-                      match.label,
-                      style: theme.textTheme.titleMedium,
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: categoryColor.withValues(alpha: .14),
+                    child: Icon(
+                      switch (match.matchType) {
+                        MatchType.friendly => Icons.handshake_outlined,
+                        MatchType.playoff => Icons.emoji_events_outlined,
+                        MatchType.tournament => Icons.emoji_events_outlined,
+                        MatchType.championship => Icons.sports_hockey,
+                      },
+                      size: 19,
+                      color: categoryColor,
                     ),
                   ),
-                  _StatusChip(status: match.status),
-                ],
-              ),
-              MatchTypeChip(
-                type: match.matchType,
-                label: match.competitionLabel,
-              ),
-              if (match.city?.trim().isNotEmpty ?? false)
-                Text('Ville : ${match.city!.trim()}'),
-              if (match.isExhibition)
-                const Text('Podium du match · hors classement et badges'),
-              if (match.scoreLabel != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  match.scoreLabel!,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 4),
-              Text(
-                '${DateFormat('EEEE dd MMMM', 'fr_FR').format(match.date)} à ${match.time}',
-                style: theme.textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 12),
-              VoteParticipation(matchId: match.id),
-              if (match.status == MatchStatus.votingOpen &&
-                  match.manualCloseRequired)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    'Vote rouvert · clôture manuelle par un admin. Les votes déjà déposés sont conservés.',
-                  ),
-                ),
-              // Le logo se place à droite de ce qui suit - le classement des
-              // joueurs pour un match terminé, le bouton de vote pour un vote
-              // ouvert, ou rien pour un match à venir - jamais dans l'en-tête.
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: switch (match.status) {
-                      MatchStatus.votingOpen => _VoteAction(match: match),
-                      MatchStatus.votingClosed => _TopThree(match: match),
-                      MatchStatus.upcoming => const SizedBox.shrink(),
-                    },
-                  ),
-                  const SizedBox(width: 12),
-                  OpponentLogo(
-                    logoAssetPath: match.opponentLogoAsset,
-                    size: 56,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.history,
-                    size: 18,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Voir le bilan face à ${match.opponent}',
+                      competition == match.matchType.label
+                          ? match.matchType.label
+                          : '${match.matchType.label} - $competition',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
-                  Icon(Icons.chevron_right, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  _StatusChip(status: match.status),
                 ],
               ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) => Row(
+                      children: [
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: constraints.maxWidth * .4,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              OpponentLogo(
+                                logoAssetPath: match.opponentLogoAsset,
+                                size: 56,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                match.opponent,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Semantics(
+                            label: match.scoreLabel == null
+                                ? 'Score à venir'
+                                : 'Score : ${match.scoreLabel}',
+                            excludeSemantics: true,
+                            child: Text(
+                              match.scoreLabel ?? '- : -',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.displaySmall?.copyWith(
+                                fontSize: 40,
+                                fontWeight: FontWeight.w800,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _MatchDetail(
+                          icon: Icons.calendar_today_outlined,
+                          text:
+                              '${DateFormat('EEE d MMM yyyy', 'fr_FR').format(match.date)} · ${match.time}',
+                        ),
+                        const SizedBox(height: 10),
+                        _MatchDetail(
+                          icon: match.isHome
+                              ? Icons.home_outlined
+                              : Icons.location_on_outlined,
+                          text: [
+                            match.isHome ? 'À domicile' : "À l'extérieur",
+                            if (city != null && city.isNotEmpty) city,
+                          ].join(' · '),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (match.status != MatchStatus.upcoming) ...[
+                    const SizedBox(height: 16),
+                    if (match.status == MatchStatus.votingOpen)
+                      _VoteAction(match: match)
+                    else
+                      _TopThree(match: match),
+                    if (match.status == MatchStatus.votingOpen &&
+                        match.manualCloseRequired)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'Vote rouvert · clôture manuelle par un admin. Les votes déjà déposés sont conservés.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                  ],
+                  VoteParticipation(matchId: match.id),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.history,
+                        size: 18,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Historique des confrontations',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _MatchDetail extends StatelessWidget {
+  const _MatchDetail({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 10),
+        Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
+      ],
     );
   }
 }
@@ -330,7 +430,7 @@ class _VoteAction extends ConsumerWidget {
         }
         return FilledButton.icon(
           icon: const Icon(Icons.how_to_vote),
-          label: const Text('Voter pour les 3 meilleurs joueurs'),
+          label: const Text('Voter pour le top 3'),
           onPressed: () async {
             final membersList = await ref.read(
               membersListProvider(null).future,
