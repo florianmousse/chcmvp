@@ -82,6 +82,10 @@ class RecordingMatches extends Fake implements MatchesRepository {
     String? opponentId,
     bool isTest = false,
     MatchType matchType = MatchType.championship,
+    String? eventName,
+    String? city,
+    int? matchDay,
+    int? matchNumber,
   }) async {
     createdTest = isTest;
     present = presentPlayerIds;
@@ -109,6 +113,7 @@ void main() {
             isReviewerProvider.overrideWithValue(false),
             isAdminProvider.overrideWithValue(true),
             matchesRepositoryProvider.overrideWithValue(repo),
+            matchesListProvider.overrideWith((ref, team) => Stream.value([])),
             testMatchesListProvider.overrideWith(
               (ref) => Stream.value([closed]),
             ),
@@ -163,6 +168,7 @@ void main() {
             isReviewerProvider.overrideWithValue(false),
             isAdminProvider.overrideWithValue(true),
             matchesRepositoryProvider.overrideWithValue(repo),
+            matchesListProvider.overrideWith((ref, team) => Stream.value([])),
             testMatchesListProvider.overrideWith(
               (ref) => Stream.value([match]),
             ),
@@ -233,6 +239,7 @@ void main() {
         overrides: [
           isReviewerProvider.overrideWithValue(false),
           matchesRepositoryProvider.overrideWithValue(repo),
+          matchesListProvider.overrideWith((ref, team) => Stream.value([])),
           membersListProvider.overrideWith(
             (ref, team) => Stream.value(members),
           ),
@@ -290,6 +297,7 @@ void main() {
           overrides: [
             isReviewerProvider.overrideWithValue(true),
             matchesRepositoryProvider.overrideWithValue(repo),
+            matchesListProvider.overrideWith((ref, team) => Stream.value([])),
             membersListProvider.overrideWith(
               (ref, team) => Stream.value(members),
             ),

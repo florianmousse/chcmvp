@@ -102,7 +102,7 @@ export async function changeMemberEmail(uid: string, input: Record<string, unkno
     const fields = memberFields({ ...profile, ...input });
     if (!fields.email) throw new Error('Adresse e-mail requise.');
     if (typeof input.expectedEmail !== 'string' || input.expectedEmail.trim().toLowerCase() !== profile.email.toLowerCase()) {
-      throw new Error('L’adresse a été modifiée. Recharge la fiche du joueur.');
+      throw new Error('L\'adresse a été modifiée. Recharge la fiche du joueur.');
     }
     const account = await deps.auth.getUser(uid);
     if (account.email?.toLowerCase() !== profile.email.toLowerCase()) throw new Error('Les adresses du compte et du profil diffèrent. Vérifie le compte dans Firebase Authentication.');
@@ -111,7 +111,7 @@ export async function changeMemberEmail(uid: string, input: Record<string, unkno
     try { await doc.update(fields); }
     catch (error) {
       try { await deps.auth.updateUser(uid, { email: account.email, emailVerified: account.emailVerified }); }
-      catch { throw new Error('La synchronisation de l’adresse a échoué. Vérifie Firebase Authentication et le profil avant de réessayer.'); }
+      catch { throw new Error('La synchronisation de l\'adresse a échoué. Vérifie Firebase Authentication et le profil avant de réessayer.'); }
       throw error;
     }
     return { uid };

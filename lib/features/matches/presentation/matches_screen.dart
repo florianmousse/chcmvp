@@ -231,9 +231,14 @@ class _MatchCard extends ConsumerWidget {
                   _StatusChip(status: match.status),
                 ],
               ),
-              MatchTypeChip(type: match.matchType),
-              if (match.isFriendly)
-                const Text('Podium amical · hors classement et badges'),
+              MatchTypeChip(
+                type: match.matchType,
+                label: match.competitionLabel,
+              ),
+              if (match.city?.trim().isNotEmpty ?? false)
+                Text('Ville : ${match.city!.trim()}'),
+              if (match.isExhibition)
+                const Text('Podium du match · hors classement et badges'),
               if (match.scoreLabel != null) ...[
                 const SizedBox(height: 4),
                 Text(

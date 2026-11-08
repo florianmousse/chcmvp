@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 const ceremonyCategories = {
-  'ballon_or': 'Ballon d’or',
+  'ballon_or': 'Ballon d\'or',
   'golden_boy': 'Golden Boy',
   'puskas': 'Prix Puskás',
   'assist': 'Plus belle passe décisive',

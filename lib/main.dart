@@ -130,7 +130,7 @@ class _AuthenticatedGate extends ConsumerWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('Préparation de l’espace impossible : $e'),
+                          Text('Préparation de l\'espace impossible : $e'),
                           TextButton(
                             onPressed: () =>
                                 ref.invalidate(reviewSpaceReadyProvider),

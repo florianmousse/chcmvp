@@ -25,7 +25,10 @@ void main() {
       for (final type in MatchType.values) {
         final match = demoMatches.first.copyWith(matchType: type);
         expect(MatchModel.fromJson(jsonOf(match)).matchType, type);
-        expect(match.countsForStats, type != MatchType.friendly);
+        expect(
+          match.countsForStats,
+          type != MatchType.friendly && type != MatchType.tournament,
+        );
       }
       expect(
         demoMatches.first.copyWith(id: 'test:example').countsForStats,
@@ -33,6 +36,32 @@ void main() {
       );
     },
   );
+  test('match details round trip and competition labels', () {
+    final match = demoMatches.first.copyWith(
+      matchDay: 1,
+      matchNumber: 2,
+      city: 'Rennes',
+      eventName: 'Coupe du club',
+    );
+    final decoded = MatchModel.fromJson({
+      ...match.toJson(),
+      'pointsScale': match.pointsScale.toJson(),
+    });
+    expect(decoded.city, 'Rennes');
+    expect(decoded.competitionLabel, 'J1 - M2');
+    expect(decoded.copyWith(matchNumber: 1).competitionLabel, 'J1 - M1');
+    for (final type in [MatchType.friendly, MatchType.tournament]) {
+      expect(
+        decoded.copyWith(matchType: type).competitionLabel,
+        'Coupe du club',
+      );
+      expect(
+        decoded.copyWith(matchType: type, eventName: '  ').competitionLabel,
+        type.label,
+      );
+      expect(decoded.copyWith(matchType: type).countsForStats, false);
+    }
+  });
   test(
     'YouTube identifies the native application independently from its embed host',
     () {
@@ -59,42 +88,47 @@ void main() {
       expect(() => youtubeEmbedUri('../invalid'), throwsArgumentError);
     },
   );
-  testWidgets(
-    'friendly offers a ballot and displays its podium and turnout, but stays absent from home',
-    (tester) async {
-      var match = demoMatches.first.copyWith(
-        id: 'friendly',
-        opponent: 'Amical Rennes',
-        matchType: MatchType.friendly,
-        status: MatchStatus.votingOpen,
-      );
-      Future<void> mount(Widget page) async {
-        await tester.pumpWidget(
-          ProviderScope(
-            key: UniqueKey(),
-            overrides: [
-              ...demoOverrides,
-              matchesListProvider.overrideWith(
-                (ref, team) => Stream.value([match]),
-              ),
-            ],
-            child: MaterialApp(home: page),
-          ),
+  for (final type in [MatchType.friendly, MatchType.tournament]) {
+    testWidgets(
+      '${type.name} offers a ballot and displays its podium and turnout, but stays absent from home',
+      (tester) async {
+        var match = demoMatches.first.copyWith(
+          id: 'friendly',
+          opponent: 'Amical Rennes',
+          matchType: type,
+          eventName: "Rencontre du club",
+          city: "Rennes",
+          status: MatchStatus.votingOpen,
         );
-        await tester.pumpAndSettle();
-      }
+        Future<void> mount(Widget page) async {
+          await tester.pumpWidget(
+            ProviderScope(
+              key: UniqueKey(),
+              overrides: [
+                ...demoOverrides,
+                matchesListProvider.overrideWith(
+                  (ref, team) => Stream.value([match]),
+                ),
+              ],
+              child: MaterialApp(home: page),
+            ),
+          );
+          await tester.pumpAndSettle();
+        }
 
-      await mount(const MatchesScreen());
-      expect(find.text('Amical'), findsOneWidget);
-      expect(find.text('CHC vs Amical Rennes'), findsOneWidget);
-      expect(find.text('Voter pour les 3 meilleurs joueurs'), findsOneWidget);
-      match = match.copyWith(status: MatchStatus.votingClosed);
-      await mount(const MatchesScreen());
-      expect(find.textContaining('🥇 Camille'), findsOneWidget);
-      expect(find.textContaining('(3/4)'), findsOneWidget);
-      await mount(const HomeScreen());
-      expect(find.textContaining('Amical Rennes'), findsNothing);
-      expect(tester.takeException(), isNull);
-    },
-  );
+        await mount(const MatchesScreen());
+        expect(find.text('Rencontre du club'), findsOneWidget);
+        expect(find.text('Ville : Rennes'), findsOneWidget);
+        expect(find.text('CHC vs Amical Rennes'), findsOneWidget);
+        expect(find.text('Voter pour les 3 meilleurs joueurs'), findsOneWidget);
+        match = match.copyWith(status: MatchStatus.votingClosed);
+        await mount(const MatchesScreen());
+        expect(find.textContaining('🥇 Camille'), findsOneWidget);
+        expect(find.textContaining('(3/4)'), findsOneWidget);
+        await mount(const HomeScreen());
+        expect(find.textContaining('Amical Rennes'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 }

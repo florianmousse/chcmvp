@@ -88,6 +88,10 @@ class MatchesRepository {
     String? opponentId,
     bool isTest = false,
     MatchType matchType = MatchType.championship,
+    String? eventName,
+    String? city,
+    int? matchDay,
+    int? matchNumber,
   }) async {
     final target = isTest
         ? _firestore.collection('test_matches').doc('test:${_matches.doc().id}')
@@ -100,6 +104,10 @@ class MatchesRepository {
       'team': team,
       'status': 'upcoming',
       'matchType': matchType.name,
+      'eventName': eventName,
+      'city': city,
+      'matchDay': matchDay,
+      'matchNumber': matchNumber,
       'presentPlayerIds': presentPlayerIds,
       'votingOpensAt': null,
       'votingClosesAt': null,

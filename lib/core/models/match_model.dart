@@ -4,12 +4,13 @@ import 'package:chc_mvp/core/models/user_model.dart';
 part 'match_model.freezed.dart';
 part 'match_model.g.dart';
 
-enum MatchType { championship, friendly, playoff }
+enum MatchType { championship, friendly, tournament, playoff }
 
 extension MatchTypeLabel on MatchType {
   String get label => switch (this) {
     MatchType.championship => 'Championnat',
     MatchType.friendly => 'Amical',
+    MatchType.tournament => 'Tournoi',
     MatchType.playoff => 'Playoff',
   };
 }
@@ -45,6 +46,10 @@ class MatchModel with _$MatchModel {
 
     /// ID du document dans la collection `opponents`.
     String? opponentId,
+    String? eventName,
+    String? city,
+    int? matchDay,
+    int? matchNumber,
     String? reviewCreatedBy,
     required bool isHome,
     required String team,
@@ -76,7 +81,20 @@ class MatchModel with _$MatchModel {
   bool get isTest => id.startsWith('test:');
 
   bool get isFriendly => matchType == MatchType.friendly;
-  bool get countsForStats => !isTest && !isFriendly;
+  bool get isExhibition => isFriendly || matchType == MatchType.tournament;
+  bool get countsForStats => !isTest && !isExhibition;
+
+  String get competitionLabel {
+    if (isExhibition && (eventName?.trim().isNotEmpty ?? false)) {
+      return eventName!.trim();
+    }
+    if (matchType == MatchType.championship &&
+        matchDay != null &&
+        matchNumber != null) {
+      return 'J$matchDay - M$matchNumber';
+    }
+    return matchType.label;
+  }
 
   String get label => 'CHC vs $opponent';
 

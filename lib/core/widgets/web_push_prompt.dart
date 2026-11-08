@@ -145,7 +145,7 @@ class _WebPushPromptState extends ConsumerState<WebPushPrompt>
             !granted &&
             (!installed || (_supported && profile?.isActive == true)));
     final text = !installed
-        ? 'Sur iPhone ou iPad, ouvre CHC MVP dans Safari, puis Partager → Sur l’écran d’accueil. Ouvre ensuite cette icône pour activer les notifications.'
+        ? 'Sur iPhone ou iPad, ouvre CHC MVP dans Safari, puis Partager → Sur l\'écran d\'accueil. Ouvre ensuite cette icône pour activer les notifications.'
         : granted
         ? 'Les notifications sont activées sur cet appareil.'
         : denied

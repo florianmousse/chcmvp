@@ -27,6 +27,10 @@ _$MatchModelImpl _$$MatchModelImplFromJson(Map<String, dynamic> json) =>
       time: json['time'] as String,
       opponent: json['opponent'] as String,
       opponentId: json['opponentId'] as String?,
+      eventName: json['eventName'] as String?,
+      city: json['city'] as String?,
+      matchDay: (json['matchDay'] as num?)?.toInt(),
+      matchNumber: (json['matchNumber'] as num?)?.toInt(),
       reviewCreatedBy: json['reviewCreatedBy'] as String?,
       isHome: json['isHome'] as bool,
       team: json['team'] as String,
@@ -63,6 +67,10 @@ Map<String, dynamic> _$$MatchModelImplToJson(
   'time': instance.time,
   'opponent': instance.opponent,
   'opponentId': instance.opponentId,
+  'eventName': instance.eventName,
+  'city': instance.city,
+  'matchDay': instance.matchDay,
+  'matchNumber': instance.matchNumber,
   'reviewCreatedBy': instance.reviewCreatedBy,
   'isHome': instance.isHome,
   'team': instance.team,
@@ -88,5 +96,6 @@ const _$MatchStatusEnumMap = {
 const _$MatchTypeEnumMap = {
   MatchType.championship: 'championship',
   MatchType.friendly: 'friendly',
+  MatchType.tournament: 'tournament',
   MatchType.playoff: 'playoff',
 };

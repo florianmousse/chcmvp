@@ -134,7 +134,7 @@ async function sendToTokens(
   if (staleTokens.length > 0) {
     await pruneStaleTokens(staleTokens);
   }
-  if (deliveryFailed) throw new Error("Certaines notifications n’ont pas pu être remises à FCM.");
+  if (deliveryFailed) throw new Error("Certaines notifications n'ont pas pu être remises à FCM.");
 }
 
 async function pruneStaleTokens(staleTokens: string[]): Promise<void> {

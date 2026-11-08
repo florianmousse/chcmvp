@@ -34,7 +34,7 @@ export async function processCeremonyNotifications(db: Firestore, send: Sender) 
         }
         if (recipients.length) await send({
           title: event.status === 'open' ? `À toi de voter · ${event.title}` : `Révélation · ${event.title}`,
-          body: event.status === 'open' ? `Le vote ${job.action === 'reopen' ? 'est rouvert' : 'est ouvert'}. Prépare ton top ${event.topSize} !` : 'Les résultats sont disponibles. Découvre le classement et les trophées dans l’application.',
+          body: event.status === 'open' ? `Le vote ${job.action === 'reopen' ? 'est rouvert' : 'est ouvert'}. Prépare ton top ${event.topSize} !` : 'Les résultats sont disponibles. Découvre le classement et les trophées dans l\'application.',
           onlyUids: recipients,
           data: { type: event.status === 'open' ? 'ceremony_vote' : 'ceremony_results', ceremonyId: job.ceremonyId },
         });

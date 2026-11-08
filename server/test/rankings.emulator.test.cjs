@@ -33,13 +33,13 @@ async function seedMatch(id, date = '2026-10-12T12:00:00Z', voters = ['d', 'e'])
 }
 async function data(path) { return (await db.doc(path).get()).data(); }
 
-test('friendly podium and turnout survive rebuilds, but official totals, history and badges are removed', async () => {
+for (const matchType of ['friendly', 'tournament']) test(`${matchType} podium survives rebuilds without official totals, history or badges`, async () => {
   await db.doc('users/admin').set({role:'admin',isActive:true});
   const ref = await seedMatch('friendly');
   await ref.collection('playerStats').doc('a').set({goals:25,assists:25,greenCards:0,yellowCards:0,redCards:0});
   await rebuildRankingsAndStats(db);
   assert.equal((await data('player_stats/a')).totalPoints,5);
-  await ref.update({matchType:'friendly'});
+  await ref.update({matchType});
   await rebuildRankingsAndStats(db);
   const summary = await data('matches/friendly/results/summary');
   assert.equal(summary.totalVotes,2);

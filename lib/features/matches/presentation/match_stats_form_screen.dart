@@ -143,7 +143,7 @@ class _MatchStatsFormScreenState extends ConsumerState<MatchStatsFormScreen> {
                       const SizedBox(height: 24),
                       const Divider(),
                       const SizedBox(height: 8),
-                      if (!widget.match.isFriendly) ...[
+                      if (!widget.match.isExhibition) ...[
                         // ─── Stats par joueur ───
                         Text(
                           'Stats individuelles',
@@ -163,7 +163,7 @@ class _MatchStatsFormScreenState extends ConsumerState<MatchStatsFormScreen> {
                           );
                         }),
                       ],
-                      if (widget.match.isFriendly)
+                      if (widget.match.isExhibition)
                         const Text(
                           'Ce score ne compte pas dans les bilans du club.',
                         ),
@@ -205,7 +205,7 @@ class _MatchStatsFormScreenState extends ConsumerState<MatchStatsFormScreen> {
         );
       }).toList();
 
-      if (!widget.match.isFriendly) {
+      if (!widget.match.isExhibition) {
         await repo.saveAllPlayerMatchStats(widget.match.id, statsList);
       }
 

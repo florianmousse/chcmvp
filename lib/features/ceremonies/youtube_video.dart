@@ -77,7 +77,7 @@ class _YoutubeVideoState extends State<YoutubeVideo> {
               if (!opened && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Impossible d’ouvrir le navigateur intégré.'),
+                    content: Text('Impossible d\'ouvrir le navigateur intégré.'),
                   ),
                 );
               }
@@ -93,7 +93,7 @@ class _YoutubeVideoState extends State<YoutubeVideo> {
             );
             if (!opened && context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Impossible d’ouvrir YouTube.')),
+                const SnackBar(content: Text('Impossible d\'ouvrir YouTube.')),
               );
             }
           },

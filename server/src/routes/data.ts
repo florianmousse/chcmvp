@@ -10,7 +10,7 @@ import { canManageMatch } from '../reviewAccess';
 
 const fail = (status: number, message: string): never => { throw Object.assign(new Error(message), { status }); };
 const fieldsByKind: Record<string, string[]> = {
-  matches: ['date','time','opponent','opponentId','isHome','team','status','matchType','presentPlayerIds','votingOpensAt','votingClosesAt','reminderSentAt','pointsScale','allowSelfVote','opponentLogoAsset','scoreHome','scoreAway'],
+  matches: ['date','time','opponent','opponentId','isHome','team','status','matchType','eventName','city','matchDay','matchNumber','presentPlayerIds','votingOpensAt','votingClosesAt','reminderSentAt','pointsScale','allowSelfVote','opponentLogoAsset','scoreHome','scoreAway'],
   playerStats: ['goals','assists','greenCards','yellowCards','redCards'],
   users: ['firstName','lastName','team','photoUrl','jerseyNumber'],
   teams: ['name'], opponents: ['name','logoAsset'],
@@ -53,13 +53,21 @@ export async function writeData(uid: string, input: any, db = getFirestore()) {
         }
       }
       const next = { ...before, ...converted };
-      if (!['championship','friendly','playoff'].includes(next.matchType ?? 'championship') ||
+      if (!['championship','friendly','tournament','playoff'].includes(next.matchType ?? 'championship') ||
           !['upcoming','voting_open','voting_closed'].includes(next.status) ||
           !(next.date instanceof Timestamp) || typeof next.time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(next.time) ||
           typeof next.team !== 'string' || !next.team.trim() || typeof next.opponent !== 'string' || !next.opponent.trim() ||
           typeof next.isHome !== 'boolean' || typeof next.allowSelfVote !== 'boolean' ||
           !Array.isArray(next.presentPlayerIds) || next.presentPlayerIds.some((v: any) => typeof v !== 'string' || !v || v.includes('/')) ||
           !next.pointsScale || ['first','second','third'].some(k => !Number.isInteger(next.pointsScale[k]) || next.pointsScale[k] < 0)) fail(400, 'Match invalide.');
+      for (const key of ['eventName','city']) {
+        if (next[key] != null && (typeof next[key] !== 'string' || next[key].length > 120)) fail(400, 'Nom ou ville invalide.');
+        if (typeof converted[key] === 'string') converted[key] = converted[key].trim() || null;
+      }
+      for (const key of ['matchDay','matchNumber']) {
+        if (next[key] != null && (!Number.isSafeInteger(next[key]) || next[key] < 1)) fail(400, 'Numéro de journée ou de match invalide.');
+      }
+      if ((next.matchDay != null) !== (next.matchNumber != null)) fail(400, 'Renseignez la journée et le numéro du match ensemble.');
       if (operation === 'merge') fail(400, 'Mise à jour explicite requise.');
       if (operation === 'create' && next.status !== 'upcoming') fail(400, 'Le match doit être à venir.');
       if ((before?.status === 'voting_closed' && next.status !== 'voting_closed') ||

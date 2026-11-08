@@ -31,7 +31,7 @@ class _ReviewAccountScreenState extends ConsumerState<ReviewAccountScreen> {
             padding: const EdgeInsets.all(24),
             children: [
               const Text(
-                'Ce compte utilise toute l’application dans son propre espace de démonstration : matchs, cérémonies, votes, membres, équipes, classements et badges. Les notifications sont coupées et les invitations sont simulées. Aucun compte membre réel n’est créé.',
+                'Ce compte utilise toute l\'application dans son propre espace de démonstration : matchs, cérémonies, votes, membres, équipes, classements et badges. Les notifications sont coupées et les invitations sont simulées. Aucun compte membre réel n\'est créé.',
               ),
               const SizedBox(height: 16),
               if (_credentials == null) ...[
@@ -52,7 +52,7 @@ class _ReviewAccountScreenState extends ConsumerState<ReviewAccountScreen> {
                 ),
               ] else ...[
                 const Text(
-                  'Compte créé. Conserve ces identifiants pour la rubrique « Accès à l’application » de Google Play Console. '
+                  'Compte créé. Conserve ces identifiants pour la rubrique « Accès à l\'application » de Google Play Console. '
                   'Le mot de passe ne sera plus affiché après avoir quitté cet écran.',
                 ),
                 const SizedBox(height: 12),

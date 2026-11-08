@@ -1,3 +1,4 @@
+import 'package:chc_mvp/features/matches/domain/championship_numbering.dart';
 import 'package:chc_mvp/core/widgets/responsive_content.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +34,47 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
   String? _selectedLogoAsset;
   late bool _isTest = widget.existing?.isTest ?? false;
   bool _saving = false;
+  bool _numbersEdited = false;
+  late final _eventName = TextEditingController(
+    text: widget.existing?.eventName,
+  );
+  late final _city = TextEditingController(text: widget.existing?.city);
+  late final _matchDay = TextEditingController(
+    text: widget.existing?.matchDay?.toString(),
+  );
+  late final _matchNumber = TextEditingController(
+    text: widget.existing?.matchNumber?.toString(),
+  );
+
+  bool get _isExhibition =>
+      _matchType == MatchType.friendly || _matchType == MatchType.tournament;
+  String? _optionalText(TextEditingController controller) =>
+      controller.text.trim().isEmpty ? null : controller.text.trim();
+  int? _number(TextEditingController controller) =>
+      _matchType == MatchType.championship
+      ? int.tryParse(controller.text.trim())
+      : null;
+  String? _validateNumber(String? value) {
+    if ((value ?? '').trim().isEmpty) {
+      return _matchDay.text.trim().isEmpty && _matchNumber.text.trim().isEmpty
+          ? null
+          : 'Renseigne les deux numéros';
+    }
+    final number = int.tryParse(value!.trim());
+    return number == null || number < 1
+        ? 'Entier supérieur à zéro requis'
+        : null;
+  }
+
+  @override
+  void dispose() {
+    _eventName.dispose();
+    _city.dispose();
+    _matchDay.dispose();
+    _matchNumber.dispose();
+    super.dispose();
+  }
+
   late MatchType _matchType =
       widget.existing?.matchType ?? MatchType.championship;
 
@@ -45,6 +87,10 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
     _selectedTeam = widget.existing?.team;
     _selectedLogoAsset = widget.existing?.opponentLogoAsset;
     _selectedOpponentId = widget.existing?.opponentId;
+    if (!_isEditing) {
+      _matchDay.text = '1';
+      _matchNumber.text = '1';
+    }
   }
 
   static TimeOfDay? _parseTime(String? value) {
@@ -64,6 +110,29 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
   Widget build(BuildContext context) {
     final membersAsync = ref.watch(membersListProvider(null));
     final teamsAsync = ref.watch(teamsListProvider);
+    if (!_isEditing &&
+        !_numbersEdited &&
+        _matchType == MatchType.championship &&
+        _selectedTeam != null) {
+      final matches = _isTest
+          ? ref.watch(testMatchesListProvider)
+          : ref.watch(matchesListProvider(null));
+      matches.whenData((values) {
+        final suggestion = suggestChampionshipNumbers(
+          matches: values,
+          team: _selectedTeam!,
+          date: _date,
+          isTest: _isTest,
+        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _numbersEdited || _saving) return;
+          final day = suggestion.day.toString();
+          final number = suggestion.match.toString();
+          if (_matchDay.text != day) _matchDay.text = day;
+          if (_matchNumber.text != number) _matchNumber.text = number;
+        });
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -88,7 +157,55 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
                     ? null
                     : (v) => setState(() => _matchType = v!),
               ),
-              if (_matchType == MatchType.friendly)
+              if (_isExhibition)
+                TextFormField(
+                  controller: _eventName,
+                  maxLength: 120,
+                  decoration: InputDecoration(
+                    labelText: _matchType == MatchType.tournament
+                        ? 'Nom du tournoi (facultatif)'
+                        : 'Occasion du match amical (facultatif)',
+                  ),
+                ),
+              if (_matchType == MatchType.championship)
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _matchDay,
+                        onChanged: (_) => setState(() => _numbersEdited = true),
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Journée',
+                          helperText: 'Proposition modifiable',
+                          hintText: 'Ex. 1',
+                        ),
+                        validator: _validateNumber,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _matchNumber,
+                        onChanged: (_) => setState(() => _numbersEdited = true),
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Match dans la saison',
+                          hintText: 'Ex. 2',
+                        ),
+                        validator: _validateNumber,
+                      ),
+                    ),
+                  ],
+                ),
+              TextFormField(
+                controller: _city,
+                maxLength: 120,
+                decoration: const InputDecoration(
+                  labelText: 'Ville (facultatif)',
+                ),
+              ),
+              if (_isExhibition)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
                   child: Text(
@@ -100,7 +217,7 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Match de test'),
                 subtitle: const Text(
-                  'Réservé à l’administration, avec simulation des votes et sans effet sur les classements. Laissez désactivé pour tester le parcours habituel dans votre espace de validation.',
+                  'Réservé à l\'administration, avec simulation des votes et sans effet sur les classements. Laissez désactivé pour tester le parcours habituel dans votre espace de validation.',
                 ),
                 value: _isTest,
                 onChanged: _isEditing
@@ -376,12 +493,20 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
           'presentPlayerIds': _presentPlayerIds.toList(),
           'allowSelfVote': _allowSelfVote,
           'matchType': _matchType.name,
+          'eventName': _isExhibition ? _optionalText(_eventName) : null,
+          'city': _optionalText(_city),
+          'matchDay': _number(_matchDay),
+          'matchNumber': _number(_matchNumber),
           'opponentLogoAsset': _selectedLogoAsset,
         });
       } else {
         await repo.createMatch(
           isTest: _isTest,
           matchType: _matchType,
+          eventName: _isExhibition ? _optionalText(_eventName) : null,
+          city: _optionalText(_city),
+          matchDay: _number(_matchDay),
+          matchNumber: _number(_matchNumber),
           date: _date,
           time: _formattedTime,
           opponent: opponentName,

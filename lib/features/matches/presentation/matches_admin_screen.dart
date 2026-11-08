@@ -81,7 +81,9 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
           ),
           if (match.reviewCreatedBy != null)
             const Text('Équipe de validation · aucune notification'),
-          MatchTypeChip(type: match.matchType),
+          MatchTypeChip(type: match.matchType, label: match.competitionLabel),
+          if (match.city?.trim().isNotEmpty ?? false)
+            Text('Ville : ${match.city!.trim()}'),
           VoteParticipation(matchId: match.id),
         ],
       ),
@@ -158,7 +160,7 @@ class _MatchTileState extends ConsumerState<_MatchTile> {
           PopupMenuItem(
             value: 'stats',
             child: Text(
-              match.isFriendly ? 'Saisir le score' : 'Stats du match',
+              match.isExhibition ? 'Saisir le score' : 'Stats du match',
             ),
           ),
           if (match.status == MatchStatus.upcoming)

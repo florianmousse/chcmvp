@@ -125,7 +125,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
           padding: const EdgeInsets.all(16),
           child: SelectableText(
             'Auteur : ${data['actorUid']}\nSource : ${data['source']}\n'
-            '${data.containsKey('before') ? 'Avant :\n${pretty(readable(data['before']))}\nAprès :\n${pretty(readable(data['after']))}' : 'Action serveur — aucun contenu sensible conservé.'}',
+            '${data.containsKey('before') ? 'Avant :\n${pretty(readable(data['before']))}\nAprès :\n${pretty(readable(data['after']))}' : 'Action serveur - aucun contenu sensible conservé.'}',
           ),
         ),
       ],

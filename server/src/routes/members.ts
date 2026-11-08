@@ -13,7 +13,7 @@ membersRouter.use(requireAuth, requireAdmin, auditRequest);
 
 // Credentials are returned only once, never emailed or written to the audit log.
 membersRouter.post('/review-account', async (req, res) => {
-  if (getReviewSpaceUid()) return res.status(403).json({ error: 'La création d’accès réels est réservée à l’administration du club.' });
+  if (getReviewSpaceUid()) return res.status(403).json({ error: 'La création d\'accès réels est réservée à l\'administration du club.' });
   res.setHeader('Cache-Control', 'no-store');
   const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Adresse e-mail invalide.' });
@@ -31,7 +31,7 @@ membersRouter.post('/review-account', async (req, res) => {
     } catch (error) { await getAuth().deleteUser(doc.id); throw error; }
     res.json({ uid: doc.id, email, password });
   } catch (error: any) { res.status(400).json({ error: error.code === 'auth/email-already-exists'
-    ? 'Cette adresse possède déjà un compte. Aucun compte existant n’a été modifié.' : 'Création impossible. Vérifiez les comptes avant de réessayer.' }); }
+    ? 'Cette adresse possède déjà un compte. Aucun compte existant n\'a été modifié.' : 'Création impossible. Vérifiez les comptes avant de réessayer.' }); }
 });
 
 // Empty email creates a player profile without a login account.
@@ -51,7 +51,7 @@ membersRouter.post("/:uid/email", async (req, res) => {
 });
 
 membersRouter.post("/:uid/active", async (req, res) => {
-  if (getReviewSpaceUid() && req.params.uid === (req as AuthedRequest).uid) return res.status(400).json({ error: "Gardez votre accès à l’espace de validation actif." });
+  if (getReviewSpaceUid() && req.params.uid === (req as AuthedRequest).uid) return res.status(400).json({ error: "Gardez votre accès à l'espace de validation actif." });
   const { isActive } = req.body;
   if (typeof isActive !== "boolean") return res.status(400).json({ error: "isActive (booléen) requis." });
   try {
@@ -61,7 +61,7 @@ membersRouter.post("/:uid/active", async (req, res) => {
 });
 
 membersRouter.post("/:uid/role", async (req, res) => {
-  if (getReviewSpaceUid() && req.params.uid === (req as AuthedRequest).uid) return res.status(400).json({ error: "Votre compte conserve l’accès à la gestion de cet espace." });
+  if (getReviewSpaceUid() && req.params.uid === (req as AuthedRequest).uid) return res.status(400).json({ error: "Votre compte conserve l'accès à la gestion de cet espace." });
   const { role } = req.body;
   if (role !== "admin" && role !== "member") return res.status(400).json({ error: "role doit être 'admin' ou 'member'." });
   try {

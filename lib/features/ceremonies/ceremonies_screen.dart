@@ -191,7 +191,7 @@ class _CeremonyDetailScreenState extends ConsumerState<CeremonyDetailScreen> {
                     '${event.voteCount} / ${event.voterIds.length} personnes ont voté',
                   ),
                   Text(
-                    'Top ${event.topSize} : ${List.generate(event.topSize, (i) => '${event.topSize - i}').join(' / ')} points. En cas d’égalité : nombre de premières places, puis suivantes. Égalité parfaite : rang et trophée partagés.',
+                    'Top ${event.topSize} : ${List.generate(event.topSize, (i) => '${event.topSize - i}').join(' / ')} points. En cas d\'égalité : nombre de premières places, puis suivantes. Égalité parfaite : rang et trophée partagés.',
                   ),
                   Text(
                     event.allowSelfVote
@@ -225,7 +225,7 @@ class _CeremonyDetailScreenState extends ConsumerState<CeremonyDetailScreen> {
                                 : () => _action(
                                     'reopen',
                                     {},
-                                    'Rouvrir les votes ? Les bulletins valides sont conservés. Les résultats et trophées seront retirés jusqu’à la prochaine clôture. Les anciens bulletins contenant plusieurs fois le même joueur devront être refaits.',
+                                    'Rouvrir les votes ? Les bulletins valides sont conservés. Les résultats et trophées seront retirés jusqu\'à la prochaine clôture. Les anciens bulletins contenant plusieurs fois le même joueur devront être refaits.',
                                   ),
                             icon: const Icon(Icons.refresh),
                             label: const Text('Rouvrir le vote'),

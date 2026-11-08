@@ -91,7 +91,7 @@ class Badge {
       label: 'Cap des 50',
       emoji: '⭐',
       description:
-          '50 points de classement cumulés sur l’ensemble des saisons.',
+          '50 points de classement cumulés sur l\'ensemble des saisons.',
     ),
     BadgeType.mvpSaison: Badge(
       type: BadgeType.mvpSaison,

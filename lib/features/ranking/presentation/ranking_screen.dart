@@ -284,7 +284,7 @@ class _RankingList extends ConsumerWidget {
                 1 + entries.where((e) => e.points > entry.points).length;
             return ListTile(
               leading: CircleAvatar(
-                child: Text(entry.points > 0 ? '$rank' : '—'),
+                child: Text(entry.points > 0 ? '$rank' : '-'),
               ),
               title: Wrap(
                 spacing: 8,

@@ -3,13 +3,15 @@ import 'package:chc_mvp/core/models/match_model.dart';
 
 Color matchTypeColor(MatchType type) => switch (type) {
   MatchType.championship => const Color(0xFF3865B0),
+  MatchType.tournament => const Color(0xFF8E5AA9),
   MatchType.friendly => const Color(0xFF757575),
   MatchType.playoff => const Color(0xFF2DAA36),
 };
 
 class MatchTypeChip extends StatelessWidget {
-  const MatchTypeChip({super.key, required this.type});
+  const MatchTypeChip({super.key, required this.type, this.label});
   final MatchType type;
+  final String? label;
   @override
   Widget build(BuildContext context) => Chip(
     avatar: Icon(
@@ -23,6 +25,6 @@ class MatchTypeChip extends StatelessWidget {
     ),
     backgroundColor: matchTypeColor(type).withValues(alpha: .13),
     side: BorderSide(color: matchTypeColor(type).withValues(alpha: .6)),
-    label: Text(type.label),
+    label: Text(label ?? type.label),
   );
 }

@@ -176,7 +176,7 @@ class _CeremonyFormState extends ConsumerState<CeremonyForm> {
                       padding: const EdgeInsets.all(20),
                       children: [
                         const Text(
-                          'Prépare le prix, puis ouvre le vote depuis sa fiche. Pour plusieurs prix lors d’une soirée, crée une cérémonie par prix avec le même nom d’édition.',
+                          'Prépare le prix, puis ouvre le vote depuis sa fiche. Pour plusieurs prix lors d\'une soirée, crée une cérémonie par prix avec le même nom d\'édition.',
                         ),
                         const SizedBox(height: 16),
                         TextField(
@@ -184,7 +184,7 @@ class _CeremonyFormState extends ConsumerState<CeremonyForm> {
                           maxLength: 120,
                           decoration: const InputDecoration(
                             labelText:
-                                'Titre et édition (ex. Ballon d’or 2026)',
+                                'Titre et édition (ex. Ballon d\'or 2026)',
                           ),
                         ),
                         DropdownButtonFormField<String>(
@@ -223,7 +223,7 @@ class _CeremonyFormState extends ConsumerState<CeremonyForm> {
                           onChanged: (v) => setState(() => _self = v),
                         ),
                         const Text(
-                          'Le barème attribue N points au premier choix, puis N−1, jusqu’à 1. Le trophée revient au lauréat ; les égalités parfaites sont partagées. Golden Boy : sélectionne toi-même les joueurs éligibles.',
+                          'Le barème attribue N points au premier choix, puis N−1, jusqu\'à 1. Le trophée revient au lauréat ; les égalités parfaites sont partagées. Golden Boy : sélectionne toi-même les joueurs éligibles.',
                         ),
                         const SizedBox(height: 20),
                         Text(
@@ -231,7 +231,7 @@ class _CeremonyFormState extends ConsumerState<CeremonyForm> {
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const Text(
-                          'Les joueurs sans compte peuvent être nommés. Pour un but ou une passe, ajoute un lien YouTube public ou non répertorié autorisant l’intégration. Plusieurs actions d’un joueur peuvent être nommées.',
+                          'Les joueurs sans compte peuvent être nommés. Pour un but ou une passe, ajoute un lien YouTube public ou non répertorié autorisant l\'intégration. Plusieurs actions d\'un joueur peuvent être nommées.',
                         ),
                         for (var i = 0; i < _nominees.length; i++)
                           ListTile(

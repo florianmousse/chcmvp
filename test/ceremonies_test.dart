@@ -25,7 +25,7 @@ Ceremony event({
   bool tie = false,
   bool duplicatePlayer = false,
 }) => Ceremony.fromMap('award', {
-  'title': 'Ballon d’or 2026',
+  'title': 'Ballon d\'or 2026',
   'category': 'ballon_or',
   'status': status,
   'topSize': 5,
@@ -112,7 +112,7 @@ void main() {
     );
     expect(
       Badge.allDefinitions[BadgeType.capDes50]!.description,
-      contains('l’ensemble des saisons'),
+      contains('l\'ensemble des saisons'),
     );
     final swiss = Badge.forEarned(BadgeType.couteauSuisse, [
       'couteauSuisse',
@@ -317,7 +317,7 @@ void main() {
           MaterialPageRoute(builder: (_) => CeremonyForm(ceremony: event())),
         );
     await tester.pumpAndSettle();
-    expect(find.text('Ballon d’or 2026'), findsOneWidget);
+    expect(find.text('Ballon d\'or 2026'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Enregistrer les modifications'),
       300,
@@ -362,7 +362,7 @@ void main() {
       expect(find.text('Alex Martin'), findsOneWidget);
       expect(find.text('Camille Martin'), findsOneWidget);
       expect(find.text('0 pts'), findsNWidgets(2));
-      expect(find.byTooltip('Trophée : Ballon d’or 2026'), findsOneWidget);
+      expect(find.byTooltip('Trophée : Ballon d\'or 2026'), findsOneWidget);
       expect(find.byTooltip('Badge : Buteur · Or'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },

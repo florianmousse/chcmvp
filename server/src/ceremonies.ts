@@ -55,19 +55,19 @@ export function validateCeremony(body: any): Omit<Ceremony, 'status' | 'voteCoun
   const allowSelfVote = body.allowSelfVote === true;
   if (new Set(nominees.map(n => n.uid)).size < body.topSize ||
       voterIds.some(uid => new Set(nominees.filter(n => allowSelfVote || n.uid !== uid).map(n => n.uid)).size < body.topSize)) {
-    throw new CeremonyError('Chaque votant doit disposer d’assez de joueurs différents pour remplir le top.');
+    throw new CeremonyError('Chaque votant doit disposer d\'assez de joueurs différents pour remplir le top.');
   }
   return { title, category: body.category, topSize: body.topSize, allowSelfVote, nominees, voterIds };
 }
 export function validateBallot(event: Ceremony, uid: string, choices: unknown): string[] {
-  if (event.status !== 'open') throw new CeremonyError('Le vote n’est pas ouvert.', 409);
+  if (event.status !== 'open') throw new CeremonyError('Le vote n\'est pas ouvert.', 409);
   if (!event.voterIds.includes(uid)) throw new CeremonyError('Tu ne fais pas partie des votants de cette cérémonie.', 403);
   if (!Array.isArray(choices) || choices.length !== event.topSize || new Set(choices).size !== choices.length ||
       choices.some(choice => !event.nominees.some(n => n.id === choice && (event.allowSelfVote || n.uid !== uid)))) {
     throw new CeremonyError(`Classe ${event.topSize} nominations différentes et autorisées.`);
   }
   if (new Set(choices.map(choice => event.nominees.find(n => n.id === choice)!.uid)).size !== choices.length) {
-    throw new CeremonyError('Un joueur ne peut figurer qu’une seule fois dans ton classement, même avec plusieurs actions nominées.');
+    throw new CeremonyError('Un joueur ne peut figurer qu\'une seule fois dans ton classement, même avec plusieurs actions nominées.');
   }
   return choices;
 }
@@ -105,7 +105,7 @@ async function prepareCeremony(body: unknown, db: Firestore) {
   const docs = await db.getAll(...uids.map(uid => db.doc(`users/${uid}`)));
   const users = new Map(docs.map(doc => [doc.id, doc.data()]));
   if (uids.some(uid => users.get(uid)?.isActive !== true || users.get(uid)?.role === 'reviewer')) throw new CeremonyError('Un joueur sélectionné est absent ou inactif.');
-  if (event.voterIds.some(uid => !users.get(uid)?.email)) throw new CeremonyError('Les votants doivent disposer d’un compte avec e-mail.');
+  if (event.voterIds.some(uid => !users.get(uid)?.email)) throw new CeremonyError('Les votants doivent disposer d\'un compte avec e-mail.');
   for (const n of event.nominees) {
     const user = users.get(n.uid)!;
     n.name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();

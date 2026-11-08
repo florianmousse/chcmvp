@@ -51,7 +51,7 @@ export async function requireAuth(
     req.uid = decoded.uid;
     await enterRequestSpace(req, res, next);
   } catch (error: any) {
-    res.status(error.status ?? 401).json({ error: error.status ? error.message : "Connexion ou préparation de l’espace impossible. Réessayez." });
+    res.status(error.status ?? 401).json({ error: error.status ? error.message : "Connexion ou préparation de l'espace impossible. Réessayez." });
   }
 }
 

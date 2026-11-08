@@ -118,7 +118,7 @@ export async function rebuildRankingsUnlocked(firestore = getFirestore()): Promi
 
     // Friendly podiums belong to their match only: never accumulate them in
     // official history, rankings, game statistics or badge inputs.
-    if (match.matchType === "friendly") continue;
+    if (["friendly", "tournament"].includes(match.matchType)) continue;
     matchesProcessed++;
     const matchDate: Timestamp = match.date;
     const gameStats = await matchDoc.ref.collection("playerStats").get();
