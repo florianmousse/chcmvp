@@ -100,3 +100,7 @@ Dans **Administration → Matchs**, choisis **Championnat** (bleu), **Amical** (
 Dans **Administration → Membres → Modifier**, une adresse e-mail existante peut être remplacée. L'adresse doit être libre. Le même compte est conservé, avec son mot de passe, ses votes, statistiques, badges et trophées. Il faudra utiliser la nouvelle adresse pour la prochaine connexion par e-mail. Pour un joueur sans compte, utilise toujours **Enregistrer et inviter**.
 
 Contact du club : chcmvp.chateaubourghockeyclub@gmail.com.
+
+## Filtrer les matchs par saison
+
+Dans **Matchs**, le sélecteur **Saison** propose uniquement les saisons contenant des matchs (septembre à août). La saison courante est sélectionnée si elle contient des matchs, sinon la plus récente disponible. La liste des saisons est obtenue en lisant un seul match par saison, sans charger tout l'historique. Seuls les matchs de la saison sélectionnée sont chargés par cet écran. Les votes ouverts apparaissent en premier, du match le plus récent au plus ancien. Les autres matchs suivent, également par date décroissante, sans séparation entre matchs à venir et terminés. Les filtres de statut restent disponibles. Ce fonctionnement est identique sur Android, sur le web et dans les espaces de review.

@@ -1,4 +1,5 @@
 import 'package:chc_mvp/core/services/paged_firestore.dart';
+import 'package:chc_mvp/features/matches/domain/match_list.dart';
 import 'package:chc_mvp/core/services/scoped_firestore.dart';
 import 'package:chc_mvp/core/services/audited_data.dart';
 import 'package:chc_mvp/core/models/match_reference.dart';
@@ -58,6 +59,56 @@ class MatchesRepository {
     'secondPlaceUid': secondPlaceUid,
     'thirdPlaceUid': thirdPlaceUid,
   });
+
+  /// Un seul document lu par saison, en sautant directement à la précédente.
+  Future<List<int>> loadMatchSeasons() async {
+    final years = <int>[];
+    DateTime? before;
+    while (true) {
+      Query<Map<String, dynamic>> query = _matches;
+      if (before != null) {
+        query = query.where('date', isLessThan: Timestamp.fromDate(before));
+      }
+      final snapshot = await query
+          .orderBy('date', descending: true)
+          .limit(1)
+          .get()
+          .timeout(const Duration(seconds: 15));
+      if (snapshot.docs.isEmpty) return years;
+      final date = snapshot.docs.single.data()['date'];
+      if (date is! Timestamp) {
+        throw const FormatException('Date de match invalide.');
+      }
+      final instant = date.toDate().toUtc();
+      final year = instant.isBefore(matchSeasonStart(instant.year))
+          ? instant.year - 1
+          : instant.year;
+      years.add(year);
+      before = matchSeasonStart(year);
+    }
+  }
+
+  /// Ne charge que les matchs de la saison demandée, dans le même espace.
+  Stream<List<MatchModel>> watchSeasonMatches(int startYear) => _matches
+      .where(
+        'date',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(matchSeasonStart(startYear)),
+      )
+      .where(
+        'date',
+        isLessThan: Timestamp.fromDate(matchSeasonStart(startYear + 1)),
+      )
+      .orderBy('date', descending: true)
+      .snapshots()
+      .map(
+        (snapshot) => snapshot.docs
+            .map(
+              (doc) => MatchModel.fromJson(
+                sanitizeFirestoreJson({...doc.data(), 'id': doc.id}),
+              ),
+            )
+            .toList(),
+      );
 
   Stream<List<MatchModel>> watchMatches({String? team}) {
     Query<Map<String, dynamic>> query = _matches;

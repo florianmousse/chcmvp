@@ -15,6 +15,17 @@ final matchesRepositoryProvider = Provider<MatchesRepository>((ref) {
   );
 });
 
+final matchSeasonsProvider = FutureProvider.autoDispose<List<int>>((ref) {
+  ref.watch(authStateProvider);
+  return ref.watch(matchesRepositoryProvider).loadMatchSeasons();
+});
+
+final seasonMatchesProvider = StreamProvider.autoDispose
+    .family<List<MatchModel>, int>((ref, year) {
+      ref.watch(authStateProvider);
+      return ref.watch(matchesRepositoryProvider).watchSeasonMatches(year);
+    });
+
 final matchesListProvider = StreamProvider.family<List<MatchModel>, String?>((
   ref,
   team,

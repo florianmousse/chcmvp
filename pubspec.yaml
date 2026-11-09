@@ -1,7 +1,7 @@
 name: chc_mvp
 description: Application de vote des meilleurs joueurs pour club de hockey sur gazon.
 publish_to: "none"
-version: 1.5.3+15
+version: 1.5.4+16
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
