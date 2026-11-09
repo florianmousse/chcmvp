@@ -10,7 +10,7 @@ Outils : Flutter **3.44.9** (version vérifiée), Node.js **24 LTS** recommandé
 flutter pub get --enforce-lockfile
 node scripts/generate-legal.mjs
 flutter test test/web_compatibility_test.dart
-flutter build web --release --no-web-resources-cdn
+flutter build web --release --no-web-resources-cdn --dart-define=SERVER_BASE_URL=https://api.example.invalid
 node scripts/preview-web.mjs
 ```
 
@@ -19,10 +19,10 @@ Ouvrir **http://127.0.0.1:8085**. `Ctrl+C` arrête l'aperçu. Le serveur ne rend
 Pour développer avec rechargement :
 
 ```powershell
-flutter run -d chrome --web-port 8085
+flutter run -d chrome --web-port 8085 --dart-define=SERVER_BASE_URL=https://api.example.invalid
 ```
 
-Le site reprend les onglets Accueil, Matchs, Classements, Profil et Administration. Sur grand écran, la navigation devient latérale. Les fenêtres de vote, les statistiques et les formulaires d'administration utilisent les composants existants. Les notifications push et les widgets Android restent propres à l'application mobile ; le site ne demande pas d'autorisation de notification. L'ajout à l'écran d'accueil dépend du navigateur. Une connexion Internet reste nécessaire.
+Le site reprend les onglets Accueil, Matchs, Classements, Profil et Administration. Sur grand écran, la navigation devient latérale. Les fenêtres de vote, les statistiques et les formulaires d'administration utilisent les composants existants. Les notifications web sont facultatives et nécessitent la configuration décrite dans [WEB_PUSH.md](WEB_PUSH.md). Les widgets Android restent propres à l'application mobile. L'ajout à l'écran d'accueil dépend du navigateur. Une connexion Internet reste nécessaire.
 
 ## 2. Préparer le dépôt Git
 
@@ -47,11 +47,11 @@ Les réglages sont déjà déclarés dans `vercel.json` :
 
 Le script télécharge la version verrouillée de Flutter, résout les dépendances selon `pubspec.lock`, génère les pages légales puis compile le site. Les fichiers du moteur CanvasKit sont servis depuis le site. Le premier build peut être plus long en raison du téléchargement du SDK.
 
-Variable facultative dans **Settings → Environment Variables** :
+Variable obligatoire pour SERVER_BASE_URL dans **Settings → Environment Variables** :
 
 | Variable          | Valeur par défaut             | Utilisation                                                    |
 | ----------------- | ----------------------------- | -------------------------------------------------------------- |
-| `SERVER_BASE_URL` | `https://chc-mvp.duckdns.org` | URL HTTPS du VPS, sans slash final                             |
+| `SERVER_BASE_URL` | Aucune | URL HTTPS du VPS, sans slash final                             |
 | `FLUTTER_VERSION` | `3.44.9`                      | Ne changer qu'après avoir vérifié la nouvelle version en local |
 
 Ces valeurs sont utilisées pendant la compilation. Après modification, lancer un **Redeploy**. Ne pas ajouter de compte de service Firebase, mot de passe SMTP ou clé privée aux variables de ce frontend.
@@ -93,6 +93,8 @@ sudo systemctl restart hockey-club-server
 Le nom du service et le chemin doivent correspondre à ton installation ; voir `deploy/DEPLOY_ORACLE_VPS.md`. Le middleware CORS répond aux requêtes `OPTIONS` et autorise les en-têtes `Authorization` et `Content-Type`. Nginx doit laisser passer ces requêtes jusqu'à Express. Ne pas ajouter en parallèle un en-tête CORS `*` dans Nginx.
 
 Les routes protégées conservent la validation du jeton Firebase et du rôle administrateur. Les applications natives, qui n'envoient pas d'en-tête `Origin`, continuent de fonctionner. Sans cette étape, les lectures Firebase peuvent fonctionner mais la réinitialisation du mot de passe et certaines actions administrateur échoueront dans le navigateur.
+
+Voir [la migration des profils et la configuration obligatoire](AUDIT_CORRECTIONS.md) avant de publier les clients et les nouvelles permissions.
 
 ## 6. Déployer les règles de vote
 
@@ -144,7 +146,7 @@ Pour modifier ces données, éditer `web/legal-config.json`. Pour modifier les t
 - Confirmer l'hébergement réel du VPS, le prestataire SMTP, les régions Firebase et les garanties de transfert contractuelles ; ajuster la politique si l'installation diffère du dépôt.
 - Définir les durées opérationnelles de conservation des bulletins, historiques, journaux et sauvegardes. Le logiciel existant n'exécute pas de purge automatique ; le club doit organiser les traitements manuels ou ajouter une procédure avant de promettre un délai de suppression automatisé.
 - Valider la base juridique selon l'adhésion au club et les modalités applicables aux mineurs. Les textes décrivent le service observé ; ils ne remplacent pas la validation des pratiques réelles du club.
-- Le modèle actuel autorise les membres actifs à lire les fiches membres, y compris les e-mails. Si le club veut réserver ces coordonnées aux administrateurs, séparer les données privées dans un document protégé : les règles Firestore ne masquent pas certains champs d'un document lisible.
+- Les nouvelles règles réservent les fiches complètes à leur propriétaire et aux administrateurs actifs. L'annuaire des autres membres passe par une projection serveur sans e-mails ni tokens. Appliquer la transition décrite dans [AUDIT_CORRECTIONS.md](AUDIT_CORRECTIONS.md) avant de fermer les anciennes lectures directes.
 - La suppression d'un membre dans le backend actuel retire le compte Auth et la fiche `users`, mais ne nettoie pas automatiquement tous les votes, badges, historiques, statistiques et références dans les matchs. La page publique propose donc une **demande par e-mail**, sans annoncer une suppression immédiate ou une anonymisation déjà implémentée. Définir et exécuter la procédure complète lors d'une demande.
 - Les anciennes pages légales servies par le VPS sont distinctes de celles du web. Les harmoniser ou les rediriger vers le domaine final, notamment si leurs URL sont utilisées dans le Play Store. Elles contiennent des coordonnées et promesses de suppression différentes.
 

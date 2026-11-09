@@ -149,10 +149,12 @@ class _VoteScreenState extends ConsumerState<VoteScreen> {
         Navigator.of(context).pop();
       }
     } on VoteValidationException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Erreur : $e')));

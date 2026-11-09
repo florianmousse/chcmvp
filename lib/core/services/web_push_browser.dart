@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/services/push_token_store.dart';
 import 'dart:js_interop';
 import 'package:flutter/foundation.dart';
 import 'package:web/web.dart' as web;
@@ -73,9 +74,7 @@ class WebPush {
       if (token == null) throw StateError('Abonnement indisponible');
       if (FirebaseAuth.instance.currentUser?.uid != uid) return;
       if (_token == token && _uid == uid) return;
-      await FirebaseFirestore.instance.collection('users').doc(uid).update({
-        'fcmTokens': FieldValue.arrayUnion([token]),
-      });
+      await storePushToken(FirebaseFirestore.instance, uid, token);
       _token = token;
       _uid = uid;
       subscribedUid.value = uid;
@@ -100,9 +99,12 @@ class WebPush {
     subscribedUid.value = null;
     if (uid != null && token != null) {
       try {
-        await FirebaseFirestore.instance.collection('users').doc(uid).update({
-          'fcmTokens': FieldValue.arrayRemove([token]),
-        });
+        await storePushToken(
+          FirebaseFirestore.instance,
+          uid,
+          token,
+          remove: true,
+        );
       } catch (_) {
         /* The invalidated token is pruned by the sender. */
       }

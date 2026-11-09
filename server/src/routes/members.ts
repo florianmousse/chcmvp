@@ -1,3 +1,4 @@
+import { memberDirectory } from '../memberDirectory';
 import { getReviewSpaceUid } from "../database";
 import { getFirestore } from "../database";
 import { auditRequest } from '../audit';
@@ -9,7 +10,19 @@ import { requireAuth, requireAdmin, AuthedRequest } from "../middleware/auth";
 import { createMember, changeMemberEmail, inviteExistingMember, setMemberActive, deleteMember, memberDependencies } from "../members";
 
 export const membersRouter = Router();
-membersRouter.use(requireAuth, requireAdmin, auditRequest);
+membersRouter.use(requireAuth);
+membersRouter.get('/directory', async (req: AuthedRequest, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!req.uid) { res.status(401).json({ error: 'Connexion requise.' }); return; }
+  try { res.json(await memberDirectory(req.uid, req.query.cursor, getFirestore())); }
+  catch (error: unknown) {
+    const status = error instanceof Error && 'status' in error ? error.status : 500;
+    res.status(status === 400 || status === 403 ? status : 500).json({
+      error: status === 400 ? 'Page invalide.' : status === 403 ? 'Accès refusé.' : 'Annuaire indisponible.',
+    });
+  }
+});
+membersRouter.use(requireAdmin, auditRequest);
 
 // Credentials are returned only once, never emailed or written to the audit log.
 membersRouter.post('/review-account', async (req, res) => {

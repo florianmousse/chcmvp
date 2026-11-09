@@ -39,49 +39,25 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           LayoutBuilder(
             builder: (context, constraints) {
               final items = <Widget>[
-                if (ref.watch(reviewSpaceUidProvider) == null)
-                  _AdminTile(
-                    icon: Icons.science,
-                    title: 'Espaces de validation',
-                    subtitle: 'Consulter les données créées par les testeurs',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ReviewSpacesScreen(),
-                      ),
-                    ),
-                  ),
                 _AdminTile(
-                  icon: Icons.history,
-                  title: 'Journal des actions',
-                  subtitle: 'Auteurs, dates et modifications',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AuditLogScreen()),
+                  icon: Icons.sports_hockey_outlined,
+                  title: 'Matchs',
+                  subtitle: 'Créer, modifier, ouvrir/fermer le vote',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const MatchesAdminScreen(),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                if (ref.watch(reviewSpaceUidProvider) == null)
-                  _AdminTile(
-                    icon: Icons.science_outlined,
-                    title: 'Compte de validation',
-                    subtitle: 'Créer un accès isolé pour les tests',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ReviewAccountScreen(),
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 12),
                 _AdminTile(
-                  icon: Icons.emoji_events_outlined,
-                  title: 'Cérémonies',
-                  subtitle:
-                      'Préparer les prix, ouvrir les votes et révéler les lauréats',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CeremoniesScreen()),
+                  icon: Icons.sports_outlined,
+                  title: 'Adversaires',
+                  subtitle: 'Gérer les équipes adverses',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const OpponentsAdminScreen(),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -98,17 +74,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 ),
                 const SizedBox(height: 12),
                 _AdminTile(
-                  icon: Icons.sports_hockey_outlined,
-                  title: 'Matchs',
-                  subtitle: 'Créer, modifier, ouvrir/fermer le vote',
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const MatchesAdminScreen(),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _AdminTile(
                   icon: Icons.shield_outlined,
                   title: 'Équipes',
                   subtitle: 'Créer, renommer, supprimer',
@@ -118,16 +83,53 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 ),
                 const SizedBox(height: 12),
                 _AdminTile(
-                  icon: Icons.sports_outlined,
-                  title: 'Adversaires',
-                  subtitle: 'Gérer les équipes adverses',
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const OpponentsAdminScreen(),
-                    ),
+                  icon: Icons.emoji_events_outlined,
+                  title: 'Cérémonies',
+                  subtitle:
+                      'Préparer les prix, ouvrir les votes et révéler les lauréats',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CeremoniesScreen()),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
+                _AdminTile(
+                  icon: Icons.history,
+                  title: 'Journal des actions',
+                  subtitle: 'Auteurs, dates et modifications',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AuditLogScreen()),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (ref.watch(reviewSpaceUidProvider) == null)
+                  _AdminTile(
+                    icon: Icons.science,
+                    title: 'Espaces de validation',
+                    subtitle: 'Consulter les données créées par les testeurs',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ReviewSpacesScreen(),
+                      ),
+                    ),
+                  ),
+                if (ref.watch(reviewSpaceUidProvider) == null)
+                  const SizedBox(height: 12),
+                if (ref.watch(reviewSpaceUidProvider) == null)
+                  _AdminTile(
+                    icon: Icons.science_outlined,
+                    title: 'Compte de validation',
+                    subtitle: 'Créer un accès isolé pour les tests',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ReviewAccountScreen(),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 12),
                 _RankingsMaintenanceCard(
                   rebuilding: _rebuilding,
                   lastResultMessage: _lastResultMessage,

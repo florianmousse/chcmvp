@@ -87,7 +87,7 @@ de choisir, doit être unique sur tout le Play Store).
 ## 4. Construire le fichier à envoyer
 
 ```powershell
-flutter build appbundle --release
+flutter build appbundle --release --dart-define=SERVER_BASE_URL=https://api.example.invalid
 ```
 
 Génère `build/app/outputs/bundle/release/app-release.aab` - c'est ce fichier `.aab`
@@ -146,7 +146,9 @@ le `+` (le "version name", ex: `1.0.1`) est ce que voient les utilisateurs, à t
 faire évoluer selon tes conventions. Puis :
 
 ```powershell
-flutter build appbundle --release
+flutter build appbundle --release --dart-define=SERVER_BASE_URL=https://api.example.invalid
 ```
 
 et renvoie le nouveau `.aab` dans Play Console > Production > Créer une release.
+
+Voir [AUDIT_CORRECTIONS.md](AUDIT_CORRECTIONS.md) : remplacer le domaine fictif par le backend cible et coordonner la mise en service des nouvelles permissions avec les clients Android/web.

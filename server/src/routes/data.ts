@@ -1,3 +1,4 @@
+import { validateProfilePatch } from '../profileValidation';
 import { getFirestore } from "../database";
 import { reviewDatabaseOwner } from "../database";
 import { initializeVotingWindow } from "../votingLifecycle";
@@ -81,10 +82,7 @@ export async function writeData(uid: string, input: any, db = getFirestore()) {
     }
     if (kind === 'playerStats' && Object.values(data).some(v => !Number.isInteger(v) || (v as number) < 0)) fail(400, 'Statistiques invalides.');
     if (['teams','opponents'].includes(kind) && operation !== 'delete' && (typeof data.name !== 'string' || !data.name.trim())) fail(400, 'Nom requis.');
-    if (kind === 'users') {
-      for (const key of ['firstName','lastName','team']) if (key in data && (typeof data[key] !== 'string' || !data[key].trim())) fail(400, 'Profil invalide.');
-      if (data.jerseyNumber != null && (!Number.isInteger(data.jerseyNumber) || data.jerseyNumber < 0)) fail(400, 'Numéro invalide.');
-    }
+    if (kind === 'users') validateProfilePatch(data);
     // Keep only editable fields in snapshots; profile tokens and emails are never copied.
     const clean = (value: any) => value ? Object.fromEntries(Object.entries(value).filter(([k]) => fieldsByKind[kind].includes(k))) : null;
     auditChange(tx, db, uid, actor, operation, path, clean(before), operation === 'delete' ? null : clean({ ...before, ...converted }));

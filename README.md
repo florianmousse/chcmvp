@@ -56,14 +56,15 @@ flutter pub get
 # 4. Générer les fichiers freezed/json/riverpod
 dart run build_runner build --delete-conflicting-outputs
 
-# 5. Déployer les règles de sécurité Firestore
-firebase deploy --only firestore:rules
+# 5. Préparer les permissions Firestore
+# Suivre deploy/AUDIT_CORRECTIONS.md avant tout déploiement des règles.
 
+# Voir deploy/AUDIT_CORRECTIONS.md pour la migration des lectures de profils.
 # 6. Configurer l'adresse du serveur
-# → Modifier lib/core/config/server_config.dart avec l'URL de ton VPS
+# → Remplacer le domaine fictif ci-dessous par l'URL du backend cible.
 
 # 7. Lancer l'app
-flutter run
+flutter run --dart-define=SERVER_BASE_URL=https://api.example.invalid
 ```
 
 ---

@@ -40,7 +40,7 @@ class ParticipationServer extends Fake implements ServerClient {
   Future<Map<String, dynamic>> get(String path) async {
     calls++;
     expect(path, '/matches/live/participation');
-    if (fail) throw ServerException('Indisponible');
+    if (fail) throw const ServerException('Indisponible');
     return data;
   }
 
@@ -52,7 +52,7 @@ class ParticipationServer extends Fake implements ServerClient {
     expect(path, '/matches/live/votes/a/reset');
     expect(body, {'voteVersion': '1:2'});
     resets.add(path);
-    if (failReset) throw ServerException('Le vote vient de se terminer.');
+    if (failReset) throw const ServerException('Le vote vient de se terminer.');
     data = {
       ...data,
       'votedCount': 0,

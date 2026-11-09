@@ -45,8 +45,9 @@ final messagingSyncProvider = Provider<void>((ref) {
     if (disposed ||
         scheduled ||
         pendingTarget == null ||
-        ref.read(currentUserProfileProvider).value?.isActive != true)
+        ref.read(currentUserProfileProvider).value?.isActive != true) {
       return;
+    }
     scheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       scheduled = false;

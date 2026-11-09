@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/services/paged_firestore.dart';
 import 'package:chc_mvp/core/services/scoped_firestore.dart';
 import 'package:chc_mvp/core/services/audited_data.dart';
 import 'package:chc_mvp/core/models/match_reference.dart';
@@ -32,9 +33,9 @@ class MatchesRepository {
     if (reviewerUid != null) {
       query = query.where('reviewCreatedBy', isEqualTo: reviewerUid);
     }
-    return query.snapshots().map(
+    return watchPagedQuery(query).map(
       (snap) =>
-          snap.docs
+          snap
               .map(
                 (d) => MatchModel.fromJson(
                   sanitizeFirestoreJson({...d.data(), 'id': d.id}),
@@ -59,19 +60,18 @@ class MatchesRepository {
   });
 
   Stream<List<MatchModel>> watchMatches({String? team}) {
-    Query<Map<String, dynamic>> query = _matches.orderBy(
-      'date',
-      descending: true,
-    );
+    Query<Map<String, dynamic>> query = _matches;
     if (team != null) query = query.where('team', isEqualTo: team);
-    return query.snapshots().map(
-      (snap) => snap.docs
-          .map(
-            (d) => MatchModel.fromJson(
-              sanitizeFirestoreJson({...d.data(), 'id': d.id}),
-            ),
-          )
-          .toList(),
+    return watchPagedQuery(query).map(
+      (snap) =>
+          snap
+              .map(
+                (d) => MatchModel.fromJson(
+                  sanitizeFirestoreJson({...d.data(), 'id': d.id}),
+                ),
+              )
+              .toList()
+            ..sort((a, b) => b.date.compareTo(a.date)),
     );
   }
 

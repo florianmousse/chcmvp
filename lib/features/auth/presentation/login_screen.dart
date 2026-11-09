@@ -209,8 +209,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await ref.read(authServiceProvider).signInWithGoogle();
     } on AuthFailure catch (e) {
-      if (e.message == 'cancelled')
+      if (e.message == 'cancelled') {
         return; // l'utilisateur a fermé la fenêtre, rien à afficher
+      }
       if (mounted) _showError(e.message);
     } finally {
       if (mounted) setState(() => _submittingGoogle = false);

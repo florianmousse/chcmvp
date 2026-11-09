@@ -253,3 +253,28 @@ test('Espace complet : lectures privées, vote normal et aucune sortie vers le c
   assert.equal((await access(`${root}/matches/play`,uid)).status,403);
   assert.equal((await access(`${root}/matches/play`,'admin')).status,200);
 });
+
+
+test('Private member documents are only readable by owner or active admin', async () => {
+  await seed('users/private-profile', { role:'member', isActive:true, email:'synthetic@example.invalid', fcmTokens:['synthetic-token'] });
+  for (const uid of ['private-profile','admin']) assert.equal((await access('users/private-profile',uid)).status,200);
+  for (const uid of ['voter','inactive','inactive-admin','unknown']) assert.equal((await access('users/private-profile',uid)).status,403);
+  assert.equal((await fetch(`${base}/users/private-profile`)).status,403);
+});
+
+test('Token maintenance validates ownership, type, length and number of devices', async () => {
+  await seed('users/token-owner', { role:'member', isActive:true, fcmTokens:[] });
+  const update = (tokens, uid = 'token-owner') => fetch(`${base}/users/token-owner?updateMask.fieldPaths=fcmTokens`, {
+    method:'PATCH', headers:{Authorization:`Bearer ${token(uid)}`,'Content-Type':'application/json'},
+    body:JSON.stringify({fields:fields({fcmTokens:tokens})}),
+  });
+  for (const tokens of [[], ['synthetic-a'], Array.from({length:10},(_,i)=>`synthetic-${i}`)]) {
+    const result = await update(tokens); assert.equal(result.status,200,await result.text());
+  }
+  for (const tokens of [null, {}, 'string', [123], [''], ['white space'], ['a'.repeat(4097)], ['same','same'], Array.from({length:11},(_,i)=>`t-${i}`)]) {
+    const result = await update(tokens); assert.equal(result.status,403,await result.text());
+  }
+  for (const uid of ['voter','admin','inactive','unknown']) assert.equal((await update(['synthetic'],uid)).status,403);
+  await seed('users/token-owner', { role:'member', isActive:false, fcmTokens:[] });
+  assert.equal((await update(['synthetic'])).status,403);
+});

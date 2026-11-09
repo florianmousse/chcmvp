@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/services/push_token_store.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:chc_mvp/core/services/local_notifications_service.dart';
@@ -66,14 +67,10 @@ class MessagingService {
   Future<void> clearTokenForUser(String uid) async {
     final token = await _messaging.getToken();
     if (token == null) return;
-    await _firestore.collection('users').doc(uid).update({
-      'fcmTokens': FieldValue.arrayRemove([token]),
-    });
+    await storePushToken(_firestore, uid, token, remove: true);
   }
 
   Future<void> _saveToken(String uid, String token) async {
-    await _firestore.collection('users').doc(uid).update({
-      'fcmTokens': FieldValue.arrayUnion([token]),
-    });
+    await storePushToken(_firestore, uid, token);
   }
 }

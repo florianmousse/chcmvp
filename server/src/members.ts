@@ -5,6 +5,7 @@ import { randomBytes } from "crypto";
 import { Auth, getAuth } from "firebase-admin/auth";
 import { Firestore } from "firebase-admin/firestore";
 import { sendInviteEmail } from "./mailer";
+import { validateProfilePatch } from './profileValidation';
 
 export interface MemberDependencies {
   auth: Auth;
@@ -23,9 +24,8 @@ export function memberFields(input: Record<string, unknown>) {
   if (!firstName || !lastName || !team) throw new Error("Prénom, nom et équipe requis.");
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Adresse e-mail invalide.");
   const jerseyNumber = input.jerseyNumber ?? null;
-  if (jerseyNumber !== null && (!Number.isInteger(jerseyNumber) || (jerseyNumber as number) < 0)) {
-    throw new Error("Numéro de maillot invalide.");
-  }
+  validateProfilePatch({ firstName, lastName, team, jerseyNumber });
+  if (email.length > 254) throw new Error('Adresse e-mail invalide.');
   return { email, firstName, lastName, team, jerseyNumber };
 }
 

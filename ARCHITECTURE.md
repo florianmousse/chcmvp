@@ -152,13 +152,15 @@ Les badges non gagnés apparaissent verrouillés (opacité réduite + « ? ») d
 
 ## 7. Règles de sécurité Firestore
 
-- Un membre ne peut lire/écrire que son propre profil ; seul un admin peut modifier `role`,
-  `isActive`, ou le profil d'un autre membre.
+- Les fiches complètes sont lisibles par leur propriétaire et les admins actifs. L'annuaire
+  des autres membres passe par une projection serveur. Les mises à jour de profil passent
+  par l'API ; seuls les tokens FCM restent modifiables directement par leur propriétaire.
 - Un membre ne peut créer un vote que pour `voterUid == request.auth.uid`, seulement si
   le statut du match est `voting_open`, et seulement une fois.
 - Personne ne peut lire les votes individuels des autres - seul le serveur (admin SDK) y
   accède pour calculer `results/summary`.
-- Seul un admin peut écrire dans `matches/`, `users/*.role`, `settings/`.
+- Les écritures de gestion passent par le serveur et ses contrôles de rôle. Les règles
+  refusent les écritures directes dans `matches`, `settings` et les rôles des utilisateurs.
 
 ## 8. Backend VPS - remplace Cloud Functions
 
@@ -192,3 +194,7 @@ selon `authStateProvider` + `currentUserProfileProvider`. La coquille utilise un
 | Admin web                      | Second client Flutter Web (ou React) ciblant les mêmes collections Firestore         |
 | Réinitialisation de saison     | Fonction admin qui archive `rankings_cache` courant puis le vide                     |
 | Photos de profil               | À remplacer par un service gratuit (Cloudinary) - Firebase Storage exige aussi Blaze |
+
+## Confidentialité des profils et configuration du serveur
+
+Les profils complets sont lisibles uniquement par leur propriétaire et les administrateurs actifs. Les autres membres utilisent la projection paginée `/members/directory`, sans e-mails ni tokens. `SERVER_BASE_URL` doit être fourni explicitement au build. Voir [la procédure de transition](deploy/AUDIT_CORRECTIONS.md) pour les anciennes versions et les espaces de validation.

@@ -1,3 +1,4 @@
+import 'package:chc_mvp/core/config/server_config.dart';
 import 'package:chc_mvp/core/widgets/web_push_prompt.dart';
 import 'package:chc_mvp/core/widgets/review_mode_banner.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -27,6 +28,25 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    configuredServerUri(serverBaseUrl);
+  } on StateError catch (error) {
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(error.message.toString()),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    return;
+  }
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('fr_FR');
   if (!kIsWeb) await HomeWidgetService.initialize();

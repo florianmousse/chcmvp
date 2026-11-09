@@ -1,8 +1,20 @@
-/// Adresse du serveur déployé sur le VPS (voir deploy/DEPLOY_ORACLE_VPS.md).
-/// ⚠️ Remplace par l'URL de TON serveur si tu forks ce projet.
-/// Utilise un sous-domaine DuckDNS gratuit plutôt qu'une IP brute -
-/// nécessaire pour que le certificat HTTPS (Let's Encrypt) soit valide.
-const String serverBaseUrl = String.fromEnvironment(
-  'SERVER_BASE_URL',
-  defaultValue: 'https://chc-mvp.duckdns.org',
-);
+/// Required for every build; never fall back to the club production backend.
+const String serverBaseUrl = String.fromEnvironment('SERVER_BASE_URL');
+
+Uri configuredServerUri(String value) {
+  final uri = Uri.tryParse(value);
+  final local =
+      uri != null && ['localhost', '127.0.0.1', '::1'].contains(uri.host);
+  if (uri == null ||
+      uri.host.isEmpty ||
+      uri.userInfo.isNotEmpty ||
+      uri.hasQuery ||
+      uri.hasFragment ||
+      (uri.path.isNotEmpty && uri.path != '/') ||
+      (uri.scheme != 'https' && !(local && uri.scheme == 'http'))) {
+    throw StateError(
+      'SERVER_BASE_URL manquant ou invalide. Configurez une URL HTTPS (HTTP uniquement en local).',
+    );
+  }
+  return uri;
+}

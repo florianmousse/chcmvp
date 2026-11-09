@@ -38,7 +38,11 @@ void main() {
         loss,
         draw,
         win.copyWith(id: 'test:demo', scoreHome: 99),
-        win.copyWith(id: 'friendly', matchType: MatchType.friendly, scoreHome: 99),
+        win.copyWith(
+          id: 'friendly',
+          matchType: MatchType.friendly,
+          scoreHome: 99,
+        ),
         win.copyWith(id: 'future', status: MatchStatus.upcoming),
         win.copyWith(id: 'missing', scoreAway: null),
         win.copyWith(id: 'negative', scoreHome: -1),
@@ -80,7 +84,7 @@ void main() {
     tester,
   ) async {
     await mount(tester, const MatchesScreen());
-    await tester.tap(find.text('CHC vs Rennes'));
+    await tester.tap(find.text('Rennes'));
     await tester.pumpAndSettle();
     expect(find.byType(OpponentDetailScreen), findsOneWidget);
     expect(find.text('Historique des confrontations'), findsOneWidget);
@@ -91,7 +95,7 @@ void main() {
     tester,
   ) async {
     await mount(tester, const MatchesScreen());
-    await tester.tap(find.text('Voter pour les 3 meilleurs joueurs'));
+    await tester.tap(find.text('Voter pour le top 3'));
     await tester.pumpAndSettle();
     expect(find.byType(VoteScreen), findsOneWidget);
     expect(find.byType(OpponentDetailScreen), findsNothing);

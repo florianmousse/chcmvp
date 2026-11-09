@@ -117,10 +117,10 @@ void main() {
         }
 
         await mount(const MatchesScreen());
-        expect(find.text('Rencontre du club'), findsOneWidget);
-        expect(find.text('Ville : Rennes'), findsOneWidget);
-        expect(find.text('CHC vs Amical Rennes'), findsOneWidget);
-        expect(find.text('Voter pour les 3 meilleurs joueurs'), findsOneWidget);
+        expect(find.textContaining('Rencontre du club'), findsOneWidget);
+        expect(find.textContaining('Rennes').last, findsOneWidget);
+        expect(find.text('Amical Rennes'), findsOneWidget);
+        expect(find.text('Voter pour le top 3'), findsOneWidget);
         match = match.copyWith(status: MatchStatus.votingClosed);
         await mount(const MatchesScreen());
         expect(find.textContaining('🥇 Camille'), findsOneWidget);

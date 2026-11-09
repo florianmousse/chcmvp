@@ -88,16 +88,35 @@ service cloud.firestore {
       }
     }
 
+    // A member may register at most ten devices; validate every list element.
+    function validTokenAt(tokens, i) {
+      return tokens.size() <= i || (tokens[i] is string && tokens[i].size() > 0 &&
+        tokens[i].size() <= 4096 && tokens[i].matches('^[^\\s]+$'));
+    }
+    function validTokens(tokens) {
+      return tokens is list && tokens.size() <= 10 && tokens.toSet().size() == tokens.size() &&
+        validTokenAt(tokens, 0) &&
+        validTokenAt(tokens, 1) &&
+        validTokenAt(tokens, 2) &&
+        validTokenAt(tokens, 3) &&
+        validTokenAt(tokens, 4) &&
+        validTokenAt(tokens, 5) &&
+        validTokenAt(tokens, 6) &&
+        validTokenAt(tokens, 7) &&
+        validTokenAt(tokens, 8) &&
+        validTokenAt(tokens, 9);
+    }
+
     // ---------- users ----------
     match /users/{userId} {
       // Lire sa propre fiche permet aussi d'afficher proprement un compte
       // désactivé ou sans fiche, sans ouvrir les autres données du club.
-      allow read: if isClubMember() ||
+      allow read: if isAdmin() ||
         (isSignedIn() && request.auth.uid == userId);
       allow create, delete: if false;
       // Only push-token maintenance remains direct. Profile edits use the audited API.
       allow update: if isActiveMember() && request.auth.uid == userId &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens']);
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens']) && validTokens(request.resource.data.fcmTokens);
     }
 
     // ---------- settings (barème, durée de vote, délai de rappel...) ----------

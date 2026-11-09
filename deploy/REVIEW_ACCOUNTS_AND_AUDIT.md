@@ -56,3 +56,7 @@ flutter test --no-pub
 ```
 
 Les tests d'intégration exigent un émulateur loopback et utilisent exclusivement des projets `demo-*`.
+
+## Transition des lectures de profils
+
+La route `/members/directory` utilise aussi la base isolée du testeur. Voir [AUDIT_CORRECTIONS.md](AUDIT_CORRECTIONS.md) pour les permissions, les nouveaux tests et la mise en service coordonnée Android/web.

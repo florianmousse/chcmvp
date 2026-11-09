@@ -44,7 +44,8 @@ class VoteParticipation extends ConsumerWidget {
   final String matchId;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(canManageMatchesProvider) || !TickerMode.of(context)) {
+    if (!ref.watch(canManageMatchesProvider) ||
+        !TickerMode.valuesOf(context).enabled) {
       return const SizedBox.shrink();
     }
     final value = ref.watch(voteParticipationProvider(matchId));

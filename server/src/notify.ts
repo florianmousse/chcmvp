@@ -1,7 +1,7 @@
 import { getReviewSpaceUid } from "./database";
 import { getFirestore } from "./database";
 import { suppressMatchNotification } from "./reviewAccess";
-import { notificationTokens } from "./notificationAudience";
+import { notificationTokens, validNotificationTokens } from "./notificationAudience";
 
 import { getMessaging } from "firebase-admin/messaging";
 import {
@@ -93,7 +93,7 @@ export async function notifyAdmins({
 
   const tokens: string[] = [];
   adminsSnap.forEach((doc) => {
-    const fcmTokens: string[] = doc.data().fcmTokens ?? [];
+    const fcmTokens = validNotificationTokens(doc.data().fcmTokens);
     tokens.push(...fcmTokens);
   });
 
@@ -146,7 +146,7 @@ async function pruneStaleTokens(staleTokens: string[]): Promise<void> {
     .get();
   const batch = firestore.batch();
   usersSnap.forEach((doc) => {
-    const current: string[] = doc.data().fcmTokens ?? [];
+    const current = validNotificationTokens(doc.data().fcmTokens);
     const cleaned = current.filter((t) => !staleTokens.includes(t));
     batch.update(doc.ref, { fcmTokens: cleaned });
   });

@@ -28,6 +28,8 @@ getFirestore().collection('ceremony_notifications').where('done', '==', false)
 cron.schedule('*/10 * * * *', () => { void deliverCeremonies(); });
 
 const app = express();
+// Only the local reverse proxy may supply the client address.
+app.set('trust proxy', 'loopback');
 app.use(
   createCorsMiddleware((process.env.WEB_ALLOWED_ORIGINS ?? "").split(",")),
 );
