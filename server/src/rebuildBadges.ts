@@ -105,7 +105,7 @@ export function calculateBadges(matches: BadgeMatch[], now = new Date()): Map<st
   return earned;
 }
 
-export async function rebuildBadges(matches: BadgeMatch[], db = getFirestore(), now = new Date()): Promise<number> {
+export async function rebuildBadges(matches: BadgeMatch[], db = getFirestore(), now = new Date(), silent = false): Promise<number> {
   const computed = calculateBadges(matches, now);
   const previous = await db.collection("userBadges").get();
   const existing = new Map(previous.docs.map((d) => [d.id, d.data().earned ?? {}]));
@@ -116,7 +116,7 @@ export async function rebuildBadges(matches: BadgeMatch[], db = getFirestore(), 
     const before = existing.get(uid) ?? {};
     if (Object.keys(before).length === types.size && [...types].every((type) => before[type])) continue;
     const earned = Object.fromEntries([...types].map((type) => [type, before[type] ?? Timestamp.fromDate(now)]));
-    batch.set(db.doc(`userBadges/${uid}`), { earned, updatedAt: Timestamp.fromDate(now) });
+    batch.set(db.doc(`userBadges/${uid}`), { earned, updatedAt: Timestamp.fromDate(now), silent });
     pending++; changed++;
     if (pending >= 400) { await batch.commit(); batch = db.batch(); pending = 0; }
   }

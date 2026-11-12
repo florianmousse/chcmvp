@@ -1,3 +1,5 @@
+import { reconcileMatches } from './matchRecovery';
+import { logEvent } from './logger';
 import { getFirestore } from "./database";
 import { votingOpenedNotification, votingClosedNotification } from "./matchNotifications";
 
@@ -5,33 +7,24 @@ import { initializeVotingWindow } from "./votingLifecycle";
 import { getClubSettings, notifyMembers } from "./notify";
 import { rebuildRankingsAndStats, recomputeClosedMatch } from "./rebuildRankings";
 
-/**
- * Sur Cloud Functions, `onDocumentUpdated` donne directement before/after.
- * Sur un onSnapshot classique, il faut reconstituer soi-même la transition
- * en gardant le dernier statut connu de chaque match en mémoire. C'est
- * possible ici parce que ce process tourne en continu sur le VPS (contrairement
- * à une fonction serverless qui redémarre à froid) - le cache reste cohérent
- * tant que le serveur ne redémarre pas. Au redémarrage, le premier instantané
- * sert uniquement à initialiser le cache (voir `isFirstSnapshot`), pour ne pas
- * redéclencher des notifications sur des matchs déjà traités auparavant.
- */
+/** Notifications only follow live transitions. Durable fingerprints and the
+ * periodic reconciliation repair data independently, without replaying alerts. */
 export function startMatchListeners(): void {
   const firestore = getFirestore();
+  void getClubSettings().then(settings => reconcileMatches(settings.voteDurationHours, firestore))
+    .catch(() => logEvent('error', 'vote.demarrage', 'Réconciliation indisponible ; reprise au prochain cycle.'));
   for (const collection of ["matches", "test_matches"]) {
     const lastKnownStatus = new Map<string, string>();
-    const lastKnownType = new Map<string, string>();
     let isFirstSnapshot = true;
 
     firestore.collection(collection).onSnapshot(
       (snapshot) => {
         if (isFirstSnapshot) {
           snapshot.forEach((doc) =>
-            (lastKnownType.set(doc.id, doc.data().matchType ?? "championship"), lastKnownStatus.set(doc.id, doc.data().status)),
+            lastKnownStatus.set(doc.id, doc.data().status),
           );
           isFirstSnapshot = false;
-          console.log(
-            `Listener matchs initialisé (${snapshot.size} matchs en cache).`,
-          );
+          logEvent('info', 'vote.ecoute', 'Écoute des matchs prête.', { collection, count: snapshot.size });
           return;
         }
 
@@ -39,7 +32,7 @@ export function startMatchListeners(): void {
           if (change.type === "removed") {
             lastKnownStatus.delete(change.doc.id);
             if (collection === "matches") rebuildRankingsAndStats().catch((e) =>
-              console.error("Erreur nettoyage après suppression:", e),
+              logEvent('error', 'vote.suppression', 'Recalcul après suppression échoué.'),
             );
             return;
           }
@@ -49,21 +42,16 @@ export function startMatchListeners(): void {
           const before = lastKnownStatus.get(matchId);
           lastKnownStatus.set(matchId, after.status);
 
-          const oldType = lastKnownType.get(matchId);
-          lastKnownType.set(matchId, after.matchType ?? 'championship');
-          if (collection === 'matches' && oldType != null && oldType !== (after.matchType ?? 'championship')) {
-            rebuildRankingsAndStats().catch(e => console.error('Recalcul après changement de type:', e));
-          }
           if (before === after.status) return; // pas un changement de statut, on ignore
 
           if (before !== "voting_open" && after.status === "voting_open") {
             handleVotingOpened(matchId, after).catch((e) =>
-              console.error(`Erreur handleVotingOpened(${matchId}):`, e),
+              logEvent('error', 'vote.ouverture', 'Ouverture incomplète ; vérifier la reprise automatique.', { matchId }),
             );
           }
           if (before !== "voting_closed" && after.status === "voting_closed") {
             handleVotingClosed(matchId, after, true).catch((e) =>
-              console.error(`Erreur handleVotingClosed(${matchId}):`, e),
+              logEvent('error', 'vote.cloture', 'Clôture incomplète ; résultats repris au prochain cycle, notification non rejouée.', { matchId }),
             );
           }
         });
@@ -71,7 +59,7 @@ export function startMatchListeners(): void {
       (error) => {
         // firebase-admin réessaie automatiquement la connexion en cas de coupure
         // réseau ; on journalise simplement pour visibilité (voir `pm2 logs` / `journalctl`).
-        console.error("Erreur du listener matches :", error);
+        logEvent('error', 'vote.ecoute', 'Écoute interrompue ; vérifier la connexion Firestore.', { collection });
       },
     );
   }
@@ -88,7 +76,7 @@ async function handleVotingOpened(
 
   await notifyMembers(await votingOpenedNotification(matchId, match));
 
-  console.log(`Vote ouvert et notification envoyée pour le match ${matchId}`);
+  logEvent('info', 'vote.ouverture', 'Vote ouvert ; demande de notification traitée.', { matchId });
 }
 
 export async function handleVotingClosed(
@@ -119,7 +107,5 @@ export async function handleVotingClosed(
     .join(", ");
   await notifyMembers(votingClosedNotification(matchId, match, mvpNames));
 
-  console.log(
-    `Résultats calculés pour le match ${matchId} (${totalVotes} votes, MVP: ${mvpUids.join(", ") || "aucun"})`,
-  );
+  logEvent('info', 'vote.cloture', 'Résultats calculés ; demande de notification traitée.', { matchId, count: totalVotes });
 }

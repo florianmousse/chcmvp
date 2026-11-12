@@ -51,10 +51,26 @@ test('bootstrap is isolated, idempotent and only grants synthetic administration
   await ensureReviewSpace('review','admin',production);
   assert.equal((await db.doc('users/demo-player-1').get()).data().firstName,'Modifié');
   assert.equal((await db.doc('users/admin').get()).data().role,'admin');
+  assert.equal((await db.doc('users/admin').get()).data().email,'admin@example.invalid');
+  assert.equal((await db.doc('users/admin').get()).data().firstName,'Administrateur');
   assert.equal(await productionState(),original);
   assert.throws(()=>db.doc('../users/member'));
   assert.throws(()=>db.doc('review_spaces/other/users/member'));
   assert.throws(()=>db.collectionGroup('votes'));
+});
+
+test('legacy bootstrap identities are anonymized once without modifying production or sandbox history',async()=>{
+  await ensureReviewSpace('review','admin',production);
+  const db=reviewDatabase('review',production);
+  await db.doc('users/admin').update({firstName:'Ancienne identité',email:'old@example.test',syntheticIdentityVersion:0});
+  await db.doc('matches/history').set({opponent:'Conservé',status:'upcoming'});
+  await ensureReviewSpace('review','admin',production);
+  assert.equal((await db.doc('users/admin').get()).data().email,'admin@example.invalid');
+  assert.equal((await db.doc('matches/history').get()).data().opponent,'Conservé');
+  await db.doc('users/admin').update({firstName:'Personnage de test'});
+  await ensureReviewSpace('review','admin',production);
+  assert.equal((await db.doc('users/admin').get()).data().firstName,'Personnage de test');
+  assert.equal(await productionState(),original);
 });
 
 test('ceremony creation, actual voting, reveal, edit, reopen, cancellation and deletion never touch production',async()=>{

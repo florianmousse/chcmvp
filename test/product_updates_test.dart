@@ -185,7 +185,7 @@ void main() {
             overrides: demoOverrides,
             child: ProviderScope(
               overrides: [
-                matchesListProvider.overrideWith(
+                seasonMatchesProvider.overrideWith(
                   (ref, team) => Stream.value([demoMatches.last]),
                 ),
               ],

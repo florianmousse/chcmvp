@@ -72,8 +72,17 @@ class MatchModel with _$MatchModel {
     int? scoreAway,
   }) = _MatchModel;
 
-  factory MatchModel.fromJson(Map<String, dynamic> json) =>
-      _$MatchModelFromJson(json);
+  factory MatchModel.fromJson(Map<String, dynamic> json) {
+    final civilDate = json['civilDate'];
+    // A calendar day is not a timezone-dependent instant. Older documents
+    // retain the previous timestamp conversion until explicitly edited.
+    return _$MatchModelFromJson({
+      ...json,
+      if (civilDate is String &&
+          RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(civilDate))
+        'date': '${civilDate}T12:00:00',
+    });
+  }
 
   const MatchModel._();
 

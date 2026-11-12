@@ -1,9 +1,11 @@
+import { logEvent } from './logger';
 import { getReviewSpaceUid } from "./database";
 import { getFirestore } from "./database";
 import { suppressMatchNotification } from "./reviewAccess";
 import { notificationTokens, validNotificationTokens } from "./notificationAudience";
 
 import { getMessaging } from "firebase-admin/messaging";
+import { notificationAppearance } from './notificationAppearance';
 import {
   VOTE_DURATION_HOURS,
   REMINDER_BEFORE_HOURS,
@@ -62,7 +64,7 @@ export async function notifyMembers({
   });
 
   if (tokens.length === 0) {
-    console.log(`notifyMembers: aucun token à notifier pour "${title}"`);
+    logEvent('info', 'notification.membres', 'Aucun appareil éligible ; aucun envoi.');
     return;
   }
 
@@ -98,7 +100,7 @@ export async function notifyAdmins({
   });
 
   if (tokens.length === 0) {
-    console.log(`notifyAdmins: aucun token admin pour "${title}"`);
+    logEvent('info', 'notification.admins', 'Aucun appareil administrateur ; aucun envoi.');
     return;
   }
 
@@ -120,6 +122,7 @@ async function sendToTokens(
   let deliveryFailed = false;
   for (const chunk of chunks) {
     const response = await getMessaging().sendEachForMulticast({
+      ...notificationAppearance,
       tokens: chunk,
       notification,
       data,

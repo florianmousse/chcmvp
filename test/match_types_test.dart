@@ -109,6 +109,9 @@ void main() {
                 matchesListProvider.overrideWith(
                   (ref, team) => Stream.value([match]),
                 ),
+                seasonMatchesProvider.overrideWith(
+                  (ref, team) => Stream.value([match]),
+                ),
               ],
               child: MaterialApp(home: page),
             ),

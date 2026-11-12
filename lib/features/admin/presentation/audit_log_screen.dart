@@ -1,9 +1,20 @@
-import 'dart:convert';
+import 'audit_entry_view.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:chc_mvp/features/auth/presentation/auth_providers.dart';
+
+// Keep the subscription stable while typing a filter. A scope or page-size
+// change still creates a new, correctly scoped query.
+final auditLogsStreamProvider = Provider.autoDispose
+    .family<Stream<QuerySnapshot<Map<String, dynamic>>>, int>((ref, limit) {
+      return ref
+          .watch(appDatabaseProvider)
+          .collection('audit_logs')
+          .orderBy('at', descending: true)
+          .limit(limit)
+          .snapshots();
+    });
 
 class AuditLogScreen extends ConsumerStatefulWidget {
   const AuditLogScreen({super.key});
@@ -41,16 +52,13 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
               ),
               Expanded(
                 child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: ref
-                      .watch(appDatabaseProvider)
-                      .collection('audit_logs')
-                      .orderBy('at', descending: true)
-                      .limit(_limit)
-                      .snapshots(),
+                  stream: ref.watch(auditLogsStreamProvider(_limit)),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return Center(
-                        child: Text('Journal indisponible : ${snapshot.error}'),
+                      return const Center(
+                        child: Text(
+                          'Journal indisponible. Vérifie ta connexion puis réessaie.',
+                        ),
                       );
                     }
                     if (!snapshot.hasData) {
@@ -65,8 +73,10 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
                                 'actorRole',
                                 'target',
                                 'action',
+                                auditActionLabel(d.data()),
+                                auditSubjectLabel(d.data()),
                               ].any(
-                                (k) => '${d.data()[k] ?? ''}'
+                                (k) => '${d.data()[k] ?? k}'
                                     .toLowerCase()
                                     .contains(_filter),
                               ),
@@ -94,41 +104,5 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
             ],
           ),
   );
-  Widget _entry(Map<String, dynamic> data) {
-    final at = data['at'];
-    final time = at is Timestamp
-        ? DateFormat('dd/MM/yyyy HH:mm:ss').format(at.toDate().toLocal())
-        : 'Date inconnue';
-    final status = switch (data['status']) {
-      'success' => 'Réussie',
-      'failed' => 'Échec (effets partiels possibles)',
-      _ => 'En cours / résultat inconnu',
-    };
-    final name = (data['actorName'] as String?)?.trim();
-    String pretty(Object? value) =>
-        const JsonEncoder.withIndent('  ').convert(value);
-    Object? readable(Object? value) {
-      if (value is Timestamp) return value.toDate().toLocal().toIso8601String();
-      if (value is Map) return value.map((k, v) => MapEntry(k, readable(v)));
-      if (value is List) return value.map(readable).toList();
-      return value;
-    }
-
-    return ExpansionTile(
-      title: Text('${data['action']} · ${data['target']}'),
-      subtitle: Text(
-        '$time · ${name?.isNotEmpty == true ? name : data['actorUid']} · $status'
-        '${data['reviewSpaceUid'] != null || data['actorRole'] == 'reviewer' ? ' · Équipe de validation' : ''}',
-      ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: SelectableText(
-            'Auteur : ${data['actorUid']}\nSource : ${data['source']}\n'
-            '${data.containsKey('before') ? 'Avant :\n${pretty(readable(data['before']))}\nAprès :\n${pretty(readable(data['after']))}' : 'Action serveur - aucun contenu sensible conservé.'}',
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _entry(Map<String, dynamic> data) => AuditEntryCard(data: data);
 }

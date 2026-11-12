@@ -485,6 +485,7 @@ class _MatchFormScreenState extends ConsumerState<MatchFormScreen> {
       if (_isEditing) {
         await repo.updateMatch(widget.existing!.id, {
           'date': Timestamp.fromDate(_date),
+          'civilDate': DateFormat('yyyy-MM-dd').format(_date),
           'time': _formattedTime,
           'opponent': opponentName,
           'opponentId': _selectedOpponentId,

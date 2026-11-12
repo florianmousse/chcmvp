@@ -1,17 +1,18 @@
+import { matchDateTime } from '../matchTime';
 import { validateProfilePatch } from '../profileValidation';
 import { getFirestore } from "../database";
 import { reviewDatabaseOwner } from "../database";
 import { initializeVotingWindow } from "../votingLifecycle";
 import { recomputeClosedMatch } from "../rebuildRankings";
 import { Router } from 'express';
-import { Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { requireAuth, AuthedRequest } from '../middleware/auth';
 import { auditChange, auditRequest } from '../audit';
 import { canManageMatch } from '../reviewAccess';
 
 const fail = (status: number, message: string): never => { throw Object.assign(new Error(message), { status }); };
 const fieldsByKind: Record<string, string[]> = {
-  matches: ['date','time','opponent','opponentId','isHome','team','status','matchType','eventName','city','matchDay','matchNumber','presentPlayerIds','votingOpensAt','votingClosesAt','reminderSentAt','pointsScale','allowSelfVote','opponentLogoAsset','scoreHome','scoreAway'],
+  matches: ['date','civilDate','time','opponent','opponentId','isHome','team','status','matchType','eventName','city','matchDay','matchNumber','presentPlayerIds','votingOpensAt','votingClosesAt','reminderSentAt','pointsScale','allowSelfVote','opponentLogoAsset','scoreHome','scoreAway'],
   playerStats: ['goals','assists','greenCards','yellowCards','redCards'],
   users: ['firstName','lastName','team','photoUrl','jerseyNumber'],
   teams: ['name'], opponents: ['name','logoAsset'],
@@ -53,7 +54,10 @@ export async function writeData(uid: string, input: any, db = getFirestore()) {
           converted[key] = Timestamp.fromDate(date);
         }
       }
+      // Old clients only send an instant; derive its Paris date on the server.
+      if (converted.date != null && !Object.prototype.hasOwnProperty.call(data, 'civilDate')) converted.civilDate = null;
       const next = { ...before, ...converted };
+      if (before?.status !== next.status) converted.resultsSourceFingerprint = null;
       if (!['championship','friendly','tournament','playoff'].includes(next.matchType ?? 'championship') ||
           !['upcoming','voting_open','voting_closed'].includes(next.status) ||
           !(next.date instanceof Timestamp) || typeof next.time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(next.time) ||
@@ -61,6 +65,12 @@ export async function writeData(uid: string, input: any, db = getFirestore()) {
           typeof next.isHome !== 'boolean' || typeof next.allowSelfVote !== 'boolean' ||
           !Array.isArray(next.presentPlayerIds) || next.presentPlayerIds.some((v: any) => typeof v !== 'string' || !v || v.includes('/')) ||
           !next.pointsScale || ['first','second','third'].some(k => !Number.isInteger(next.pointsScale[k]) || next.pointsScale[k] < 0)) fail(400, 'Match invalide.');
+      if (next.civilDate != null && (typeof next.civilDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(next.civilDate))) fail(400, 'Date civile invalide.');
+      try { matchDateTime(next.date, next.time, next.civilDate ?? undefined); } catch { fail(400, 'Date ou heure de match invalide en Europe/Paris.'); }
+      if (next.civilDate != null && (converted.date != null || converted.civilDate != null)) {
+        converted.date = Timestamp.fromMillis(matchDateTime(next.date, '12:00', next.civilDate));
+      }
+      if (next.status === 'voting_open' && before?.status !== 'voting_open' && new Set(next.presentPlayerIds).size < 3) fail(400, 'Au moins trois joueurs distincts sont nécessaires pour ouvrir le vote.');
       for (const key of ['eventName','city']) {
         if (next[key] != null && (typeof next[key] !== 'string' || next[key].length > 120)) fail(400, 'Nom ou ville invalide.');
         if (typeof converted[key] === 'string') converted[key] = converted[key].trim() || null;
@@ -90,12 +100,14 @@ export async function writeData(uid: string, input: any, db = getFirestore()) {
     else if (operation === 'create') tx.create(ref, converted);
     else if (operation === 'update') tx.update(ref, converted);
     else tx.set(ref, converted, { merge: true });
+    if (kind === 'playerStats') tx.update(db.doc(p.slice(0, 2).join('/')), { resultsRevision: FieldValue.increment(1) });
   });
-  if (reviewDatabaseOwner(db) && kind === 'matches') {
+  if (kind === 'matches') {
     const match = (await ref.get()).data();
-    if (match?.status === 'voting_open') await initializeVotingWindow(p[1], 48, db);
+    if (reviewDatabaseOwner(db) && match?.status === 'voting_open') await initializeVotingWindow(p[1], 48, db);
     if (match?.status === 'voting_closed') await recomputeClosedMatch(p[1], db);
   }
+  if (kind === 'playerStats') await recomputeClosedMatch(p[1], db);
   return { success: true };
 }
 
@@ -118,12 +130,14 @@ dataRouter.post('/stats', async (req: AuthedRequest, res) => {
       if (!match) fail(404, 'Match introuvable.');
       const refs = stats.map((s: any) => parent.collection('playerStats').doc(s.playerId));
       const previous = refs.length ? await tx.getAll(...refs) : [];
+      tx.update(parent, { resultsRevision: FieldValue.increment(1) });
       stats.forEach((s: any, i: number) => {
         const { playerId, ...data } = s;
         auditChange(tx, db, req.uid!, actor, 'update', refs[i].path, previous[i].data() ?? null, data);
         tx.set(refs[i], data);
       });
     });
+    await recomputeClosedMatch(matchId, db);
     res.json({ success: true });
   } catch (error: any) { res.status(error.status ?? 500).json({ error: error.message }); }
 });

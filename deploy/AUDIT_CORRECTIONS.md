@@ -9,7 +9,7 @@
 - Les modifications de profil refusent les noms/équipes vides ou de plus de 120 caractères, les numéros hors de 0 à 999 et les photos autres que des URL HTTPS de 2048 caractères maximum, sans identifiants intégrés. `null` permet de retirer une photo ou un numéro.
 - Les tokens FCM sont des listes de dix chaînes distinctes maximum, de 1 à 4096 caractères sans espaces. Android et web les mettent à jour par transaction et gardent les dix appareils enregistrés le plus récemment. Les données anciennes mal formées sont normalisées lors de cette opération ; le serveur ignore les tokens invalides sans interrompre les notifications des autres membres.
 - Les appels HTTP GET, POST et DELETE expirent après 20 secondes, authentification comprise. Les écritures ne sont pas rejouées. Après une coupure, vérifier le résultat avant de réessayer : un délai client ne prouve pas que le serveur a annulé l'action.
-- La réinitialisation publique du mot de passe valide l'adresse et limite les demandes sur 15 minutes : 3 par adresse, 10 par IP et 100 au total. Les réponses pour un compte absent et un envoi échoué restent identiques. Les journaux ne contiennent ni adresse ni lien de réinitialisation.
+- La réinitialisation publique du mot de passe valide l'adresse et limite les demandes sur 15 minutes : 3 par adresse, 10 par IP et 100 au total. Les réponses pour un compte absent et un envoi échoué restent identiques. Le contrôleur ne journalise ni adresse ni lien ; la fuite complémentaire identifiée dans le mailer sans SMTP est corrigée localement dans la [deuxième phase](AUDIT_CORRECTIONS_PHASE_2.md), dont le déploiement reste à effectuer.
 
 ## Configuration obligatoire
 

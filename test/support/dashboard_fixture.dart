@@ -51,6 +51,8 @@ final demoMatches = [
   ),
 ];
 final demoOverrides = [
+  matchSeasonsProvider.overrideWith((ref) async => [2026]),
+  seasonMatchesProvider.overrideWith((ref, year) => Stream.value(demoMatches)),
   ceremoniesProvider.overrideWith((ref) => Stream.value([])),
   allBadgesProvider.overrideWith((ref) => Stream.value({})),
   testMatchesListProvider.overrideWith((ref) => Stream.value([])),

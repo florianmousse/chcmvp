@@ -1,3 +1,4 @@
+import { resultsFingerprint } from './matchResultVersion';
 import { getFirestore } from "./database";
 import { Timestamp } from "firebase-admin/firestore";
 import { computeMatchTally, Tally } from "./matchTally";
@@ -29,7 +30,7 @@ export function rebuildRankingsAndStats(firestore = getFirestore()) {
 }
 
 /** Caller must hold the ranking lock. Also usable with a local test database. */
-export async function rebuildRankingsUnlocked(firestore = getFirestore()): Promise<{
+export async function rebuildRankingsUnlocked(firestore = getFirestore(), silent = false): Promise<{
   matchesProcessed: number;
   orphanMatchesDeleted: number;
   badgesUpdated: number;
@@ -270,7 +271,18 @@ export async function rebuildRankingsUnlocked(firestore = getFirestore()): Promi
   }
   await flush(true);
 
-  const badgesUpdated = await rebuildBadges(badgeMatches, firestore);
+  const badgesUpdated = await rebuildBadges(badgeMatches, firestore, new Date(), silent);
+  // Acknowledge every successfully rebuilt snapshot, not only the triggering
+  // match. Never acknowledge a concurrent change to its source fields.
+  for (const doc of matchesSnap.docs) {
+    const fingerprint = resultsFingerprint(doc.data());
+    await firestore.runTransaction(async tx => {
+      const current = (await tx.get(doc.ref)).data();
+      if (current && current.resultsSourceFingerprint !== fingerprint && resultsFingerprint(current) === fingerprint) {
+        tx.update(doc.ref, { resultsSourceFingerprint: fingerprint });
+      }
+    });
+  }
   return { matchesProcessed, orphanMatchesDeleted, badgesUpdated };
 }
 
@@ -282,7 +294,7 @@ export function deleteMatchAndRebuild(matchId: string, firestore = getFirestore(
   });
 }
 
-export function recomputeClosedMatch(matchId: string, firestore = getFirestore()) {
+export function recomputeClosedMatch(matchId: string, firestore = getFirestore(), silent = false) {
   return withRankingLock(async () => {
     const ref = matchReference(matchId, firestore);
     const current = await ref.get();
@@ -293,7 +305,7 @@ export function recomputeClosedMatch(matchId: string, firestore = getFirestore()
       const result = computeMatchTally(votes.docs.map((v) => v.data() as any), match.pointsScale ?? { first: 5, second: 3, third: 1 });
       await ref.collection("results").doc("summary").set({ ...result, computedAt: Timestamp.now() });
     } else {
-      await rebuildRankingsUnlocked(firestore);
+      await rebuildRankingsUnlocked(firestore, silent);
     }
     return {
       match: current.data()!,

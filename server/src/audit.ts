@@ -1,3 +1,4 @@
+import { logEvent } from './logger';
 import { getReviewSpaceUid, reviewDatabaseOwner } from "./database";
 import { getFirestore } from "./database";
 import { FieldValue, Transaction, Firestore } from "firebase-admin/firestore";
@@ -24,7 +25,7 @@ export async function auditRequest(req: AuthedRequest, res: Response, next: Next
     res.once('finish', () => {
       void entry.update({ status: res.statusCode < 400 ? 'success' : 'failed',
         resultId, httpStatus: res.statusCode, finishedAt: FieldValue.serverTimestamp() })
-        .catch(error => console.error('Audit completion failed', entry.id, error));
+        .catch(error => logEvent('error', 'journal.finalisation', 'Résultat non enregistré ; consulter les actions au statut inconnu.'));
     });
     next();
   } catch { res.status(503).json({ error: 'Journal indisponible. Action non exécutée, réessayez.' }); }

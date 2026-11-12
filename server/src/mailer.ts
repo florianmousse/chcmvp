@@ -1,5 +1,6 @@
 import { getReviewSpaceUid } from "./database";
 import nodemailer from "nodemailer";
+import { logEvent } from './logger';
 
 /**
  * Gmail SMTP avec un mot de passe d'application (nécessite la validation en
@@ -40,6 +41,16 @@ function isSmtpConfigured(): boolean {
   return !!process.env.SMTP_USER && !!process.env.SMTP_APP_PASSWORD;
 }
 
+function requireSmtp(): void {
+  if (isSmtpConfigured()) return;
+  logEvent('error', 'mail.configuration', 'Envoi impossible : configurer SMTP_USER et SMTP_APP_PASSWORD.');
+  throw Object.assign(new Error('Service de messagerie indisponible.'), { code: 'SMTP_NOT_CONFIGURED' });
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c);
+}
+
 function button(href: string, label: string): string {
   return `
     <p style="text-align:center;margin:32px 0;">
@@ -65,12 +76,7 @@ export async function sendInviteEmail({
   resetLink: string;
 }): Promise<void> {
   if (getReviewSpaceUid()) return;
-  if (!isSmtpConfigured()) {
-    console.warn(
-      `SMTP non configuré (.env) - e-mail d'invitation pour ${to} non envoyé. Lien : ${resetLink}`,
-    );
-    return;
-  }
+  requireSmtp();
 
   await transporter.sendMail({
     from: `"${CLUB_NAME}" <${process.env.SMTP_USER}>`,
@@ -82,7 +88,7 @@ export async function sendInviteEmail({
       `Clique sur ce lien pour choisir ton mot de passe :\n${resetLink}\n\n` +
       `À bientôt !\n${CLUB_NAME}`,
     html: wrapHtml(`
-      <p>Bonjour ${firstName},</p>
+      <p>Bonjour ${escapeHtml(firstName)},</p>
       <p>Un compte t'a été créé sur l'application du <strong>${CLUB_NAME}</strong>.</p>
       ${button(resetLink, "Définir mon mot de passe")}
     `),
@@ -102,12 +108,7 @@ export async function sendPasswordResetEmail({
   resetLink: string;
 }): Promise<void> {
   if (getReviewSpaceUid()) return;
-  if (!isSmtpConfigured()) {
-    console.warn(
-      `SMTP non configuré (.env) - e-mail de réinitialisation pour ${to} non envoyé. Lien : ${resetLink}`,
-    );
-    return;
-  }
+  requireSmtp();
 
   await transporter.sendMail({
     from: `"${CLUB_NAME}" <${process.env.SMTP_USER}>`,

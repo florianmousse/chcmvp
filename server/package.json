@@ -9,8 +9,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "test": "node --test test/cors.test.cjs test/members.test.cjs test/tally.test.cjs test/badges.test.cjs test/dependency-compatibility.test.cjs test/ceremonies.test.cjs test/security-boundaries.test.cjs",
-    "test:emulator": "node --test test/rankings.emulator.test.cjs test/ceremonies.emulator.test.cjs test/review-audit.emulator.test.cjs test/review-space.emulator.test.cjs test/security-boundaries.emulator.test.cjs"
+    "test": "node --test test/cors.test.cjs test/members.test.cjs test/tally.test.cjs test/badges.test.cjs test/dependency-compatibility.test.cjs test/ceremonies.test.cjs test/security-boundaries.test.cjs test/audit-corrections.test.cjs",
+    "test:emulator": "node --test test/rankings.emulator.test.cjs test/ceremonies.emulator.test.cjs test/review-audit.emulator.test.cjs test/review-space.emulator.test.cjs test/security-boundaries.emulator.test.cjs test/match-recovery.emulator.test.cjs"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

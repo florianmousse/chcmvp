@@ -1,3 +1,5 @@
+import { logEvent } from './logger';
+import { notificationAppearance } from './notificationAppearance';
 import { getReviewSpaceUid } from "./database";
 import { getFirestore } from "./database";
 import { Timestamp } from "firebase-admin/firestore";
@@ -49,9 +51,7 @@ export function startBadgeListener(): void {
           lastKnownBadges.set(doc.id, new Set(Object.keys(earned)));
         });
         isFirstSnapshot = false;
-        console.log(
-          `Listener badges initialisé (${snapshot.size} joueurs en cache).`,
-        );
+        logEvent('info', 'badge.ecoute', 'Écoute des badges prête.', { count: snapshot.size });
         return;
       }
 
@@ -80,18 +80,15 @@ export function startBadgeListener(): void {
         // Mettre à jour le cache
         lastKnownBadges.set(userId, currentTypes);
 
-        if (newBadges.length > 0) {
+        if (newBadges.length > 0 && change.doc.data().silent !== true) {
           sendBadgeNotification(userId, newBadges).catch((e) =>
-            console.error(
-              `Erreur notification badge pour ${userId}:`,
-              e,
-            ),
+            logEvent('error', 'badge.notification', 'Notification non remise ; vérifier le service FCM.'),
           );
         }
       });
     },
     (error) => {
-      console.error("Erreur du listener userBadges :", error);
+      logEvent('error', 'badge.ecoute', 'Écoute interrompue ; vérifier la connexion Firestore.');
     },
   );
 }
@@ -125,10 +122,7 @@ async function sendBadgeNotification(
       ? `Tu as obtenu le badge ${badgeLabels[0]} !`
       : `Tu as obtenu : ${badgeLabels.join(", ")}`;
 
-  const firstName = userData.firstName ?? "Joueur";
-  console.log(
-    `Badge notification pour ${firstName} (${userId}): ${badgeLabels.join(", ")}`,
-  );
+  logEvent('info', 'badge.notification', 'Préparation des nouveaux badges.', { count: newBadgeTypes.length });
 
   // Envoyer la notification
   const staleTokens: string[] = [];
@@ -139,6 +133,7 @@ async function sendBadgeNotification(
 
   for (const chunk of chunks) {
     const response = await getMessaging().sendEachForMulticast({
+      ...notificationAppearance,
       tokens: chunk,
       notification: { title, body },
       data: { type: "badge_earned", badges: newBadgeTypes.join(",") },

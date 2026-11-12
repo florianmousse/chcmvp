@@ -3,6 +3,11 @@
         android:label="CHC MVP"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- FCM background notifications must use the same transparent small
+             icon as local notifications, never the opaque launcher artwork. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_chc" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

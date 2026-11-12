@@ -27,7 +27,7 @@ export function reopenVoting(matchId: string, adminUid: string, db = getFirestor
       }
       const now = Timestamp.now();
       tx.update(ref, {
-        status: "voting_open", manualCloseRequired: true,
+        status: "voting_open", manualCloseRequired: true, resultsSourceFingerprint: null,
         reopenedAt: now, reopenedBy: adminUid, votingOpensAt: now,
         votingClosesAt: null, reminderSentAt: null, adminReopenReminderSentAt: null,
       });
@@ -67,7 +67,7 @@ export function closeExpiredVoting(matchId: string, now: Timestamp, db = getFire
         !match.votingClosesAt || match.votingClosesAt.toMillis() > now.toMillis()) return false;
     auditChange(tx, db, 'system', { firstName: 'Cycle automatique' }, 'close_voting', ref.path,
       { status: match.status }, { status: 'voting_closed' });
-    tx.update(ref, { status: "voting_closed" });
+    tx.update(ref, { status: "voting_closed", resultsSourceFingerprint: null });
     return true;
   });
 }

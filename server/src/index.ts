@@ -1,3 +1,4 @@
+import { logEvent } from './logger';
 import { getFirestore } from "./database";
 import "./firebase"; // initialise firebase-admin avant tout le reste
 import express from "express";
@@ -20,11 +21,11 @@ import { notifyMembers } from './notify';
 import { processCeremonyNotifications } from './ceremonyNotifications';
 
 const deliverCeremonies = () => processCeremonyNotifications(getFirestore(), notifyMembers)
-  .catch(e => console.error('Notifications cérémonies:', e));
+  .catch(e => logEvent('error', 'ceremonie.notifications', 'Envoi interrompu ; reprise au prochain cycle.'));
 getFirestore().collection('ceremony_notifications').where('done', '==', false)
   .onSnapshot(snapshot => {
     if (snapshot.docChanges().some(change => change.type === 'added')) void deliverCeremonies();
-  }, e => console.error('Listener cérémonies:', e));
+  }, e => logEvent('error', 'ceremonie.ecoute', 'Écoute interrompue ; vérifier Firestore.'));
 cron.schedule('*/10 * * * *', () => { void deliverCeremonies(); });
 
 const app = express();
@@ -64,13 +65,13 @@ startBadgeListener();
 // rappels, clôture. Toutes les 10 minutes pour une réactivité raisonnable
 // (un match de 20:00 → vote ouvert entre 22:00 et 22:10 au plus tard).
 cron.schedule("*/10 * * * *", () => {
-  processReviewSpaces().catch(e => console.error("Cycle validation:", e));
+  processReviewSpaces().catch(e => logEvent('error', 'validation.cycle', 'Cycle de validation interrompu ; reprise au prochain cycle.'));
   processScheduledVoting().catch((e) =>
-    console.error("Erreur processScheduledVoting :", e),
+    logEvent('error', 'vote.cycle', 'Cycle interrompu ; reprise dans dix minutes.'),
   );
 });
 
 const port = Number(process.env.PORT ?? 8080);
 app.listen(port, () => {
-  console.log(`Serveur CHC MVP démarré sur le port ${port}`);
+  logEvent('info', 'serveur.demarrage', `Serveur prêt sur le port ${port}.`);
 });

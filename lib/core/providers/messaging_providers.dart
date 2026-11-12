@@ -25,11 +25,13 @@ final localNotificationsServiceProvider = Provider<LocalNotificationsService>((
 });
 
 final messagingServiceProvider = Provider<MessagingService>((ref) {
-  return MessagingService(
+  final service = MessagingService(
     ref.watch(firebaseMessagingProvider),
     ref.watch(firestoreProvider),
     ref.watch(localNotificationsServiceProvider),
   );
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 /// À observer une fois quelque part en haut de l'arbre de widgets (voir
@@ -71,7 +73,7 @@ final messagingSyncProvider = Provider<void>((ref) {
     final wasSignedIn = previous?.value != null;
     final nowSignedIn = next.value != null;
 
-    if (!wasSignedIn && nowSignedIn) {
+    if (nowSignedIn && previous?.value?.uid != next.value?.uid) {
       service.initForUser(next.value!.uid, onNotificationTap: openTarget);
     } else if (wasSignedIn && !nowSignedIn) {
       service.clearTokenForUser(previous!.value!.uid);

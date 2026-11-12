@@ -5,18 +5,9 @@ import { Timestamp } from "firebase-admin/firestore";
 import { getClubSettings, notifyMembers, notifyAdmins } from "./notify";
 import { closeExpiredVoting, remindReopenedVoting } from "./votingLifecycle";
 
-/**
- * Combine un Timestamp Firestore (date du match, ex: 2026-09-15 00:00:00) et
- * une chaîne d'heure au format "HH:mm" pour obtenir le timestamp exact du
- * début du match. La date Firestore est stockée à minuit UTC ; l'heure est
- * en heure locale (Europe/Paris). On la combine directement.
- */
-function matchDateTime(dateTs: Timestamp, time: string): number {
-  const d = dateTs.toDate();
-  const [h, m] = time.split(":").map(Number);
-  d.setHours(h, m, 0, 0);
-  return d.getTime();
-}
+import { matchDateTime } from './matchTime';
+import { reconcileMatches } from './matchRecovery';
+import { logEvent } from './logger';
 
 /**
  * Traitement périodique (cron toutes les 10 min) qui gère le cycle de vie
@@ -33,6 +24,7 @@ function matchDateTime(dateTs: Timestamp, time: string): number {
 export async function processScheduledVoting(): Promise<void> {
   const firestore = getFirestore();
   const settings = await getClubSettings();
+  await reconcileMatches(settings.voteDurationHours, firestore);
   const now = Timestamp.now();
   const nowMs = now.toMillis();
 
@@ -51,7 +43,12 @@ export async function processScheduledVoting(): Promise<void> {
       const time: string | undefined = match.time;
       if (!dateTs || !time) continue;
 
-      const matchMs = matchDateTime(dateTs, time);
+      let matchMs: number;
+      try { matchMs = matchDateTime(dateTs, time, match.civilDate); }
+      catch {
+        logEvent('error', 'vote.calendrier', 'Date ou heure invalide ; corriger le match avant ouverture.', { matchId: doc.id });
+        continue;
+      }
       const presentIds: string[] = match.presentPlayerIds ?? [];
 
       // ── Phase 1 : Rappel admin si feuille de présence vide ──
@@ -71,9 +68,7 @@ export async function processScheduledVoting(): Promise<void> {
           data: { type: "admin_presence_reminder", matchId: doc.id },
         });
         await doc.ref.update({ adminReminderSentAt: now });
-        console.log(
-          `Rappel admin envoyé pour le match ${doc.id} (feuille de présence vide)`,
-        );
+        logEvent('info', 'vote.presences', 'Rappel de feuille de présence traité.', { matchId: doc.id });
         continue; // pas d'ouverture de vote si pas de présence
       }
 
@@ -83,23 +78,23 @@ export async function processScheduledVoting(): Promise<void> {
       // Le listener matchListeners.ts détecte la transition et envoie la notif.
       const voteOpenThresholdMs =
         matchMs + settings.voteOpenDelayHours * 3600 * 1000;
-      if (presentIds.length > 0 && nowMs >= voteOpenThresholdMs) {
-        const closesAt = Timestamp.fromMillis(
-          voteOpenThresholdMs + settings.voteDurationHours * 3600 * 1000,
-        );
+      if (presentIds.length >= 3 && nowMs >= voteOpenThresholdMs) {
         await firestore.runTransaction(async (tx) => {
           const current = (await tx.get(doc.ref)).data();
           if (!current || current.status !== "upcoming" || current.manualCloseRequired) return;
+          if (!Array.isArray(current.presentPlayerIds) || new Set(current.presentPlayerIds).size < 3) return;
+          const currentOpenMs = matchDateTime(current.date, current.time, current.civilDate) + settings.voteOpenDelayHours * 3600000;
+          if (nowMs < currentOpenMs) return;
           auditChange(tx, firestore, 'system', { firstName: 'Cycle automatique' }, 'open_voting', doc.ref.path,
             { status: current.status }, { status: 'voting_open' });
           tx.update(doc.ref, {
             status: "voting_open",
-            votingOpensAt: Timestamp.fromMillis(voteOpenThresholdMs),
-            votingClosesAt: closesAt,
+            votingOpensAt: Timestamp.fromMillis(currentOpenMs),
+            votingClosesAt: Timestamp.fromMillis(currentOpenMs + settings.voteDurationHours * 3600000),
             reminderSentAt: null,
           });
         });
-        console.log(`Vote ouvert automatiquement pour le match ${doc.id}`);
+        logEvent('info', 'vote.cycle', "Traitement automatique de l'ouverture terminé.", { matchId: doc.id });
       }
     }
 
@@ -126,7 +121,7 @@ export async function processScheduledVoting(): Promise<void> {
         // "voting_closed"), qui calcule les résultats et envoie la notification
         // de clôture - pas besoin de dupliquer cette logique ici.
         if (await closeExpiredVoting(doc.id, now, firestore)) {
-          console.log(`Vote clôturé automatiquement pour le match ${doc.id}`);
+          logEvent('info', 'vote.cloture', 'Échéance atteinte ; vote clôturé.', { matchId: doc.id });
         }
         continue;
       }
@@ -143,14 +138,15 @@ export async function processScheduledVoting(): Promise<void> {
   }
 }
 
-async function sendReminderToNonVoters(
+export async function sendReminderToNonVoters(
   matchId: string,
   match: FirebaseFirestore.DocumentData,
 ): Promise<void> {
+  const presentPlayerIds: string[] = match.presentPlayerIds ?? [];
+  if (presentPlayerIds.length === 0) return;
   const firestore = getFirestore();
   const votesSnap = await matchReference(matchId, firestore).collection("votes").get();
   const votedUids = votesSnap.docs.map((d) => d.id);
-  const presentPlayerIds: string[] = match.presentPlayerIds ?? [];
 
   await notifyMembers({
     adminsOnly: matchId.startsWith("test:"),
@@ -158,11 +154,9 @@ async function sendReminderToNonVoters(
     body: `Il te reste moins de 24h pour voter pour les 3 meilleurs joueurs contre ${match.opponent ?? "l'adversaire"}.`,
     team: match.team,
     excludeUids: votedUids,
-    onlyUids: presentPlayerIds.length > 0 ? presentPlayerIds : undefined,
+    onlyUids: presentPlayerIds,
     data: { type: "voting_reminder", matchId },
   });
 
-  console.log(
-    `Rappel envoyé pour le match ${matchId} (${votedUids.length} ont déjà voté)`,
-  );
+  logEvent('info', 'vote.rappel', 'Rappel aux non-votants traité.', { matchId, count: votedUids.length });
 }

@@ -149,6 +149,8 @@ class MatchesRepository {
         : _matches.doc();
     await writeAuditedData(_server, target.path, 'create', {
       'date': Timestamp.fromDate(date),
+      'civilDate':
+          '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
       'time': time,
       'opponent': opponent,
       'isHome': isHome,

@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'web_push.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -99,7 +100,10 @@ class AuthService {
 
   Future<void> signOut() async {
     if (kIsWeb) await WebPush.disconnect();
-    if (!kIsWeb) await _googleSignIn.signOut();
+    if (!kIsWeb) {
+      await FirebaseMessaging.instance.deleteToken();
+      await _googleSignIn.signOut();
+    }
     await _auth.signOut();
   }
 
