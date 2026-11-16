@@ -106,7 +106,18 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
                   );
                 }
 
-                final sorted = sortMatchList(matches, status: _filter);
+                final pendingVoteMatchIds = <String>{
+                  for (final match in matches)
+                    if (match.status == MatchStatus.votingOpen &&
+                        ref.watch(hasVotedProvider(match.id)).valueOrNull ==
+                            false)
+                      match.id,
+                };
+                final sorted = sortMatchList(
+                  matches,
+                  status: _filter,
+                  pendingVoteMatchIds: pendingVoteMatchIds,
+                );
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,

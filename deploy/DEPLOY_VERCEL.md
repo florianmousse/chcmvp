@@ -10,7 +10,8 @@ Outils : Flutter **3.44.9** (version vérifiée), Node.js **24 LTS** recommandé
 flutter pub get --enforce-lockfile
 node scripts/generate-legal.mjs
 flutter test test/web_compatibility_test.dart
-flutter build web --release --no-web-resources-cdn --dart-define=SERVER_BASE_URL=https://api.example.invalid
+$appBuildVersion = node scripts/read-app-version.mjs
+flutter build web --release --no-web-resources-cdn --dart-define="APP_BUILD_VERSION=$appBuildVersion" --dart-define=SERVER_BASE_URL=https://api.example.invalid
 node scripts/preview-web.mjs
 ```
 
@@ -19,7 +20,8 @@ Ouvrir **http://127.0.0.1:8085**. `Ctrl+C` arrête l'aperçu. Le serveur ne rend
 Pour développer avec rechargement :
 
 ```powershell
-flutter run -d chrome --web-port 8085 --dart-define=SERVER_BASE_URL=https://api.example.invalid
+$appBuildVersion = node scripts/read-app-version.mjs
+flutter run -d chrome --web-port 8085 --dart-define="APP_BUILD_VERSION=$appBuildVersion" --dart-define=SERVER_BASE_URL=https://api.example.invalid
 ```
 
 Le site reprend les onglets Accueil, Matchs, Classements, Profil et Administration. Sur grand écran, la navigation devient latérale. Les fenêtres de vote, les statistiques et les formulaires d'administration utilisent les composants existants. Les notifications web sont facultatives et nécessitent la configuration décrite dans [WEB_PUSH.md](WEB_PUSH.md). Les widgets Android restent propres à l'application mobile. L'ajout à l'écran d'accueil dépend du navigateur. Une connexion Internet reste nécessaire.

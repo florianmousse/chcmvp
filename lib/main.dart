@@ -1,6 +1,7 @@
 import 'package:chc_mvp/core/config/server_config.dart';
 import 'package:chc_mvp/core/widgets/web_push_prompt.dart';
 import 'package:chc_mvp/core/widgets/review_mode_banner.dart';
+import 'package:chc_mvp/core/widgets/app_update_prompt.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -102,7 +103,7 @@ class HockeyClubApp extends ConsumerWidget {
           ),
         ),
       ),
-      home: const _RootRouter(),
+      home: const AppUpdatePrompt(child: _RootRouter()),
     );
   }
 }

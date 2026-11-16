@@ -13,6 +13,8 @@ export CI=true
 flutter config --no-analytics --enable-web
 flutter pub get --enforce-lockfile
 node scripts/generate-legal.mjs
+APP_BUILD_VERSION="$(node scripts/read-app-version.mjs)"
 flutter build web --release --no-web-resources-cdn \
+  --dart-define="APP_BUILD_VERSION=${APP_BUILD_VERSION}" \
   --dart-define="WEB_PUSH_VAPID_KEY=${WEB_PUSH_VAPID_KEY:-BNRbOhhjp2PU7vTaKPArxhcXcTsyZ-FfMwbaUCgxloXObVFXAEKKu1BjlrZiNT-2vtGJG3peNbNo6y4rsohcCMc}" \
   --dart-define="SERVER_BASE_URL=${SERVER_BASE_URL}"

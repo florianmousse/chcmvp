@@ -1,4 +1,5 @@
 import 'package:chc_mvp/core/models/match_reference.dart';
+import 'package:chc_mvp/features/matches/domain/match_list.dart';
 import 'package:chc_mvp/core/utils/season.dart';
 import 'package:chc_mvp/features/home/domain/advanced_stats_calculator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -182,9 +183,7 @@ final adminMatchesListProvider = Provider<AsyncValue<List<MatchModel>>>((ref) {
   final tests = ref.watch(testMatchesListProvider);
   return real.when(
     data: (matches) => tests.whenData(
-      (testMatches) =>
-          [...matches, ...testMatches]
-            ..sort((a, b) => b.date.compareTo(a.date)),
+      (testMatches) => sortMatchList([...matches, ...testMatches]),
     ),
     loading: () => const AsyncLoading(),
     error: (e, st) => AsyncError(e, st),

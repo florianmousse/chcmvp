@@ -74,13 +74,14 @@ class _VoteScreenState extends ConsumerState<VoteScreen> {
   Widget _rankSelector(
     String label,
     String? selectedUid,
-    ValueChanged<String> onSelect,
+    ValueChanged<String?> onSelect,
   ) {
     // Un joueur déjà choisi à un autre rang est grisé pour empêcher
     // visuellement le doublon (la validation métier le bloque de toute façon).
     final takenElsewhere = {_first, _second, _third}
       ..remove(selectedUid)
       ..removeWhere((e) => e == null);
+    final submitting = ref.watch(voteSubmissionControllerProvider).isLoading;
 
     return Card(
       child: Padding(
@@ -91,9 +92,19 @@ class _VoteScreenState extends ConsumerState<VoteScreen> {
             Text(label, style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
+              key: ValueKey('$label:$selectedUid'),
               initialValue: selectedUid,
               isExpanded: true,
-              decoration: const InputDecoration(border: OutlineInputBorder()),
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                suffixIcon: selectedUid == null
+                    ? null
+                    : IconButton(
+                        tooltip: 'Retirer le joueur - $label',
+                        icon: const Icon(Icons.close),
+                        onPressed: submitting ? null : () => onSelect(null),
+                      ),
+              ),
               items: widget.candidates
                   .where(
                     (c) => widget.match.allowSelfVote || c.uid != _currentUid,
@@ -113,9 +124,7 @@ class _VoteScreenState extends ConsumerState<VoteScreen> {
                     ),
                   )
                   .toList(),
-              onChanged: (uid) {
-                if (uid != null) onSelect(uid);
-              },
+              onChanged: submitting ? null : onSelect,
             ),
           ],
         ),

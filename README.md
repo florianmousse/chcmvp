@@ -21,10 +21,16 @@ les réglages Vercel, Firebase et CORS, ainsi que les points juridiques à valid
 ## Fonctionnalités
 
 - 🗳️ **Vote** - Chaque joueur présent vote pour ses 3 meilleurs coéquipiers (anonyme)
+- **Ordre des matchs** - Les votes ouverts non encore effectués passent en tête,
+  puis chaque groupe est trié par date et heure décroissantes. L'administration
+  utilise uniquement ce tri chronologique. Avant validation du top 3, la croix
+  permet de retirer un joueur pour le sélectionner à un autre rang.
 - 🏆 **Classement** - Général, mensuel, par saison avec barème configurable (5/3/1 pts)
 - 📊 **Statistiques** - Évolution par match, moyenne, badges, série top 3
 - 🏠 **Écran d'accueil** - Stat insolite hebdomadaire, duel de la semaine, temps forts, records
 - 🔔 **Notifications push** - Ouverture/clôture du vote, rappels automatiques
+- **Mises à jour** - Alerte facultative au démarrage sur Android (Google Play)
+  et proposition de rechargement sur le web. Voir [le guide](deploy/APP_UPDATES.md).
 - 🤖 **Cycle de vote automatique** - Ouverture 2h après le match, rappel 24h avant clôture, clôture à 48h
 - 🛡️ **Admin** - Gestion des membres, création de matchs, feuille de présence
 - 🎖️ **8 badges** - MVP de la saison, En feu, Plébiscité, Révélation, Votant assidu, etc.
@@ -35,7 +41,7 @@ les réglages Vercel, Firebase et CORS, ainsi que les points juridiques à valid
 
 ### Prérequis
 
-- Flutter SDK (≥ 3.x)
+- Flutter SDK 3.44 minimum (3.44.9 vérifié), Dart 3.12 minimum
 - Un projet Firebase avec **Authentication** (email/password), **Cloud Firestore**, **Cloud Messaging**
 
 ### Installation

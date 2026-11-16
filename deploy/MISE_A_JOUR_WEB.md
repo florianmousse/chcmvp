@@ -25,7 +25,7 @@ Si le serveur n'a pas encore été mis à jour, il refusera l'ajout sans e-mail.
 flutter test test/web_compatibility_test.dart test/product_updates_test.dart test/member_form_test.dart
 node server/node_modules/typescript/bin/tsc -p server/tsconfig.json
 npm --prefix server test
-flutter build web --release --no-web-resources-cdn --dart-define=SERVER_BASE_URL=https://chc-mvp.duckdns.org
+flutter build web --release --no-web-resources-cdn --dart-define="APP_BUILD_VERSION=$(node scripts/read-app-version.mjs)" --dart-define=SERVER_BASE_URL=https://chc-mvp.duckdns.org
 ```
 
 Le contrôle navigateur utilise un formulaire isolé et des identifiants fictifs, sans contacter Firebase :
